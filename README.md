@@ -3,7 +3,7 @@ Gradle plugin for j2objc (Java to Objective-C transpiler)
 
 ### Usage
 
-Please read extensive comments at the start of the j2objc.gradle file
+Please read extensive comments at the start of the j2objc.gradle file - [link](https://github.com/brunobowden/j2objc-gradle/blob/master/j2obc.gradle#L33)
 
 ### Future Plans
 
