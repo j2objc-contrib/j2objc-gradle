@@ -1,15 +1,15 @@
 # j2objc-gradle
 Gradle plugin for j2objc (Java to Objective-C transpiler)
 
-## Usage
+### Usage
 
 Please read extensive comments at the start of the j2objc.gradle file
 
-## Future Plans
+### Future Plans
 
 The intent is to evolve this in to a full gradle plugin over time. Happy to accept contributions.
 
-## Contributing
+### Contributing
 
 1. Fork it clicking on the top right "Fork" button
 1. Create your feature branch (`git checkout -b my-new-feature`)
