@@ -23,14 +23,14 @@
  * j2objc by design doesn't translate UI code and expects you to write that in the
  * native language of each platform.
  *
- * Please submit gradle plugin patches here:
- *     https://gist.github.com/brunobowden/58d6e311ab96760fc371
+ * For the latest version and to submit patches:
+ *     https://github.com/brunobowden/j2objc-gradle
  *
  * j2objc:
  *     https://github.com/google/j2objc/wiki
  *
  *
- * Basic Usage:
+ * Usage:
  * 1) Download a j2objc release and unzip it to a directory:
  *     https://github.com/google/j2objc/releases
  * 2) Copy this file (j2objc.gradle) next to the build.gradle file of the project to be translated
@@ -192,14 +192,15 @@ class J2objcUtils {
         while (matcher.find(start)) {
             start = matcher.end()
             def newProps = new Properties()
+            def argValue = matcher.group(2)
             if (matcher.group(1) == "es") {
-                // --prefixes
-                // remove trailing space that confuses FileInputStream
-                def prefixesPath = matcher.group(2).trim()
+                // --prefixes prefixes.properties
+                // trailing space confuses FileInputStream
+                def prefixesPath = argValue.trim()
                 newProps.load(new FileInputStream(proj.file(prefixesPath).path))
             } else {
-                // --prefix (this will be a single property)
-                newProps.load(new StringReader(matcher.group(2)));
+                // --prefix com.example.dir=CED
+                newProps.load(new StringReader(argValue));
             }
             props.putAll(newProps)
         }
