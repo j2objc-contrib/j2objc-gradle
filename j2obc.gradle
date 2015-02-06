@@ -272,7 +272,7 @@ class J2objcTranslateTask extends DefaultTask {
                 args firstArgs.split()
 
                 args "-d", "${destDir}"
-                args "-sourcepath", project.file("src/main/java").path
+                args "-sourcepath", "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
 
                 project.j2objcConfig.translateJ2objcLibs.each { library ->
                     def libPath = J2objcUtils.j2objcHome(getProject()) + "/lib/" + library
