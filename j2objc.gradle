@@ -76,6 +76,7 @@
 apply plugin: j2objc
 
 
+// Further configuration uses the following fields, setting them in j2objcConfig within build.gradle
 class J2objcPluginExtension {
 
     // Where to copy generated files (excludes test code and executable)
