@@ -42,6 +42,7 @@
     j2objcConfig {
 
         // MODIFY to where your unzipped j2objc directory is located
+        // NOTE download the latest version from: https://github.com/google/j2objc/releases
         j2objcHome null  // e.g. "${projectDir}/../../j2objc or absolute path
 
         // MODIFY to where generated objc files should be put for Xcode project
@@ -49,41 +50,7 @@
         // NOTE this should contain ONLY j2objc generated files, other contents will be deleted
         destDir null  // e.g. "${projectDir}/../Xcode/j2objc-generated"
 
-
-        // FLAGS
-        // Uncomment each of the following to use. The flags are set to the plugin defaults.
-
-        // Translate flags for j2objc
-        // This is where to add "-classpath" for jar dependencies, note that the
-        // translated and compiled libraries also needs to be added to compileFlags as well
-        // translateFlags "--no-package-directories"
-
-        // Compile flags for j2objcc
-        // compileFlags "-ObjC -ljre_emul -ljunit -lmockito"
-
-        // Test flags for translated test
-        // testFlags ""
-
-        // J2objc libraries, must be available in $J2OBJC_HOME/lib/..., e.g. add guava here
-        // translateJ2objcLibs "junit-4.10.jar", "mockito-core-1.9.5.jar"
-
-
-        // FILTERS
-        // Filter on files to translate or test, ignored if null
-        // Matches on path, not filename or Class name
-        // Must match IncludeRegex and NOT match ExcludeRegex
-        // You can remove the "()" in "*()/" - it's a workaround to avoid closing the '/*' comment
-
-        // translateExcludeRegex ".*()/src/(main|test)/java/com/example/EXCLUDE_DIR/.*"
-        // translateIncludeRegex ".*()/TranslateOnlyMeAnd(|Test)\\.java"
-
-        // Test filter also applies the translate filter
-        // testExcludeRegex ".*()/(IgnoreOneTest|IgnoreTwoTest)\\.java"
-        // testIncludeRegex ".*()/OnlyThisTest\\.java"
-
-        // Helpful checks that you can disable
-        // boolean filenameCollisionCheck = true
-        // boolean testExecutedCheck = true
+        // Further settings are listed in the "J2objcPluginExtension" class below
     }
 
  * 4) Run command to generate and copyfiles. This will only succeed if all steps succeed.
@@ -117,23 +84,54 @@ class J2objcPluginExtension {
     // Path to j2objc distribution
     String j2objcHome = null
 
-    // Additional command line flags for each stage, last thing added to command:
-    String translateFlags = "--no-package-directories"
-    String compileFlags = "-ObjC -ljre_emul -ljunit -lmockito"
-    String testFlags = ""
+    // Stages: CycleFinder => Translate => Compile => Test
 
+    // CYCLEFINDER
+    // TODO(bruno): consider enabling cycleFinder by default
+    boolean cycleFinder = false
+    // Flags copied verbatim to cycle_finder command
+    String cycleFinderFlags = ""
+
+    // TRANSLATE
+    // Flags copied verbatim to j2objc command
+    String translateFlags = "--no-package-directories"
     // Additional libraries that are part of the j2objc release
     // TODO: warn if different versions than testCompile from Java plugin
-    String[] translateJ2objcLibs = ["junit-4.10.jar", "mockito-core-1.9.5.jar"]
-
-    // See "FILTER" comment above
-    // TODO: consider moving to include(s) / exclude(s) structure as used for filetree
+    // TODO: just import everything in the j2objc/lib/ directory?
+    // Xcode doesn't support directories for packages, so all files must be output
+    // to a single directory. This check makes sure that the name don't collide.
+    boolean filenameCollisionCheck = true
+    // J2objc libraries, from $J2OBJC_HOME/lib/...
+    String[] translateJ2objcLibs = [
+            // Memory annotations, e.g. @Weak, @AutoreleasePool
+            "j2objc_annotations.jar",
+            // Libraries that have CycleFinder fixes, e.g. @Weak and code removal
+            "j2objc_guava.jar", "j2objc_junit.jar", "jre_emul.jar",
+            // Libraries don't need CycleFinder fixes
+            "javax.inject-1.jar", "jsr305-3.0.0.jar",
+            "mockito-core-1.9.5.jar"]
+    // Filter on files to translate:
+    // a) Filter on files to translate or test, ignored if null
+    // b) Matches on path + filename
+    // c) Must match IncludeRegex and NOT match ExcludeRegex
+    // Example:
+    //     translateExcludeRegex ".*/src/(main|test)/java/com/example/EXCLUDE_DIR/.*"
+    //     translateIncludeRegex ".*/TranslateOnlyMeAnd(|Test)\\.java"
     String translateExcludeRegex = null
     String translateIncludeRegex = null
+    // TODO: consider moving to include(s) / exclude(s) structure as used for filetree
+
+    // COMPILE
+    // Flags copied verbatim to j2objcc command
+    String compileFlags = "-ObjC -lguava -ljavax_inject -ljre_emul -ljsr305 -ljunit -lmockito"
+
+    // TEST
+    // Flags copied verbatim to testrunner command
+    String testFlags = ""
+    // Filter tests, see translate filter above
     String testExcludeRegex = null
     String testIncludeRegex = null
-
-    boolean filenameCollisionCheck = true
+    // Warn if no tests are executed
     boolean testExecutedCheck = true
 }
 
@@ -155,7 +153,6 @@ class J2objcUtils {
                 "\n" +
                 "j2objcConfig {\n" +
                 "    j2objcHome null // e.g. \"\${projectDir}/../j2objc\"\n" +
-                "    ..."
                 "}\n" +
                 "\n" +
                 "It must be the path of the unzipped j2objc release. Download releases here:\n" +
@@ -224,11 +221,73 @@ class J2objcUtils {
                         "To disable this check (which may overwrite output files):\n" +
                         "j2objcConfig {\n" +
                         "    filenameCollisionCheck false\n" +
-                        "    ...\n" +
                         "}\n"
                 throw new InvalidUserDataException(message)
             }
             nameMap.put(file.name, file)
+        }
+    }
+}
+
+
+class J2objcCycleFinderTask extends DefaultTask {
+
+    @InputFiles FileCollection srcFiles
+
+    @TaskAction
+    def cycleFinder() {
+
+        if (! project.j2objcConfig.cycleFinder) {
+            println "Skipping j2objcCycleFinder"
+            return
+        }
+
+        def j2objcHome = J2objcUtils.j2objcHome(getProject())
+        def cycleFinderExec = j2objcHome + "/cycle_finder"
+        def windowsOnlyArgs = ""
+        if (J2objcUtils.isWindows()) {
+            cycleFinderExec = "java"
+            windowsOnlyArgs = "-jar ${j2objcHome}/lib/cycle_finder.jar"
+        }
+
+        if (project.j2objcConfig.cycleFinderFlags == "") {
+            def message =
+                    "CycleFinder is more difficult to setup and use. Though it's hoped to improve\n" +
+                    "this for the future, for now it's easiest to disable. If you want to try it:\n" +
+                    "1) Download the j2objc source:\n" +
+                    "    https://github.com/google/j2objc\n" +
+                    "2) Within your local j2objc repo run:\n" +
+                    "    \$ (cd jre_emul && make java_sources_manifest)\n" +
+                    "3) Configure j2objcConfig so the CycleFinder uses the j2objc source:\n" +
+                    "    j2objcConfig {\n" +
+                    "        cycleFinder true\n" +
+                    "        cycleFinderFlags (\n" +
+                    "                -whitelist \$ {" + "projectDir}/../../<J2OBJC_REPO>/jre_emul/cycle_whitelist.txt\n" +
+                    "                --sourcefilelist \$ {" + "projectDir}/../../<J2OBJC_REPO>/jre_emul/build_result/java_sources.mf)\n" +
+                    "    }"
+            throw new InvalidUserDataException(message)
+        }
+
+        srcFiles = J2objcUtils.fileFilter(srcFiles,
+                project.j2objcConfig.translateIncludeRegex,
+                project.j2objcConfig.translateExcludeRegex)
+
+        project.exec {
+            executable cycleFinderExec
+
+            args windowsOnlyArgs.split()
+            args "-sourcepath", project.file("src/main/java").path
+
+            project.j2objcConfig.translateJ2objcLibs.each { library ->
+                def libPath = J2objcUtils.j2objcHome(getProject()) + "/lib/" + library
+                args "-classpath", project.file(libPath).path
+            }
+
+            args "${project.j2objcConfig.cycleFinderFlags}".split()
+
+            srcFiles.each { file ->
+                args file.path
+            }
         }
     }
 }
@@ -242,14 +301,12 @@ class J2objcTranslateTask extends DefaultTask {
 
     @TaskAction
     def translate() {
-        def isWindows = J2objcUtils.isWindows()
         def j2objcHome = J2objcUtils.j2objcHome(getProject())
         def j2objcExec = j2objcHome + "/j2objc"
-        def firstArgs = ""
-        if (isWindows) {
+        def windowsOnlyArgs = ""
+        if (J2objcUtils.isWindows()) {
             j2objcExec = "java"
-            // "-Xbootclasspath:${j2objcHome}/lib/jre_emul.jar"
-            firstArgs = "-jar ${j2objcHome}/lib/j2objc.jar"
+            windowsOnlyArgs = "-jar ${j2objcHome}/lib/j2objc.jar"
         }
 
         // Clean build directory to delete files that are no longer generated
@@ -269,8 +326,7 @@ class J2objcTranslateTask extends DefaultTask {
             project.exec {
                 executable j2objcExec
 
-                args firstArgs.split()
-
+                args windowsOnlyArgs.split()
                 args "-d", "${destDir}"
                 args "-sourcepath", project.file("src/main/java").path
 
@@ -306,9 +362,8 @@ class J2objcTranslateTask extends DefaultTask {
                         "are regular expressions on the file path. For example:\n" +
                         "\n" +
                         "j2objcConfig {\n" +
-                        "    translateIncludeRegex \".*/src/main/java/com/example/translateThisDir/.*\n" +
-                        "    translateExcludeRegex \".*/(CantTranslateYet|NotThisEither)\\.java\"\n" +
-                        "    ...\n" +
+                        "    translateIncludeRegex \".*/src/main/java/com/example/TranslateThisDirectoryOnly/.*\n" +
+                        "    translateExcludeRegex \".*/(SkipThisClass|AlsoSkipThisClass)\\.java\"\n" +
                         "}\n"
 
                     print message
@@ -430,7 +485,6 @@ class J2objcTestTask extends DefaultTask {
                         "To disable this check (which is against best practice):\n" +
                         "j2objcConfig {\n" +
                         "    testExecutedCheck false\n" +
-                        "    ...\n" +
                         "}\n"
                 throw new InvalidUserDataException(message)
             }
@@ -453,7 +507,6 @@ class j2objcCopyTask extends DefaultTask {
                     "\n" +
                     "j2objcConfig {\n" +
                     "    destDir null // e.g. \"\${" + "projectDir}/../Xcode/j2objc-generated\"\n" +
-                    "    ..."
                     "}"
             throw new InvalidUserDataException(message)
         }
@@ -495,21 +548,29 @@ class j2objc implements Plugin<Project> {
     void apply(Project project) {
         project.with {
             // TODO: dependency on project.j2objcConfig, so any setting change
-            // TODO: invalidates all tasks and causes a full rebuild
+            // TODO: invalidates all (ideally some) tasks and causes a rebuild
             project.extensions.create("j2objcConfig", J2objcPluginExtension)
 
             // Produces a modest amount of output
             logging.captureStandardOutput LogLevel.INFO
 
+            tasks.create(name: "j2objcCycleFinder", type: J2objcCycleFinderTask) {
+                description "Run the cycle_finder tool on all Java source files"
+                srcFiles = files(
+                        fileTree(dir: projectDir,
+                                include: "**/*.java",
+                                exclude: project.relativePath(buildDir)))
+            }
+
             // Dependency may be added in project.plugins.withType for Java or Android plugin
-            tasks.create(name: "j2objcTranslate", type: J2objcTranslateTask) {
+            tasks.create(name: "j2objcTranslate", type: J2objcTranslateTask,
+                    dependsOn: 'j2objcCycleFinder') {
                 description "Translates all the java source files in to Objective-C using j2objc"
                 srcFiles = files(
                         fileTree(dir: projectDir,
                                 include: "**/*.java",
                                 exclude: project.relativePath(buildDir)))
                 destDir = file("${buildDir}/j2objc")
-                println "destDir: " + destDir + ", " + destDir.path
             }
 
             project.tasks.create(name: "j2objcCompile", type: J2objcCompileTask,
@@ -535,9 +596,9 @@ class j2objc implements Plugin<Project> {
 
             // Make sure the wider project builds successfully
             if (project.plugins.findPlugin('java')) {
-                project.tasks.findByName('j2objcTranslate').dependsOn('test')
+                project.tasks.findByName('j2objcCycleFinder').dependsOn('test')
             } else if (project.plugins.findPlugin('com.android.application')) {
-                project.tasks.findByName('j2objcTranslate').dependsOn('assemble')
+                project.tasks.findByName('j2objcCycleFinder').dependsOn('assemble')
             } else {
                 def message =
                         "j2objc plugin didn't find either 'java' or 'com.android.application'\n" +
