@@ -19,8 +19,6 @@ j2objcConfig {
     // NOTE these files should be checked in to the repository and updated as needed
     // NOTE this should contain ONLY j2objc generated files, other contents will be deleted
     destDir null  // e.g. "${projectDir}/../Xcode/j2objc-generated"
-
-    // Further settings are listed in the "J2objcPluginExtension" class below
 }
 ```
 
