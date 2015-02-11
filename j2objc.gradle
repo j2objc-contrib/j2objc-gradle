@@ -59,10 +59,11 @@
  *
  * Commands:
  * Each one depends on the previous command
- *     j2objcTranslate - Translate all files to Objective-C, builds java or Android project if found
- *     j2objcCompile   - Compile Objective-C files and build Objective-C binary (named 'runner')
- *     j2objcTest      - Run all java tests against the Objective-C binary
- *     j2objcCopy      - Copy generated Objective-C files to Xcode project
+ *     j2objcCycleFinder - Run the Cycle Finder Tool on Java sources 
+ *     j2objcTranslate   - Translate all files to Objective-C, builds java or Android project if found
+ *     j2objcCompile     - Compile Objective-C files and build Objective-C binary (named 'runner')
+ *     j2objcTest        - Run all java tests against the Objective-C binary
+ *     j2objcCopy        - Copy generated Objective-C files to Xcode project
  *
  * Note that you can use the Gradle shorthand of "$ gradlew jCop" to do the j2objcCopy task.
  * The other shorthand expressions are "jTr", "jCom" and "jTe"
@@ -495,7 +496,7 @@ class J2objcTestTask extends DefaultTask {
 }
 
 
-class j2objcCopyTask extends DefaultTask {
+class J2objcCopyTask extends DefaultTask {
 
     @InputDirectory File srcDir
 
@@ -590,7 +591,7 @@ class j2objc implements Plugin<Project> {
                 srcFiles = files(fileTree(dir: projectDir, includes: ["**/*Test.java"]))
             }
 
-            project.tasks.create(name: 'j2objcCopy', type: j2objcCopyTask,
+            project.tasks.create(name: 'j2objcCopy', type: J2objcCopyTask,
                     dependsOn: 'j2objcTest') {
                 description 'Depends on j2objc translation and test, copies to destDir'
                 srcDir = file("${project.buildDir}/j2objc")
