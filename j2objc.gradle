@@ -547,6 +547,7 @@ class j2objcCopyTask extends DefaultTask {
 
 class j2objc implements Plugin<Project> {
 
+    @Override
     void apply(Project project) {
         project.with {
             // TODO: dependency on project.j2objcConfig, so any setting change
