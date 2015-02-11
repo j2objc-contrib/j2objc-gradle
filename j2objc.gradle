@@ -264,8 +264,8 @@ class J2objcCycleFinderTask extends DefaultTask {
                     "    j2objcConfig {\n" +
                     "        cycleFinder true\n" +
                     "        cycleFinderFlags (\n" +
-                    "                --whitelist \${projectDir}/../../<J2OBJC_REPO>/jre_emul/cycle_whitelist.txt\n" +
-                    "                --sourcefilelist \${projectDir}/../../<J2OBJC_REPO>/jre_emul/build_result/java_sources.mf)\n" +
+                    "                \"--whitelist \${projectDir}/../../<J2OBJC_REPO>/jre_emul/cycle_whitelist.txt\" +\n" +
+                    "                \"--sourcefilelist \${projectDir}/../../<J2OBJC_REPO>/jre_emul/build_result/java_sources.mf\")\n" +
                     "    }\n" +
                     "Also see: https://groups.google.com/forum/#!msg/j2objc-discuss/2fozbf6-liM/R83v7ffX5NMJ"
             throw new InvalidUserDataException(message)
