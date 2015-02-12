@@ -83,8 +83,8 @@ class J2objcPluginExtension {
     // Where to copy generated files (excludes test code and executable)
     String destDir = null
 
-	// Additional sources that should be included on the classpath, e.g., java annotation processor source files
-	String buildSourceDir = null 
+    // Additional sources that should be included on the classpath, e.g., java annotation processor source files
+    String buildSourceDir = null 
 
     // Path to j2objc distribution
     String j2objcHome = null
@@ -320,12 +320,12 @@ class J2objcTranslateTask extends DefaultTask {
         println "Deleting j2objc build dir: " + destDir.path
         project.delete destDir.path
 
-		def buildSourceDir = project.j2objcConfig.buildSourceDir
-		println "buildSourceDir: "+buildSourceDir		
-		if (buildSourceDir) {
-			def buildSrcFiles = project.files(project.fileTree(dir: buildSourceDir, includes: ["**/*.java"]))
-			srcFiles += buildSrcFiles
-		}
+	def buildSourceDir = project.j2objcConfig.buildSourceDir
+	println "buildSourceDir: "+buildSourceDir		
+	if (buildSourceDir) {
+		def buildSrcFiles = project.files(project.fileTree(dir: buildSourceDir, includes: ["**/*.java"]))
+		srcFiles += buildSrcFiles
+	}
 
         srcFiles = J2objcUtils.fileFilter(srcFiles,
                 project.j2objcConfig.translateIncludeRegex,
