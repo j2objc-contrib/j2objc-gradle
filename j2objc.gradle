@@ -59,7 +59,7 @@
  *
  * Commands:
  * Each one depends on the previous command
- *     j2objcCycleFinder - Run the Cycle Finder Tool on Java sources 
+ *     j2objcCycleFinder - Find cycles that can cause memory leaks, see https://github.com/google/j2objc/wiki/Cycle-Finder-Tool
  *     j2objcTranslate   - Translate all files to Objective-C, builds java or Android project if found
  *     j2objcCompile     - Compile Objective-C files and build Objective-C binary (named 'runner')
  *     j2objcTest        - Run all java tests against the Objective-C binary
@@ -86,13 +86,14 @@ class J2objcPluginExtension {
     // Path to j2objc distribution
     String j2objcHome = null
 
-    // Stages: CycleFinder => Translate => Compile => Test
-
     // CYCLEFINDER
     // TODO(bruno): consider enabling cycleFinder by default
     boolean cycleFinder = false
     // Flags copied verbatim to cycle_finder command
-    String cycleFinderFlags = ""
+    String cycleFinderFlags = null
+    // Expected number of cycles, defaults to all those found in JRE
+    // TODO(bruno): convert to a default whitelist and change expected cyles to 0
+    int cycleFinderExpectedCycles = 40
 
     // TRANSLATE
     // Flags copied verbatim to j2objc command
@@ -113,7 +114,7 @@ class J2objcPluginExtension {
             "javax.inject-1.jar", "jsr305-3.0.0.jar",
             "mockito-core-1.9.5.jar"]
     // Filter on files to translate:
-    // a) Filter on files to translate or test, ignored if null
+    // a) Ignored if null
     // b) Matches on path + filename
     // c) Must match IncludeRegex and NOT match ExcludeRegex
     // Example:
@@ -130,7 +131,7 @@ class J2objcPluginExtension {
     // TEST
     // Flags copied verbatim to testrunner command
     String testFlags = ""
-    // Filter tests, see translate filter above
+    // Filter tests, applied in addition to translate filters (see above)
     String testExcludeRegex = null
     String testIncludeRegex = null
     // Warn if no tests are executed
@@ -186,7 +187,7 @@ class J2objcUtils {
     //   --prefixes dir/prefixes.properties --prefix com.ex.dir=Short --prefix com.ex.dir2=Short2
     static def prefixProperties(Project proj) {
         Properties props = new Properties()
-        def matcher = proj.j2objcConfig.translateFlags =~ /--prefix(|es) +([^-]+)/
+        def matcher = (proj.j2objcConfig.translateFlags =~ /--prefix(|es) +([^-]+)/)
         def start = 0
         while (matcher.find(start)) {
             start = matcher.end()
@@ -252,10 +253,18 @@ class J2objcCycleFinderTask extends DefaultTask {
             windowsOnlyArgs = "-jar ${j2objcHome}/lib/cycle_finder.jar"
         }
 
-        if (project.j2objcConfig.cycleFinderFlags == "") {
+        if (project.j2objcConfig.cycleFinderFlags == null) {
             def message =
-                    "CycleFinder is more difficult to setup and use. Though it's hoped to improve\n" +
-                    "this for the future, for now it's easiest to disable. If you want to try it:\n" +
+                    "CycleFinder is more difficult to setup and use, though it's hoped to improve\n" +
+                    "this for the future. For now there are two ways to set it up:\n" +
+                    "\n" +
+                    "SIMPLE: set cycleFinderFlags to empty string:\n" +
+                    "    j2objcConfig {\n" +
+                    "        cycleFinder true\n" +
+                    "        cycleFinderFlags \"\"\n" +
+                    "    }\n" +
+                    "\n" +
+                    "DIFFICULT:\n" +
                     "1) Download the j2objc source:\n" +
                     "    https://github.com/google/j2objc\n" +
                     "2) Within your local j2objc repo run:\n" +
@@ -264,8 +273,9 @@ class J2objcCycleFinderTask extends DefaultTask {
                     "    j2objcConfig {\n" +
                     "        cycleFinder true\n" +
                     "        cycleFinderFlags (\n" +
-                    "                \"--whitelist \${projectDir}/../../<J2OBJC_REPO>/jre_emul/cycle_whitelist.txt\" +\n" +
-                    "                \"--sourcefilelist \${projectDir}/../../<J2OBJC_REPO>/jre_emul/build_result/java_sources.mf\")\n" +
+                    "                \"--whitelist \${projectDir}/../../<J2OBJC_REPO>/jre_emul/cycle_whitelist.txt \\\n" +
+                    "                 --sourcefilelist \${projectDir}/../../<J2OBJC_REPO>/jre_emul/build_result/java_sources.mf\")\n" +
+                    "        cycleFinderExpectedCycles 0\n" +
                     "    }\n" +
                     "Also see: https://groups.google.com/forum/#!msg/j2objc-discuss/2fozbf6-liM/R83v7ffX5NMJ"
             throw new InvalidUserDataException(message)
@@ -275,22 +285,51 @@ class J2objcCycleFinderTask extends DefaultTask {
                 project.j2objcConfig.translateIncludeRegex,
                 project.j2objcConfig.translateExcludeRegex)
 
-        project.exec {
-            executable cycleFinderExec
+        def output = new ByteArrayOutputStream()
+        try {
+            project.exec {
+                executable cycleFinderExec
 
-            args windowsOnlyArgs.split()
-            args "-sourcepath", "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
+                args windowsOnlyArgs.split()
+                args "-sourcepath", "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
 
-            project.j2objcConfig.translateJ2objcLibs.each { library ->
-                def libPath = J2objcUtils.j2objcHome(getProject()) + "/lib/" + library
-                args "-classpath", project.file(libPath).path
+                project.j2objcConfig.translateJ2objcLibs.each { library ->
+                    def libPath = J2objcUtils.j2objcHome(getProject()) + "/lib/" + library
+                    args "-classpath", project.file(libPath).path
+                }
+
+                args "${project.j2objcConfig.cycleFinderFlags}".split()
+
+                srcFiles.each { file ->
+                    args file.path
+                }
+
+                standardOutput = output;
             }
 
-            args "${project.j2objcConfig.cycleFinderFlags}".split()
+        } catch (e) {
 
-            srcFiles.each { file ->
-                args file.path
+            def out = output.toString()
+
+            def matcher = (out =~ /(\d+) CYCLES FOUND/)
+            if (! matcher.find()) {
+                print out
+                throw new InvalidUserDataException("Can't find XX CYCLES FOUND")
+            } else {
+                def cycleCountStr = matcher[0][1]
+                if (! cycleCountStr.isInteger()) {
+                    print out
+                    throw new InvalidUserDataException("XX CYCLES FOUND isn't integer: " + matcher[0][0])
+                }
+                def cyclesFound = cycleCountStr.toInteger()
+                if (cyclesFound != project.j2objcConfig.cycleFinderExpectedCycles) {
+                    print out
+                    print ("Cycles found (" + cyclesFound + ") != cycleFinderExpectedCycles (" +
+                            project.j2objcConfig.cycleFinderExpectedCycles + ")    ")
+                    throw e
+                }
             }
+            // Suppress exception when cycles found == cycleFinderExpectedCycles
         }
     }
 }
@@ -448,7 +487,7 @@ class J2objcTestTask extends DefaultTask {
             // Translate test name according to prefixes.properties
             // E.g. com.example.dir.SomeTest => PREFIX.SomeTest
             def namespaceRegex = /^(([^.]+\.)+)[^.]+$/  // No match for test outside a package
-            def matcher = testName =~ namespaceRegex
+            def matcher = (testName =~ namespaceRegex)
             if (matcher.find()) {
                 def namespace = matcher[0][1]            // com.example.dir.
                 def namespaceChopped = namespace[0..-2]  // com.example.dir
