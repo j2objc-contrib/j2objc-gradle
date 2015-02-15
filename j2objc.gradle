@@ -83,7 +83,8 @@ class J2objcPluginExtension {
     // Where to copy generated files (excludes test code and executable)
     String destDir = null
 
-    // Additional sources that should be included on the classpath, e.g., java annotation processor source files
+    // Only generated source files, e.g. from dagger annotations. The script will
+    // ignore changes in this directory so they must be limited to generated files.
     String generatedSourceDir = null 
     
     // Path to j2objc distribution
