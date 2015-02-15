@@ -83,6 +83,10 @@ class J2objcPluginExtension {
     // Where to copy generated files (excludes test code and executable)
     String destDir = null
 
+    // Only generated source files, e.g. from dagger annotations. The script will
+    // ignore changes in this directory so they must be limited to generated files.
+    String generatedSourceDir = null 
+    
     // Path to j2objc distribution
     String j2objcHome = null
 
@@ -355,6 +359,13 @@ class J2objcTranslateTask extends DefaultTask {
         // Print command before operation to be helpful log if operation fails
         println "Deleting j2objc build dir: " + destDir.path
         project.delete destDir.path
+
+	def generatedSourceDir = project.j2objcConfig.generatedSourceDir
+	println "generatedSourceDir: "+generatedSourceDir		
+	if (generatedSourceDir) {
+		def buildSrcFiles = project.files(project.fileTree(dir: generatedSourceDir, includes: ["**/*.java"]))
+		srcFiles += buildSrcFiles
+	}
 
         srcFiles = J2objcUtils.fileFilter(srcFiles,
                 project.j2objcConfig.translateIncludeRegex,
