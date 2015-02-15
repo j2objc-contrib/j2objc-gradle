@@ -645,7 +645,7 @@ class j2objc implements Plugin<Project> {
             project.tasks.create(name: 'j2objcCopy', type: J2objcCopyTask,
                     dependsOn: 'j2objcTest') {
                 description 'Depends on j2objc translation and test, copies to destDir'
-                srcDir = file("${project.buildDir}/j2objc")
+                srcDir = file("${buildDir}/j2objc")
             }
 
             // Make sure the wider project builds successfully
