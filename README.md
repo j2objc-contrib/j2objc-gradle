@@ -37,3 +37,8 @@ The intent is to evolve this in to a full gradle plugin over time. Happy to acce
 1. Commit your changes (`git commit -am 'Add some feature'`)
 1. Push to the branch (`git push origin my-new-feature`)
 1. Create a new Pull Request
+
+### License
+
+This library is distributed under the Apache 2.0 license found in the
+[LICENSE](./LICENSE) file.
