@@ -234,6 +234,15 @@ class J2objcUtils {
             nameMap.put(file.name, file)
         }
     }
+    
+    static def addJavaFiles(Project proj, FileCollection files, String generatedSourceDir) {
+	if (generatedSourceDir) {
+		println "include generatedSourceDir: "+generatedSourceDir
+		def buildSrcFiles = proj.files(proj.fileTree(dir: generatedSourceDir, includes: ["**/*.java"]))
+		files += buildSrcFiles
+	}
+	return files
+    }
 }
 
 
@@ -285,6 +294,13 @@ class J2objcCycleFinderTask extends DefaultTask {
             throw new InvalidUserDataException(message)
         }
 
+       def sourcepath = "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
+	// Generated Files
+	srcFiles = J2objcUtils.addJavaFiles(project, srcFiles, project.j2objcConfig.generatedSourceDir)
+	if (project.j2objcConfig.generatedSourceDir) {
+		sourcepath += ":${project.file(project.j2objcConfig.generatedSourceDir).path}"
+	}
+
         srcFiles = J2objcUtils.fileFilter(srcFiles,
                 project.j2objcConfig.translateIncludeRegex,
                 project.j2objcConfig.translateExcludeRegex)
@@ -295,7 +311,7 @@ class J2objcCycleFinderTask extends DefaultTask {
                 executable cycleFinderExec
 
                 args windowsOnlyArgs.split()
-                args "-sourcepath", "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
+                args "-sourcepath", sourcepath
 
                 project.j2objcConfig.translateJ2objcLibs.each { library ->
                     def libPath = J2objcUtils.j2objcHome(getProject()) + "/lib/" + library
@@ -360,11 +376,12 @@ class J2objcTranslateTask extends DefaultTask {
         println "Deleting j2objc build dir: " + destDir.path
         project.delete destDir.path
 
-	def generatedSourceDir = project.j2objcConfig.generatedSourceDir
-	println "generatedSourceDir: "+generatedSourceDir		
-	if (generatedSourceDir) {
-		def buildSrcFiles = project.files(project.fileTree(dir: generatedSourceDir, includes: ["**/*.java"]))
-		srcFiles += buildSrcFiles
+	def sourcepath = "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
+		
+	// Generated Files
+	srcFiles = J2objcUtils.addJavaFiles(project, srcFiles, project.j2objcConfig.generatedSourceDir)
+	if (project.j2objcConfig.generatedSourceDir) {
+		sourcepath += ":${project.file(project.j2objcConfig.generatedSourceDir).path}"
 	}
 
         srcFiles = J2objcUtils.fileFilter(srcFiles,
@@ -381,7 +398,7 @@ class J2objcTranslateTask extends DefaultTask {
 
                 args windowsOnlyArgs.split()
                 args "-d", "${destDir}"
-                args "-sourcepath", "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
+                args "-sourcepath", sourcepath
 
                 project.j2objcConfig.translateJ2objcLibs.each { library ->
                     def libPath = J2objcUtils.j2objcHome(getProject()) + "/lib/" + library
