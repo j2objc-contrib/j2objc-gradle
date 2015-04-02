@@ -285,7 +285,7 @@ class J2objcCycleFinderTask extends DefaultTask {
             throw new InvalidUserDataException(message)
         }
 
-        def sourcepath = "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
+       def sourcepath = "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
 	def generatedSourceDir = project.j2objcConfig.generatedSourceDir
 	if (generatedSourceDir) {
 		println "include generatedSourceDir: ${generatedSourceDir}"
