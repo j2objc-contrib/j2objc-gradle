@@ -285,6 +285,15 @@ class J2objcCycleFinderTask extends DefaultTask {
             throw new InvalidUserDataException(message)
         }
 
+        def sourcepath = "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
+	def generatedSourceDir = project.j2objcConfig.generatedSourceDir
+	if (generatedSourceDir) {
+		println "include generatedSourceDir: ${generatedSourceDir}"
+		def buildSrcFiles = project.files(project.fileTree(dir: generatedSourceDir, includes: ["**/*.java"]))
+		srcFiles += buildSrcFiles
+		sourcepath += ":${project.file(generatedSourceDir).path}"
+	}
+
         srcFiles = J2objcUtils.fileFilter(srcFiles,
                 project.j2objcConfig.translateIncludeRegex,
                 project.j2objcConfig.translateExcludeRegex)
@@ -295,7 +304,7 @@ class J2objcCycleFinderTask extends DefaultTask {
                 executable cycleFinderExec
 
                 args windowsOnlyArgs.split()
-                args "-sourcepath", "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
+                args "-sourcepath", sourcepath
 
                 project.j2objcConfig.translateJ2objcLibs.each { library ->
                     def libPath = J2objcUtils.j2objcHome(getProject()) + "/lib/" + library
