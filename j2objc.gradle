@@ -360,11 +360,14 @@ class J2objcTranslateTask extends DefaultTask {
         println "Deleting j2objc build dir: " + destDir.path
         project.delete destDir.path
 
+       def sourcepath = "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
+
 	def generatedSourceDir = project.j2objcConfig.generatedSourceDir
 	println "generatedSourceDir: "+generatedSourceDir		
 	if (generatedSourceDir) {
 		def buildSrcFiles = project.files(project.fileTree(dir: generatedSourceDir, includes: ["**/*.java"]))
 		srcFiles += buildSrcFiles
+		sourcepath += ":${project.file(generatedSourceDir).path}"
 	}
 
         srcFiles = J2objcUtils.fileFilter(srcFiles,
@@ -381,7 +384,7 @@ class J2objcTranslateTask extends DefaultTask {
 
                 args windowsOnlyArgs.split()
                 args "-d", "${destDir}"
-                args "-sourcepath", "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
+                args "-sourcepath", sourcepath
 
                 project.j2objcConfig.translateJ2objcLibs.each { library ->
                     def libPath = J2objcUtils.j2objcHome(getProject()) + "/lib/" + library
