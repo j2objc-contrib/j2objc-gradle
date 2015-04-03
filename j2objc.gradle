@@ -140,6 +140,17 @@ class J2objcPluginExtension {
     String testIncludeRegex = null
     // Warn if no tests are executed
     boolean testExecutedCheck = true
+    
+    // LINK
+    // the directory of the target Xcode project
+    String xcodeProjectDir = null
+    // the group where the objective-c files should be inserted to, e.g., "generated_source"
+    // note that the group will be deleted on every execution of the link command
+    String xcodeGroup = null
+    // the Xcode target the generated files should be linked to
+    String xcodeTarget = null
+    // the name of the target Xcode project, e.g., MyProject.xcodeproj
+    String xcodeProject = null
 }
 
 
@@ -613,6 +624,61 @@ class J2objcCopyTask extends DefaultTask {
 }
 
 
+/**
+ * Note: This task requires https://github.com/developertown/integratej2objc
+ * 
+ */
+class J2objcLinkTask extends DefaultTask {
+	
+	@InputDirectory File srcDir
+
+	@TaskAction
+	def link() {
+		
+		if (project.j2objcConfig.xcodeProjectDir == null) {
+			def message = "You must specify the xcodeProjectDir"
+			throw new InvalidUserDataException(message)
+		}
+		if (project.j2objcConfig.xcodeGroup == null) {
+			def message = "You must specify the xcodeGroup"
+			throw new InvalidUserDataException(message)
+		}
+		if (project.j2objcConfig.xcodeTarget == null) {
+			def message = "You must specify the xcodeTarget"
+			throw new InvalidUserDataException(message)
+		}
+		if (project.j2objcConfig.xcodeProject == null) {
+			def message = "You must specify the xcodeProject"
+			throw new InvalidUserDataException(message)
+		}
+		
+		def xcodeProjectDir = project.j2objcConfig.xcodeProjectDir
+		def xcodeGroup = project.j2objcConfig.xcodeGroup
+		def xcodeTarget = project.j2objcConfig.xcodeTarget
+		def xcodeProject = project.j2objcConfig.xcodeProject
+		
+		def srcFolder = srcDir.toString().replaceFirst(".*${project.name}","../${project.name}")
+		def integratej2objcExec = "integratej2objc"
+		
+		try {
+			project.exec {
+				executable integratej2objcExec
+
+				args "integrate_source"
+				args "-p", "${xcodeProjectDir}" 
+				args "-x", "${xcodeProject}"
+				args "-s", "${srcFolder}"
+				args "-g", "${xcodeGroup}"
+				args "-t", "${xcodeTarget}"
+			}
+
+		} catch (e) {
+			throw e
+		}		
+	}
+}
+
+
 class j2objc implements Plugin<Project> {
 
     @Override
@@ -664,6 +730,12 @@ class j2objc implements Plugin<Project> {
                 description 'Depends on j2objc translation and test, copies to destDir'
                 srcDir = file("${buildDir}/j2objc")
             }
+            
+            project.tasks.create(name: 'j2objcLink', type: J2objcLinkTask,
+		dependsOn: 'j2objcTranslate') {
+		description 'Depends on j2objc translation, link generated files to Xcode project'
+		srcDir = file("${buildDir}/j2objc")
+	    }
 
             // Make sure the wider project builds successfully
             if (project.plugins.findPlugin('java')) {
