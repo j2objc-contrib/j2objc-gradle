@@ -128,6 +128,11 @@ class J2objcPluginExtension {
     String translateIncludeRegex = null
     // TODO: consider moving to include(s) / exclude(s) structure as used for filetree
 
+    // addition source paths for the translation task, 
+    // e.g., ${projectDir}/libSrc/dagger-2.0-SNAPSHOT-sources.jar:${projectDir}/libSrc/javax.inject-1-sources.jar
+    // TODO the script should detect that dagger2 is being used and automatically make the change to the sourcepath
+    String translateSourcepaths = null
+
     // COMPILE
     // Flags copied verbatim to j2objcc command
     String compileFlags = "-ObjC -lguava -ljavax_inject -ljre_emul -ljsr305 -ljunit -lmockito"
@@ -377,6 +382,12 @@ class J2objcTranslateTask extends DefaultTask {
         project.delete destDir.path
 
 	def sourcepath = "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
+	
+	// add additional sourcepaths
+	if (project.j2objcConfig.translateSourcepaths) {
+		println "Add to sourcepath: ${project.j2objcConfig.translateSourcepaths}"
+		sourcepath += ":${project.j2objcConfig.translateSourcepaths}"
+	}
 		
 	// Generated Files
 	srcFiles = J2objcUtils.addJavaFiles(project, srcFiles, project.j2objcConfig.generatedSourceDir)
