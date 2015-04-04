@@ -145,6 +145,10 @@ class J2objcPluginExtension {
     String testIncludeRegex = null
     // Warn if no tests are executed
     boolean testExecutedCheck = true
+
+    // Define static archive name for j2objcLink
+    String staticLibName = "library.a"
+    String distributionDir = null
 }
 
 
@@ -456,6 +460,121 @@ class J2objcTranslateTask extends DefaultTask {
     }
 }
 
+// TODO: Add better error handling
+// TODO: Remove dependency of sysroot_path.sh script.
+// TODO: compileFlags must be set to blank "", we get linker errors otherwise?
+// TODO: Document this feature.
+class J2objcLinkTask extends DefaultTask {
+    @InputDirectory File srcDir
+    @OutputDirectory File destDir
+
+    @TaskAction
+    def link() {
+        def flagMap = [:]
+        def output = new ByteArrayOutputStream()
+        def sysroot= ""
+        def script = project.file("scripts/sysroot_path.sh").path
+
+        // Add iphone build flags
+        project.exec {
+            executable script
+            args "--iphoneos"
+            standardOutput = output
+        }
+        sysroot = output.toString()
+        flagMap['armv7'] = "-arch armv7 -miphoneos-version-min=5.0 -isysroot ${sysroot}"
+        flagMap['arm64'] = "-arch arm64 -miphoneos-version-min=5.0 -isysroot ${sysroot}"
+        flagMap['armv7s'] = "-arch armv7s -miphoneos-version-min=5.0 -isysroot ${sysroot}"
+
+        // Add iphone sumulator build flags
+        output = new ByteArrayOutputStream()
+        project.exec {
+            executable script
+            args "--iphonesimulator"
+            standardOutput = output
+        }
+        sysroot = output.toString()
+        flagMap['i386'] = "-arch i386 -miphoneos-version-min=5.0 -isysroot ${sysroot}"
+
+        // Compile all platforms
+        def binary = J2objcUtils.j2objcHome(getProject()) + "/j2objcc"
+        for (arch in flagMap.keySet()) {
+            println "Building ${arch} object files."
+            def archDir = new File(destDir, arch)
+            if (!archDir.exists()) {
+                archDir.mkdirs()
+            }
+
+            project.exec {
+                workingDir "${archDir.path}"
+                executable binary
+                args "-I${srcDir}"
+                args "-c"
+
+                args flagMap[arch]
+                args "${project.j2objcConfig.compileFlags}".split()
+
+                def srcFiles = project.files(project.fileTree(
+                    dir: srcDir, includes: ["**/*.mm",  "**/*.m"]))
+                srcFiles.each { file ->
+                    args file.path
+                }
+            }
+
+            // Create arch specific archives 
+            println "Building ${arch} archive."           
+            project.exec {
+                workingDir "${archDir.path}"
+                commandLine "ar"
+                args  "rcs"
+                args  "${project.j2objcConfig.staticLibName}"
+
+                def srcFiles = project.files(project.fileTree(
+                    dir: archDir, includes: ["**/*.o"]))
+                srcFiles.each { file ->
+                    args file.path
+                }
+            }
+        }
+
+        def distDir = new File("${project.j2objcConfig.distributionDir}")
+        def includeDir = new File(distDir, "include")
+        def libDir = new File(distDir, "lib")
+        if (!includeDir.exists()) {
+            includeDir.mkdirs()
+        }
+        if (!libDir.exists()) {
+            libDir.mkdirs()
+        }
+
+        println "Copying header files to ${includeDir.path}"
+        project.copy {
+            includeEmptyDirs = false
+            from destDir
+            into includeDir
+            include "**/*.h"
+        }
+
+        println "Merging Universal archive to ${libDir.path}"   
+        project.exec {
+            workingDir "${libDir.path}"
+            commandLine "lipo"
+            args "-create"
+
+            for (arch in flagMap.keySet()) {
+                def archDir = new File(destDir, arch)
+                def archLib = new File(archDir, "${project.j2objcConfig.staticLibName}" )
+                if (archLib.exists()) {
+                    args "${archLib.path}"
+                }                
+            }
+
+            args "-output"
+            args "${project.j2objcConfig.staticLibName}"
+        }
+    }
+}
+
 
 class J2objcCompileTask extends DefaultTask {
 
@@ -660,6 +779,13 @@ class j2objc implements Plugin<Project> {
                 description "Compiles the j2objc generated Objective-C code to 'testrunner' binary"
                 srcDir = file("${buildDir}/j2objc")
                 destFile = file("${buildDir}/j2objc/testrunner")
+            }
+
+            project.tasks.create(name: "j2objcLink", type: J2objcLinkTask,
+                    dependsOn: 'j2objcTranslate') {
+                description "Compiles and Links the j2objc generated Objective-C code to a static library"
+                srcDir = file("${buildDir}/j2objc")
+                destDir = file("${buildDir}/j2objc")
             }
 
             project.tasks.create(name: "j2objcTest", type: J2objcTestTask,
