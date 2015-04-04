@@ -674,7 +674,10 @@ class J2objcLinkTask extends DefaultTask {
 
 		} catch (e) {
 			throw e
-		}		
+		}
+		
+		def srcFilesSize = project.files(project.fileTree(dir: srcDir)).getFiles().size()
+		println "Linked ${srcFilesSize} files to Xcode project ${xcodeProject}"
 	}
 }
 
