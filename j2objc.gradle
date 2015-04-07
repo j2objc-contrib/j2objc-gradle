@@ -632,37 +632,38 @@ class J2objcLinkTask extends DefaultTask {
 	
     @InputDirectory File srcDir
 
-	@TaskAction
-	def link() {
+    @TaskAction
+    def link() {
 		
-		if (project.j2objcConfig.xcodeProjectDir == null) {
-			def message = "You must specify the xcodeProjectDir"
-			throw new InvalidUserDataException(message)
-		}
-		if (project.j2objcConfig.xcodeJ2objcGeneratedDir == null) {
-			def message = "You must specify the xcodeJ2objcGeneratedDir"
-			throw new InvalidUserDataException(message)
-		}
-		if (project.j2objcConfig.xcodeTarget == null) {
-			def message = "You must specify the xcodeTarget"
-			throw new InvalidUserDataException(message)
-		}
-		if (project.j2objcConfig.xcodeProject == null) {
-			def message = "You must specify the xcodeProject"
-			throw new InvalidUserDataException(message)
-		}
+	if (project.j2objcConfig.xcodeProjectDir == null) {
+		def message = "You must specify the xcodeProjectDir"
+		throw new InvalidUserDataException(message)
+	}
+	
+	if (project.j2objcConfig.xcodeJ2objcGeneratedDir == null) {
+		def message = "You must specify the xcodeJ2objcGeneratedDir"
+		throw new InvalidUserDataException(message)
+	}
+	if (project.j2objcConfig.xcodeTarget == null) {
+		def message = "You must specify the xcodeTarget"
+		throw new InvalidUserDataException(message)
+	}
+	if (project.j2objcConfig.xcodeProject == null) {
+		def message = "You must specify the xcodeProject"
+		throw new InvalidUserDataException(message)
+	}
 		
-		def xcodeProjectDir = project.j2objcConfig.xcodeProjectDir
-		def xcodeJ2objcGeneratedDir = project.j2objcConfig.xcodeJ2objcGeneratedDir
-		def xcodeTarget = project.j2objcConfig.xcodeTarget
-		def xcodeProject = project.j2objcConfig.xcodeProject
+	def xcodeProjectDir = project.j2objcConfig.xcodeProjectDir
+	def xcodeJ2objcGeneratedDir = project.j2objcConfig.xcodeJ2objcGeneratedDir
+	def xcodeTarget = project.j2objcConfig.xcodeTarget
+	def xcodeProject = project.j2objcConfig.xcodeProject
 		
-		def srcFolder = srcDir.toString().replaceFirst(".*${project.name}","../${project.name}")
-		def integratej2objcExec = "integratej2objc"
+	def srcFolder = srcDir.toString().replaceFirst(".*${project.name}","../${project.name}")
+	def integratej2objcExec = "integratej2objc"
 		
-		try {
-			project.exec {
-				executable integratej2objcExec
+	try {
+		project.exec {
+			executable integratej2objcExec
 
 				args "integrate_source"
 				args "-p", "${xcodeProjectDir}" 
@@ -672,12 +673,12 @@ class J2objcLinkTask extends DefaultTask {
 				args "-t", "${xcodeTarget}"
 			}
 
-		} catch (e) {
-			throw e
-		}
+	} catch (e) {
+		throw e
+	}
 		
-		def srcFilesSize = project.files(project.fileTree(dir: srcDir)).getFiles().size()
-		println "Linked ${srcFilesSize} files to Xcode project ${xcodeProject}"
+	def srcFilesSize = project.files(project.fileTree(dir: srcDir)).getFiles().size()
+	println "Linked ${srcFilesSize} files to Xcode project ${xcodeProject}"
 	}
 }
 
