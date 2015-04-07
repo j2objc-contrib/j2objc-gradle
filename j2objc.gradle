@@ -64,6 +64,7 @@
  *     j2objcCompile     - Compile Objective-C files and build Objective-C binary (named 'runner')
  *     j2objcTest        - Run all java tests against the Objective-C binary
  *     j2objcCopy        - Copy generated Objective-C files to Xcode project
+ *     j2objcXcode       - Link the translated files with Xcode project
  *
  * Note that you can use the Gradle shorthand of "$ gradlew jCop" to do the j2objcCopy task.
  * The other shorthand expressions are "jTr", "jCom" and "jTe"
@@ -628,12 +629,12 @@ class J2objcCopyTask extends DefaultTask {
  * Note: This task requires https://github.com/developertown/integratej2objc
  * 
  */
-class J2objcLinkTask extends DefaultTask {
+class J2objcXcodeTask extends DefaultTask {
 	
     @InputDirectory File srcDir
 
     @TaskAction
-    def link() {
+    def xcode() {
 		
 	if (project.j2objcConfig.xcodeProjectDir == null) {
 	    def message = "You must specify the xcodeProjectDir"
@@ -735,7 +736,7 @@ class j2objc implements Plugin<Project> {
                 srcDir = file("${buildDir}/j2objc")
             }
             
-            project.tasks.create(name: 'j2objcLink', type: J2objcLinkTask,
+            project.tasks.create(name: 'j2objcXcode', type: J2objcXcodeTask,
 		dependsOn: 'j2objcTranslate') {
 		description 'Depends on j2objc translation, link generated files to Xcode project'
 		srcDir = file("${buildDir}/j2objc")
