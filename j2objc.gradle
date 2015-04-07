@@ -144,9 +144,9 @@ class J2objcPluginExtension {
     // LINK
     // the directory of the target Xcode project
     String xcodeProjectDir = null
-    // the group where the objective-c files should be inserted to, e.g., "generated_source"
-    // note that the group will be deleted on every execution of the link command
-    String xcodeGroup = null
+    // J2objc generated files are copied here, relative path to xcodeProjectDir
+    // Directory contents will be deleted on every execution of the link command
+    String xcodeJ2objcGeneratedDir = "j2objc-generated"
     // the Xcode target the generated files should be linked to
     String xcodeTarget = null
     // the name of the target Xcode project, e.g., MyProject.xcodeproj
@@ -639,8 +639,8 @@ class J2objcLinkTask extends DefaultTask {
 			def message = "You must specify the xcodeProjectDir"
 			throw new InvalidUserDataException(message)
 		}
-		if (project.j2objcConfig.xcodeGroup == null) {
-			def message = "You must specify the xcodeGroup"
+		if (project.j2objcConfig.xcodeJ2objcGeneratedDir == null) {
+			def message = "You must specify the xcodeJ2objcGeneratedDir"
 			throw new InvalidUserDataException(message)
 		}
 		if (project.j2objcConfig.xcodeTarget == null) {
@@ -653,7 +653,7 @@ class J2objcLinkTask extends DefaultTask {
 		}
 		
 		def xcodeProjectDir = project.j2objcConfig.xcodeProjectDir
-		def xcodeGroup = project.j2objcConfig.xcodeGroup
+		def xcodeJ2objcGeneratedDir = project.j2objcConfig.xcodeJ2objcGeneratedDir
 		def xcodeTarget = project.j2objcConfig.xcodeTarget
 		def xcodeProject = project.j2objcConfig.xcodeProject
 		
@@ -668,7 +668,7 @@ class J2objcLinkTask extends DefaultTask {
 				args "-p", "${xcodeProjectDir}" 
 				args "-x", "${xcodeProject}"
 				args "-s", "${srcFolder}"
-				args "-g", "${xcodeGroup}"
+				args "-g", "${xcodeJ2objcGeneratedDir}"
 				args "-t", "${xcodeTarget}"
 			}
 
