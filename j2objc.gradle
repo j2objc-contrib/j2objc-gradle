@@ -576,7 +576,7 @@ class J2objcTestTask extends DefaultTask {
 
 class J2objcCopyTask extends DefaultTask {
 
-    @InputDirectory File srcDir
+	@InputDirectory File srcDir
 
     // TODO: is it possible for the task to declare an output for "up to date" logic (e.g. destDir)
 
@@ -630,7 +630,7 @@ class J2objcCopyTask extends DefaultTask {
  */
 class J2objcLinkTask extends DefaultTask {
 	
-	@InputDirectory File srcDir
+    @InputDirectory File srcDir
 
 	@TaskAction
 	def link() {
