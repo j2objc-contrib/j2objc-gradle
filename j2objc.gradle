@@ -142,14 +142,14 @@ class J2objcPluginExtension {
     boolean testExecutedCheck = true
     
     // LINK
-    // the directory of the target Xcode project
-    String xcodeProjectDir = null
+    // directory of the target Xcode project
+    String xcodeProjectDir = ${projectDir}/Xcode
     // J2objc generated files are copied here, relative path to xcodeProjectDir
     // Directory contents will be deleted on every execution of the link command
     String xcodeJ2objcGeneratedDir = "j2objc-generated"
-    // the Xcode target the generated files should be linked to
+    // Xcode target the generated files should be linked to
     String xcodeTarget = null
-    // the name of the target Xcode project, e.g., MyProject.xcodeproj
+    // name of the target Xcode project, e.g., MyProject.xcodeproj
     String xcodeProject = null
 }
 
