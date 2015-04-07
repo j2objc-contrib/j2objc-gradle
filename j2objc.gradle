@@ -636,21 +636,21 @@ class J2objcLinkTask extends DefaultTask {
     def link() {
 		
 	if (project.j2objcConfig.xcodeProjectDir == null) {
-		def message = "You must specify the xcodeProjectDir"
-		throw new InvalidUserDataException(message)
+	    def message = "You must specify the xcodeProjectDir"
+	    throw new InvalidUserDataException(message)
 	}
 	
 	if (project.j2objcConfig.xcodeJ2objcGeneratedDir == null) {
-		def message = "You must specify the xcodeJ2objcGeneratedDir"
-		throw new InvalidUserDataException(message)
+	    def message = "You must specify the xcodeJ2objcGeneratedDir"
+	    throw new InvalidUserDataException(message)
 	}
 	if (project.j2objcConfig.xcodeTarget == null) {
-		def message = "You must specify the xcodeTarget"
-		throw new InvalidUserDataException(message)
+	    def message = "You must specify the xcodeTarget"
+	    throw new InvalidUserDataException(message)
 	}
 	if (project.j2objcConfig.xcodeProject == null) {
-		def message = "You must specify the xcodeProject"
-		throw new InvalidUserDataException(message)
+	    def message = "You must specify the xcodeProject"
+	    throw new InvalidUserDataException(message)
 	}
 		
 	def xcodeProjectDir = project.j2objcConfig.xcodeProjectDir
@@ -662,16 +662,16 @@ class J2objcLinkTask extends DefaultTask {
 	def integratej2objcExec = "integratej2objc"
 		
 	try {
-		project.exec {
-			executable integratej2objcExec
+	    project.exec {
+		executable integratej2objcExec
 
-				args "integrate_source"
-				args "-p", "${xcodeProjectDir}" 
-				args "-x", "${xcodeProject}"
-				args "-s", "${srcFolder}"
-				args "-g", "${xcodeJ2objcGeneratedDir}"
-				args "-t", "${xcodeTarget}"
-			}
+		    args "integrate_source"
+		    args "-p", "${xcodeProjectDir}" 
+		    args "-x", "${xcodeProject}"
+		    args "-s", "${srcFolder}"
+		    args "-g", "${xcodeJ2objcGeneratedDir}"
+		    args "-t", "${xcodeTarget}"
+	    }
 
 	} catch (e) {
 		throw e
@@ -679,7 +679,7 @@ class J2objcLinkTask extends DefaultTask {
 		
 	def srcFilesSize = project.files(project.fileTree(dir: srcDir)).getFiles().size()
 	println "Linked ${srcFilesSize} files to Xcode project ${xcodeProject}"
-	}
+    }
 }
 
 
