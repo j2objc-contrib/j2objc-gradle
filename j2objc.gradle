@@ -737,7 +737,7 @@ class j2objc implements Plugin<Project> {
             }
             
             project.tasks.create(name: 'j2objcXcode', type: J2objcXcodeTask,
-		dependsOn: 'j2objcTranslate') {
+		dependsOn: 'j2objcCopy') {
 		description 'Depends on j2objc translation, link generated files to Xcode project'
 		srcDir = file("${buildDir}/j2objc")
 	    }
