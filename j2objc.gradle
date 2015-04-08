@@ -225,7 +225,7 @@ class J2objcUtils {
                 newProps.load(new FileInputStream(proj.file(prefixesPath).path))
             } else {
                 // --prefix com.example.dir=CED
-                newProps.load(new StringReader(argValue));
+                newProps.load(new StringReader(argValue.trim()));
             }
             props.putAll(newProps)
         }
