@@ -132,6 +132,10 @@ class J2objcPluginExtension {
     // e.g., ${projectDir}/libSrc/dagger-2.0-SNAPSHOT-sources.jar:${projectDir}/libSrc/javax.inject-1-sources.jar
     // TODO the script should detect that dagger2 is being used and automatically make the change to the sourcepath
     String translateSourcepaths = null
+    
+    // Set to true if java project dependencies of the current project should be appended to the sourcepath
+    // automatically.  You will most likely want to use --build-closure in the translateFlags as well.
+    boolean appendProjectDependenciesToSourcepath = false
 
     // COMPILE
     // Flags copied verbatim to j2objcc command
@@ -393,6 +397,18 @@ class J2objcTranslateTask extends DefaultTask {
 	srcFiles = J2objcUtils.addJavaFiles(project, srcFiles, project.j2objcConfig.generatedSourceDir)
 	if (project.j2objcConfig.generatedSourceDir) {
 		sourcepath += ":${project.file(project.j2objcConfig.generatedSourceDir).path}"
+	}
+	
+	// Project depedencies.
+	if (project.j2objcConfig.appendProjectDependenciesToSourcepath) {
+	    def depSourcePaths = []
+	    project.configurations.compile.allDependencies.each { dep ->
+	        if (dep instanceof ProjectDependency) {
+	            def depProj = ((ProjectDependency)dep).getDependencyProject()
+	            depSourcePaths += depProj.sourceSets.main.java.srcDirs
+	        }
+	    }
+	    sourcepath += ':' + depSourcePaths.join(':')
 	}
 
         srcFiles = J2objcUtils.fileFilter(srcFiles,
