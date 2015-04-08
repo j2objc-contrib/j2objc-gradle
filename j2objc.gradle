@@ -64,6 +64,7 @@
  *     j2objcCompile     - Compile Objective-C files and build Objective-C binary (named 'runner')
  *     j2objcTest        - Run all java tests against the Objective-C binary
  *     j2objcCopy        - Copy generated Objective-C files to Xcode project
+ *     j2objcXcode       - Link the translated files with Xcode project
  *
  * Note that you can use the Gradle shorthand of "$ gradlew jCop" to do the j2objcCopy task.
  * The other shorthand expressions are "jTr", "jCom" and "jTe"
@@ -149,6 +150,17 @@ class J2objcPluginExtension {
     String testIncludeRegex = null
     // Warn if no tests are executed
     boolean testExecutedCheck = true
+    
+    // LINK
+    // directory of the target Xcode project
+    String xcodeProjectDir = ${projectDir}/Xcode
+    // J2objc generated files are copied here, relative path to xcodeProjectDir
+    // Directory contents will be deleted on every execution of the link command
+    String xcodeJ2objcGeneratedDir = "j2objc-generated"
+    // Xcode target the generated files should be linked to
+    String xcodeTarget = null
+    // name of the target Xcode project, e.g., MyProject.xcodeproj
+    String xcodeProject = null
 }
 
 
@@ -592,7 +604,7 @@ class J2objcTestTask extends DefaultTask {
 
 class J2objcCopyTask extends DefaultTask {
 
-    @InputDirectory File srcDir
+	@InputDirectory File srcDir
 
     // TODO: is it possible for the task to declare an output for "up to date" logic (e.g. destDir)
 
@@ -636,6 +648,65 @@ class J2objcCopyTask extends DefaultTask {
             exclude "**/*Test.m"
             exclude "**/testrunner"
         }
+    }
+}
+
+
+/**
+ * Note: This task requires https://github.com/developertown/integratej2objc
+ * 
+ */
+class J2objcXcodeTask extends DefaultTask {
+	
+    @InputDirectory File srcDir
+
+    @TaskAction
+    def xcode() {
+		
+	if (project.j2objcConfig.xcodeProjectDir == null) {
+	    def message = "You must specify the xcodeProjectDir"
+	    throw new InvalidUserDataException(message)
+	}
+	
+	if (project.j2objcConfig.xcodeJ2objcGeneratedDir == null) {
+	    def message = "You must specify the xcodeJ2objcGeneratedDir"
+	    throw new InvalidUserDataException(message)
+	}
+	if (project.j2objcConfig.xcodeTarget == null) {
+	    def message = "You must specify the xcodeTarget"
+	    throw new InvalidUserDataException(message)
+	}
+	if (project.j2objcConfig.xcodeProject == null) {
+	    def message = "You must specify the xcodeProject"
+	    throw new InvalidUserDataException(message)
+	}
+		
+	def xcodeProjectDir = project.j2objcConfig.xcodeProjectDir
+	def xcodeJ2objcGeneratedDir = project.j2objcConfig.xcodeJ2objcGeneratedDir
+	def xcodeTarget = project.j2objcConfig.xcodeTarget
+	def xcodeProject = project.j2objcConfig.xcodeProject
+		
+	def srcFolder = srcDir.toString().replaceFirst(".*${project.name}","../${project.name}")
+	def integratej2objcExec = "integratej2objc"
+		
+	try {
+	    project.exec {
+		executable integratej2objcExec
+
+		    args "integrate_source"
+		    args "-p", "${xcodeProjectDir}" 
+		    args "-x", "${xcodeProject}"
+		    args "-s", "${srcFolder}"
+		    args "-g", "${xcodeJ2objcGeneratedDir}"
+		    args "-t", "${xcodeTarget}"
+	    }
+
+	} catch (e) {
+		throw e
+	}
+		
+	def srcFilesSize = project.files(project.fileTree(dir: srcDir)).getFiles().size()
+	println "Linked ${srcFilesSize} files to Xcode project ${xcodeProject}"
     }
 }
 
@@ -691,6 +762,12 @@ class j2objc implements Plugin<Project> {
                 description 'Depends on j2objc translation and test, copies to destDir'
                 srcDir = file("${buildDir}/j2objc")
             }
+            
+            project.tasks.create(name: 'j2objcXcode', type: J2objcXcodeTask,
+		dependsOn: 'j2objcCopy') {
+		description 'Depends on j2objc translation, link generated files to Xcode project'
+		srcDir = file("${buildDir}/j2objc")
+	    }
 
             // Make sure the wider project builds successfully
             if (project.plugins.findPlugin('java')) {
