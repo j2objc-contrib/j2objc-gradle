@@ -60,11 +60,11 @@
  * Commands:
  * Each one depends on the previous command
  *     j2objcCycleFinder - Find cycles that can cause memory leaks, see https://github.com/google/j2objc/wiki/Cycle-Finder-Tool
- *     j2objcTranslate   - Translate all files to Objective-C, builds java or Android project if found
+ *     j2objcTranslate   - Translates to Objective-C, depends on java or Android project if found
  *     j2objcCompile     - Compile Objective-C files and build Objective-C binary (named 'runner')
  *     j2objcTest        - Run all java tests against the Objective-C binary
  *     j2objcCopy        - Copy generated Objective-C files to Xcode project
- *     j2objcXcode       - Link the translated files with Xcode project
+ *     j2objcXcode       - Xcode project file import and target configuration
  *
  * Note that you can use the Gradle shorthand of "$ gradlew jCop" to do the j2objcCopy task.
  * The other shorthand expressions are "jTr", "jCom" and "jTe"
@@ -91,6 +91,7 @@ class J2objcPluginExtension {
     // Path to j2objc distribution
     String j2objcHome = null
 
+
     // CYCLEFINDER
     // TODO(bruno): consider enabling cycleFinder by default
     boolean cycleFinder = false
@@ -99,6 +100,7 @@ class J2objcPluginExtension {
     // Expected number of cycles, defaults to all those found in JRE
     // TODO(bruno): convert to a default whitelist and change expected cyles to 0
     int cycleFinderExpectedCycles = 40
+
 
     // TRANSLATE
     // Flags copied verbatim to j2objc command
@@ -109,7 +111,7 @@ class J2objcPluginExtension {
     // Xcode doesn't support directories for packages, so all files must be output
     // to a single directory. This check makes sure that the name don't collide.
     boolean filenameCollisionCheck = true
-    // J2objc libraries, from $J2OBJC_HOME/lib/...
+    // J2objc default libraries, from $J2OBJC_HOME/lib/...
     String[] translateJ2objcLibs = [
             // Memory annotations, e.g. @Weak, @AutoreleasePool
             "j2objc_annotations.jar",
@@ -119,7 +121,7 @@ class J2objcPluginExtension {
             "javax.inject-1.jar", "jsr305-3.0.0.jar",
             "mockito-core-1.9.5.jar"]
     // Filter on files to translate:
-    // a) Ignored if null
+    // a) Regexes are ignored if null
     // b) Matches on path + filename
     // c) Must match IncludeRegex and NOT match ExcludeRegex
     // Example:
@@ -129,18 +131,21 @@ class J2objcPluginExtension {
     String translateIncludeRegex = null
     // TODO: consider moving to include(s) / exclude(s) structure as used for filetree
 
-    // addition source paths for the translation task, 
+    // Translation task additional paths
     // e.g., ${projectDir}/libSrc/dagger-2.0-SNAPSHOT-sources.jar:${projectDir}/libSrc/javax.inject-1-sources.jar
-    // TODO the script should detect that dagger2 is being used and automatically make the change to the sourcepath
+    // TODO dagger2 should be detected and automatically change this parameter
     String translateSourcepaths = null
-    
+
     // Set to true if java project dependencies of the current project should be appended to the sourcepath
     // automatically.  You will most likely want to use --build-closure in the translateFlags as well.
     boolean appendProjectDependenciesToSourcepath = false
 
+
     // COMPILE
     // Flags copied verbatim to j2objcc command
+    // J2objc default libraries
     String compileFlags = "-ObjC -lguava -ljavax_inject -ljre_emul -ljsr305 -ljunit -lmockito"
+
 
     // TEST
     // Flags copied verbatim to testrunner command
