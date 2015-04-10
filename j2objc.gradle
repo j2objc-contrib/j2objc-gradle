@@ -712,6 +712,21 @@ class J2objcXcodeTask extends DefaultTask {
 		
 	def srcFilesSize = project.files(project.fileTree(dir: srcDir)).getFiles().size()
 	println "Linked ${srcFilesSize} files to Xcode project ${xcodeProject}"
+	
+	// fix the $$ xcode bug, generate a file x$y for each x$$y files after 
+	// all files have been copied to Xcode
+	// see: http://stackoverflow.com/questions/29555225/xcode-no-such-file-or-directory-if-filename-contains-sign
+	def srcFiles = project.files(project.fileTree(dir: srcDir)).getFiles()
+		
+	def col = srcFiles.findAll { file -> file.name.contains("\$\$") }
+	project.copy {
+	    from(col)
+	    into(srcDir)
+	    rename { name ->
+	        name.replace('\$\$', '\$')
+	    }
+	}
+	
     }
 }
 
