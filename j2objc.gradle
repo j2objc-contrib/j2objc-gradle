@@ -260,14 +260,14 @@ class J2objcUtils {
             nameMap.put(file.name, file)
         }
     }
-    
+
     static def addJavaFiles(Project proj, FileCollection files, String generatedSourceDir) {
-	if (generatedSourceDir) {
-		println "include generatedSourceDir: "+generatedSourceDir
-		def buildSrcFiles = proj.files(proj.fileTree(dir: generatedSourceDir, includes: ["**/*.java"]))
-		files += buildSrcFiles
-	}
-	return files
+        if (generatedSourceDir) {
+            println "include generatedSourceDir: "+generatedSourceDir
+            def buildSrcFiles = proj.files(proj.fileTree(dir: generatedSourceDir, includes: ["**/*.java"]))
+            files += buildSrcFiles
+        }
+        return files
     }
 
     static def absolutePathOrEmpty(Project proj, String relativePath) {
@@ -410,29 +410,29 @@ class J2objcTranslateTask extends DefaultTask {
         println "Deleting j2objc build dir: " + destDir.path
         project.delete destDir.path
 
-	def sourcepath = "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
-	
-	// Additional Sourcepaths, e.g. source jars
-	if (project.j2objcConfig.translateSourcepaths) {
-		println "Add to sourcepath: ${project.j2objcConfig.translateSourcepaths}"
-		sourcepath += ":${project.j2objcConfig.translateSourcepaths}"
-	}
-		
-	// Generated Files
-	srcFiles = J2objcUtils.addJavaFiles(project, srcFiles, project.j2objcConfig.generatedSourceDir)
-	sourcepath += J2objcUtils.absolutePathOrEmpty(project, project.j2objcConfig.generatedSourceDir)
-	
-	// Project Dependencies
-	if (project.j2objcConfig.appendProjectDependenciesToSourcepath) {
-	    def depSourcePaths = []
-	    project.configurations.compile.allDependencies.each { dep ->
-	        if (dep instanceof ProjectDependency) {
-	            def depProj = ((ProjectDependency)dep).getDependencyProject()
-	            depSourcePaths += depProj.sourceSets.main.java.srcDirs
-	        }
-	    }
-	    sourcepath += ':' + depSourcePaths.join(':')
-	}
+    def sourcepath = "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
+
+    //     dditional Sourcepaths, e.g. source jars
+    if (project.j2objcConfig.translateSourcepaths) {
+        println "Add to sourcepath: ${project.j2objcConfig.translateSourcepaths}"
+        sourcepath += ":${project.j2objcConfig.translateSourcepaths}"
+    }
+
+    // Gene    ated Files
+    srcFiles = J2objcUtils.addJavaFiles(project, srcFiles, project.j2objcConfig.generatedSourceDir)
+    sourcepath += J2objcUtils.absolutePathOrEmpty(project, project.j2objcConfig.generatedSourceDir)
+
+    // Project Dependencies
+    if (project.j2objcConfig.appendProjectDependenciesToSourcepath) {
+        def depSourcePaths = []
+        project.configurations.compile.allDependencies.each { dep ->
+            if (dep instanceof ProjectDependency) {
+                def depProj = ((ProjectDependency)dep).getDependencyProject()
+                depSourcePaths += depProj.sourceSets.main.java.srcDirs
+            }
+        }
+        sourcepath += ':' + depSourcePaths.join(':')
+    }
 
         srcFiles = J2objcUtils.fileFilter(srcFiles,
                 project.j2objcConfig.translateIncludeRegex,
@@ -615,7 +615,7 @@ class J2objcTestTask extends DefaultTask {
 
 class J2objcCopyTask extends DefaultTask {
 
-	@InputDirectory File srcDir
+    @InputDirectory File srcDir
 
     // TODO: is it possible for the task to declare an output for "up to date" logic (e.g. destDir)
 
@@ -668,56 +668,56 @@ class J2objcCopyTask extends DefaultTask {
  * 
  */
 class J2objcXcodeTask extends DefaultTask {
-	
+
     @InputDirectory File srcDir
 
     @TaskAction
     def xcode() {
-		
-	if (project.j2objcConfig.xcodeProjectDir == null) {
-	    def message = "You must specify the xcodeProjectDir"
-	    throw new InvalidUserDataException(message)
-	}
-	
-	if (project.j2objcConfig.xcodeJ2objcGeneratedDir == null) {
-	    def message = "You must specify the xcodeJ2objcGeneratedDir"
-	    throw new InvalidUserDataException(message)
-	}
-	if (project.j2objcConfig.xcodeTarget == null) {
-	    def message = "You must specify the xcodeTarget"
-	    throw new InvalidUserDataException(message)
-	}
-	if (project.j2objcConfig.xcodeProject == null) {
-	    def message = "You must specify the xcodeProject"
-	    throw new InvalidUserDataException(message)
-	}
-		
-	def xcodeProjectDir = project.j2objcConfig.xcodeProjectDir
-	def xcodeJ2objcGeneratedDir = project.j2objcConfig.xcodeJ2objcGeneratedDir
-	def xcodeTarget = project.j2objcConfig.xcodeTarget
-	def xcodeProject = project.j2objcConfig.xcodeProject
-		
-	def srcFolder = srcDir.toString().replaceFirst(".*${project.name}","../${project.name}")
-	def integratej2objcExec = "integratej2objc"
-		
-	try {
-	    project.exec {
-		executable integratej2objcExec
+        
+        if (project.j2objcConfig.xcodeProjectDir == null) {
+            def message = "You must specify the xcodeProjectDir"
+            throw new InvalidUserDataException(message)
+        }
 
-		    args "integrate_source"
-		    args "-p", "${xcodeProjectDir}" 
-		    args "-x", "${xcodeProject}"
-		    args "-s", "${srcFolder}"
-		    args "-g", "${xcodeJ2objcGeneratedDir}"
-		    args "-t", "${xcodeTarget}"
-	    }
+        if (project.j2objcConfig.xcodeJ2objcGeneratedDir == null) {
+            def message = "You must specify the xcodeJ2objcGeneratedDir"
+            throw new InvalidUserDataException(message)
+        }
+        if (project.j2objcConfig.xcodeTarget == null) {
+            def message = "You must specify the xcodeTarget"
+            throw new InvalidUserDataException(message)
+        }
+        if (project.j2objcConfig.xcodeProject == null) {
+            def message = "You must specify the xcodeProject"
+            throw new InvalidUserDataException(message)
+        }
 
-	} catch (e) {
-		throw e
-	}
-		
-	def srcFilesSize = project.files(project.fileTree(dir: srcDir)).getFiles().size()
-	println "Linked ${srcFilesSize} files to Xcode project ${xcodeProject}"
+        def xcodeProjectDir = project.j2objcConfig.xcodeProjectDir
+        def xcodeJ2objcGeneratedDir = project.j2objcConfig.xcodeJ2objcGeneratedDir
+        def xcodeTarget = project.j2objcConfig.xcodeTarget
+        def xcodeProject = project.j2objcConfig.xcodeProject
+
+        def srcFolder = srcDir.toString().replaceFirst(".*${project.name}","../${project.name}")
+        def integratej2objcExec = "integratej2objc"
+
+        try {
+            project.exec {
+            executable integratej2objcExec
+
+                args "integrate_source"
+                args "-p", "${xcodeProjectDir}"
+                args "-x", "${xcodeProject}"
+                args "-s", "${srcFolder}"
+                args "-g", "${xcodeJ2objcGeneratedDir}"
+                args "-t", "${xcodeTarget}"
+            }
+
+        } catch (e) {
+            throw e
+        }
+
+        def srcFilesSize = project.files(project.fileTree(dir: srcDir)).getFiles().size()
+        println "Linked ${srcFilesSize} files to Xcode project ${xcodeProject}"
     }
 }
 
