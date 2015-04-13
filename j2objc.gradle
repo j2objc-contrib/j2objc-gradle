@@ -648,10 +648,9 @@ class J2objcCopyTask extends DefaultTask {
             includeEmptyDirs = false
             from srcDir
             into destDir
-            // Don't copy the test code and executable
+            // Don't copy the test code
             exclude "**/*Test.h"
             exclude "**/*Test.m"
-            exclude "**/testrunner"
         }
     }
 }
