@@ -751,13 +751,13 @@ class j2objc implements Plugin<Project> {
                     dependsOn: 'j2objcTranslate') {
                 description "Compiles the j2objc generated Objective-C code to 'testrunner' binary"
                 srcDir = file("${buildDir}/j2objc")
-                destFile = file("${buildDir}/j2objc/testrunner")
+                destFile = file("${buildDir}/j2objcc/testrunner")
             }
 
             project.tasks.create(name: "j2objcTest", type: J2objcTestTask,
                     dependsOn: 'j2objcCompile') {
                 description 'Runs all tests in the generated Objective-C code'
-                srcFile = file("${buildDir}/j2objc/testrunner")
+                srcFile = file("${buildDir}/j2objcc/testrunner")
                 // Doesn't use 'buildDir' as missing full path with --no-package-directories flag
                 srcFiles = files(fileTree(dir: projectDir, includes: ["**/*Test.java"]))
             }
