@@ -412,13 +412,13 @@ class J2objcTranslateTask extends DefaultTask {
 
     def sourcepath = "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
 
-    //     dditional Sourcepaths, e.g. source jars
+    // Additional Sourcepaths, e.g. source jars
     if (project.j2objcConfig.translateSourcepaths) {
         println "Add to sourcepath: ${project.j2objcConfig.translateSourcepaths}"
         sourcepath += ":${project.j2objcConfig.translateSourcepaths}"
     }
 
-    // Gene    ated Files
+    // Generated Files
     srcFiles = J2objcUtils.addJavaFiles(project, srcFiles, project.j2objcConfig.generatedSourceDir)
     sourcepath += J2objcUtils.absolutePathOrEmpty(project, project.j2objcConfig.generatedSourceDir)
 
