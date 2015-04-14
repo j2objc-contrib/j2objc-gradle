@@ -284,6 +284,8 @@ class J2objcUtils {
 class J2objcCycleFinderTask extends DefaultTask {
 
     @InputFiles FileCollection srcFiles
+    // TODO: declare @OutputXXX so gradle knows if task is up to date
+    // TODO: http://stackoverflow.com/questions/29599011/up-to-date-gradle-task-status-when-it-has-no-output
 
     @TaskAction
     def cycleFinder() {
@@ -537,8 +539,7 @@ class J2objcTestTask extends DefaultTask {
 
     @InputFile File srcFile  // testrunner
     @InputFiles FileCollection srcFiles  // *Test.java
-
-    // TODO: is it possible for the task to declare an output for "up to date" logic (e.g. destDir)
+    // TODO: declare @OutputXXX so gradle knows if task is up to date
 
     @TaskAction
     def test() {
@@ -616,8 +617,7 @@ class J2objcTestTask extends DefaultTask {
 class J2objcCopyTask extends DefaultTask {
 
     @InputDirectory File srcDir
-
-    // TODO: is it possible for the task to declare an output for "up to date" logic (e.g. destDir)
+    // TODO: declare @OutputXXX so gradle knows if task is up to date
 
     @TaskAction
     def destCopy() {
@@ -672,10 +672,12 @@ class J2objcXcodeTask extends DefaultTask {
 
     @TaskAction
     def xcode() {
+        
         if (project.j2objcConfig.xcodeProjectDir == null) {
             def message = "You must specify the xcodeProjectDir"
             throw new InvalidUserDataException(message)
         }
+
         if (project.j2objcConfig.xcodeJ2objcGeneratedDir == null) {
             def message = "You must specify the xcodeJ2objcGeneratedDir"
             throw new InvalidUserDataException(message)
@@ -699,8 +701,11 @@ class J2objcXcodeTask extends DefaultTask {
 
         try {
             project.exec {
-                executable integratej2objcExec
+                // TODO: executable integratej2objcExec
+                executable "bundle"
 
+                args "exec"
+                args "integratej2objc"
                 args "integrate_source"
                 args "-p", "${xcodeProjectDir}"
                 args "-x", "${xcodeProject}"
@@ -708,16 +713,25 @@ class J2objcXcodeTask extends DefaultTask {
                 args "-g", "${xcodeJ2objcGeneratedDir}"
                 args "-t", "${xcodeTarget}"
             }
-        } catch (e) {
-            throw e
+
+        } catch (Exception exception) {
+
+            if (exception.getMessage().find("A problem occurred starting process 'command 'integratej2objc''")) {
+                // TODO: fix this installation description
+                def message =
+                        "To install integratej2objc:\n" +
+                        "https://github.com/developertown/integratej2objc/#installation"
+                throw new InvalidUserDataException(message)
+            }
+            throw exception
         }
 
         def srcFilesSize = project.files(project.fileTree(dir: srcDir)).getFiles().size()
         println "Linked ${srcFilesSize} files to Xcode project ${xcodeProject}"
 
-        // Fix $$ Xcode bug where it fails to find files with "$$" in the filename.
-        // This occurs for dagger generated files and because Xcode converts
-        // "x$$y" to "x$y" when it looks for a file. Generating temp "x$y" files works.
+        // Xcode bug workaround when it fails to find files with "$$" in the filename.
+        // This occurs because Xcode converts "x$$y" to "x$y" when it looks for a file.
+        // Generating temp "x$y" file works. Common case is dagger generated files.
         // http://stackoverflow.com/questions/29555225/xcode-no-such-file-or-directory-if-filename-contains-sign
         def srcFiles = project.files(project.fileTree(dir: srcDir)).getFiles()
         def col = srcFiles.findAll { file -> file.name.contains("\$\$") }
