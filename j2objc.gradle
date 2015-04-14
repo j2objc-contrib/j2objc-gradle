@@ -105,6 +105,9 @@ class J2objcPluginExtension {
     // TRANSLATE
     // Flags copied verbatim to j2objc command
     String translateFlags = "--no-package-directories"
+    // Libraries in ${projectDir}/lib/ for classpath to j2objc command
+    String[] translateClasspath = []
+    
     // Additional libraries that are part of the j2objc release
     // TODO: warn if different versions than testCompile from Java plugin
     // TODO: just import everything in the j2objc/lib/ directory?
@@ -443,6 +446,18 @@ class J2objcTranslateTask extends DefaultTask {
         if (project.j2objcConfig.filenameCollisionCheck) {
             J2objcUtils.filenameCollisionCheck(srcFiles)
         }
+        
+        def classpathArgs = ""
+        def classPathList = []
+        project.j2objcConfig.translateJ2objcLibs.each { library ->
+            def libPath = J2objcUtils.j2objcHome(getProject()) + "/lib/" + library
+            classPathList += project.file(libPath).path
+        }
+        project.j2objcConfig.translateClasspath.each { library ->
+            def libPath = "${project.projectDir}/lib/" + library
+            classPathList += libPath
+        }    
+        classpathArgs += classPathList.join(':')
 
         try {
             project.exec {
@@ -452,11 +467,10 @@ class J2objcTranslateTask extends DefaultTask {
                 args "-d", "${destDir}"
                 args "-sourcepath", sourcepath
 
-                project.j2objcConfig.translateJ2objcLibs.each { library ->
-                    def libPath = J2objcUtils.j2objcHome(getProject()) + "/lib/" + library
-                    args "-classpath", project.file(libPath).path
+                if (classPathList.size() > 0) {
+                  args "-classpath", classpathArgs
                 }
-
+                
                 args "${project.j2objcConfig.translateFlags}".split()
 
                 srcFiles.each { file ->
