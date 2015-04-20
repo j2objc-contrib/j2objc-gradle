@@ -106,7 +106,7 @@ class J2objcPluginExtension {
     // Flags copied verbatim to j2objc command
     String translateFlags = "--no-package-directories"
     // Libraries in ${projectDir}/lib/ for classpath to j2objc command
-    String[] translateClasspath = []
+    String[] translateClassPaths = []
     
     // Additional libraries that are part of the j2objc release
     // TODO: warn if different versions than testCompile from Java plugin
@@ -453,7 +453,7 @@ class J2objcTranslateTask extends DefaultTask {
             def libPath = J2objcUtils.j2objcHome(getProject()) + "/lib/" + library
             classPathList += project.file(libPath).path
         }
-        project.j2objcConfig.translateClasspath.each { library ->
+        project.j2objcConfig.translateClassPaths.each { library ->
             def libPath = "${project.projectDir}/lib/" + library
             classPathList += libPath
         }    
