@@ -467,7 +467,7 @@ class J2objcTranslateTask extends DefaultTask {
                 args "-d", "${destDir}"
                 args "-sourcepath", sourcepath
 
-                if (classPathList.size() > 0) {
+                if (classPathsArg.size() > 0) {
                   args "-classpath", classpathArgs
                 }
                 
