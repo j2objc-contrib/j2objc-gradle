@@ -447,7 +447,7 @@ class J2objcTranslateTask extends DefaultTask {
             J2objcUtils.filenameCollisionCheck(srcFiles)
         }
         
-        def classpathArgs = ""
+        def classPathsArg = ""
         def classPathList = []
         project.j2objcConfig.translateJ2objcLibs.each { library ->
             def libPath = J2objcUtils.j2objcHome(getProject()) + "/lib/" + library
@@ -457,7 +457,7 @@ class J2objcTranslateTask extends DefaultTask {
             def libPath = "${project.projectDir}/lib/" + library
             classPathList += libPath
         }    
-        classpathArgs += classPathList.join(':')
+        classpathArg += classPathList.join(':')
 
         try {
             project.exec {
