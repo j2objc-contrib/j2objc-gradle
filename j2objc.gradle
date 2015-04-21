@@ -462,8 +462,8 @@ class J2objcTranslateTask extends DefaultTask {
             J2objcUtils.filenameCollisionCheck(srcFiles)
         }
         
-        String[] allLClassPathsArs = project.j2objcConfig.translateJ2objcLibs + project.j2objcConfig.translateClassPaths
-        def classPathsArg = J2objcUtils.getClassPathsArg(project, allLClassPathsArs)
+        String[] allClassPathsArgs = project.j2objcConfig.translateJ2objcLibs + project.j2objcConfig.translateClassPaths
+        def classPathsArg = J2objcUtils.getClassPathsArg(project, allClassPathsArgs)
         
         try {
             project.exec {
