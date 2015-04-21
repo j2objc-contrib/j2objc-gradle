@@ -97,8 +97,6 @@ class J2objcPluginExtension {
     boolean cycleFinder = false
     // Flags copied verbatim to cycle_finder command
     String cycleFinderFlags = null
-    // Libraries in ${projectDir}/lib/ for classpath to cyclefinder command
-    String[] cycleFinderClassPaths = []
     // Expected number of cycles, defaults to all those found in JRE
     // TODO(bruno): convert to a default whitelist and change expected cyles to 0
     int cycleFinderExpectedCycles = 40
@@ -354,11 +352,24 @@ class J2objcCycleFinderTask extends DefaultTask {
         srcFiles = J2objcUtils.addJavaFiles(project, srcFiles, project.j2objcConfig.generatedSourceDir)
         sourcepath += J2objcUtils.absolutePathOrEmpty(project, project.j2objcConfig.generatedSourceDir)
 
+        // Additional Sourcepaths, e.g. source jars
+        if (project.j2objcConfig.translateSourcepaths) {
+            println "Add to sourcepath: ${project.j2objcConfig.translateSourcepaths}"
+            sourcepath += ":${project.j2objcConfig.translateSourcepaths}"
+        }
+
         srcFiles = J2objcUtils.fileFilter(srcFiles,
                 project.j2objcConfig.translateIncludeRegex,
                 project.j2objcConfig.translateExcludeRegex)
 
-        def classPathsArg = J2objcUtils.getClassPathsArg(project, project.j2objcConfig.cycleFinderClassPaths)
+        def classPathsArg = J2objcUtils.getClassPathsArg(project, project.j2objcConfig.translateClassPaths)
+        
+        // j2objc default libraries
+        def classPathList = []
+        project.j2objcConfig.translateJ2objcLibs.each { library ->
+            classPathList += j2objcHome(proj) + "/lib/" + library
+        }
+        classPathsArg += classPathList.join(':')
 
         def output = new ByteArrayOutputStream()
         try {
