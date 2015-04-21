@@ -105,6 +105,9 @@ class J2objcPluginExtension {
     // TRANSLATE
     // Flags copied verbatim to j2objc command
     String translateFlags = "--no-package-directories"
+    // Libraries in ${projectDir}/lib/ for classpath to j2objc command, e.g.: "json-20140107.jar", "somelib.jar"
+    String[] translateClassPaths = []
+    
     // Additional libraries that are part of the j2objc release
     // TODO: warn if different versions than testCompile from Java plugin
     // TODO: just import everything in the j2objc/lib/ directory?
@@ -278,6 +281,18 @@ class J2objcUtils {
             return ""
         }
     }
+    
+    // Translates an array of library names into a javac conform -classpath args String
+    static def getClassPathsArg(Project proj, String[] libraries) {
+        def classPathsArg = ""
+        def classPathList = []
+        libraries.each { library ->
+        def libPath = "${proj.projectDir}/lib/" + library
+            classPathList += libPath
+        }
+        classPathsArg += classPathList.join(':')
+        return classPathsArg
+    }
 }
 
 
@@ -337,9 +352,24 @@ class J2objcCycleFinderTask extends DefaultTask {
         srcFiles = J2objcUtils.addJavaFiles(project, srcFiles, project.j2objcConfig.generatedSourceDir)
         sourcepath += J2objcUtils.absolutePathOrEmpty(project, project.j2objcConfig.generatedSourceDir)
 
+        // Additional Sourcepaths, e.g. source jars
+        if (project.j2objcConfig.translateSourcepaths) {
+            println "Add to sourcepath: ${project.j2objcConfig.translateSourcepaths}"
+            sourcepath += ":${project.j2objcConfig.translateSourcepaths}"
+        }
+
         srcFiles = J2objcUtils.fileFilter(srcFiles,
                 project.j2objcConfig.translateIncludeRegex,
                 project.j2objcConfig.translateExcludeRegex)
+
+        def classPathsArg = J2objcUtils.getClassPathsArg(project, project.j2objcConfig.translateClassPaths)
+        
+        // j2objc default libraries
+        def classPathList = []
+        project.j2objcConfig.translateJ2objcLibs.each { library ->
+            classPathList += j2objcHome(proj) + "/lib/" + library
+        }
+        classPathsArg += classPathList.join(':')
 
         def output = new ByteArrayOutputStream()
         try {
@@ -349,9 +379,8 @@ class J2objcCycleFinderTask extends DefaultTask {
                 args windowsOnlyArgs.split()
                 args "-sourcepath", sourcepath
 
-                project.j2objcConfig.translateJ2objcLibs.each { library ->
-                    def libPath = J2objcUtils.j2objcHome(getProject()) + "/lib/" + library
-                    args "-classpath", project.file(libPath).path
+                if (classPathsArg.size() > 0) {
+                  args "-classpath", classPathsArg
                 }
 
                 args "${project.j2objcConfig.cycleFinderFlags}".split()
@@ -443,7 +472,16 @@ class J2objcTranslateTask extends DefaultTask {
         if (project.j2objcConfig.filenameCollisionCheck) {
             J2objcUtils.filenameCollisionCheck(srcFiles)
         }
-
+     
+        def classPathsArg = J2objcUtils.getClassPathsArg(project, project.j2objcConfig.translateClassPaths)
+        
+        // j2objc default libraries
+        def classPathList = []
+        project.j2objcConfig.translateJ2objcLibs.each { library ->
+            classPathList += j2objcHome(proj) + "/lib/" + library
+        }
+        classPathsArg += classPathList.join(':')
+        
         try {
             project.exec {
                 executable j2objcExec
@@ -452,11 +490,10 @@ class J2objcTranslateTask extends DefaultTask {
                 args "-d", "${destDir}"
                 args "-sourcepath", sourcepath
 
-                project.j2objcConfig.translateJ2objcLibs.each { library ->
-                    def libPath = J2objcUtils.j2objcHome(getProject()) + "/lib/" + library
-                    args "-classpath", project.file(libPath).path
+                if (classPathsArg.size() > 0) {
+                  args "-classpath", classPathsArg
                 }
-
+                
                 args "${project.j2objcConfig.translateFlags}".split()
 
                 srcFiles.each { file ->
