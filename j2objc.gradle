@@ -97,6 +97,8 @@ class J2objcPluginExtension {
     boolean cycleFinder = false
     // Flags copied verbatim to cycle_finder command
     String cycleFinderFlags = null
+    // Libraries in ${projectDir}/lib/ for classpath to cyclefinder command
+    String[] cycleFinderClassPaths = []
     // Expected number of cycles, defaults to all those found in JRE
     // TODO(bruno): convert to a default whitelist and change expected cyles to 0
     int cycleFinderExpectedCycles = 40
@@ -105,7 +107,7 @@ class J2objcPluginExtension {
     // TRANSLATE
     // Flags copied verbatim to j2objc command
     String translateFlags = "--no-package-directories"
-    // Libraries in ${projectDir}/lib/ for classpath to j2objc command
+    // Libraries in ${projectDir}/lib/ for classpath to j2objc command, e.g.: "json-20140107.jar", "somelib.jar"
     String[] translateClassPaths = []
     
     // Additional libraries that are part of the j2objc release
@@ -281,6 +283,18 @@ class J2objcUtils {
             return ""
         }
     }
+    
+    // Translates an array of library names into a javac conform -classpath args String
+    static def getClasspathsArg(Project proj, String[] libraries) {
+        def classPathsArg = ""
+        def classPathList = []
+        libraries.each { library ->
+        def libPath = "${proj.projectDir}/lib/" + library
+            classPathList += libPath
+        }
+        classPathsArg += classPathList.join(':')
+        return classPathsArg
+    }
 }
 
 
@@ -344,6 +358,8 @@ class J2objcCycleFinderTask extends DefaultTask {
                 project.j2objcConfig.translateIncludeRegex,
                 project.j2objcConfig.translateExcludeRegex)
 
+        def classPathsArg = J2objcUtils.getClasspathsArg(project, project.j2objcConfig.cycleFinderClassPaths)
+
         def output = new ByteArrayOutputStream()
         try {
             project.exec {
@@ -352,9 +368,8 @@ class J2objcCycleFinderTask extends DefaultTask {
                 args windowsOnlyArgs.split()
                 args "-sourcepath", sourcepath
 
-                project.j2objcConfig.translateJ2objcLibs.each { library ->
-                    def libPath = J2objcUtils.j2objcHome(getProject()) + "/lib/" + library
-                    args "-classpath", project.file(libPath).path
+                if (classPathsArg.size() > 0) {
+                  args "-classpath", classPathsArg
                 }
 
                 args "${project.j2objcConfig.cycleFinderFlags}".split()
@@ -447,18 +462,9 @@ class J2objcTranslateTask extends DefaultTask {
             J2objcUtils.filenameCollisionCheck(srcFiles)
         }
         
-        def classPathsArg = ""
-        def classPathList = []
-        project.j2objcConfig.translateJ2objcLibs.each { library ->
-            def libPath = J2objcUtils.j2objcHome(getProject()) + "/lib/" + library
-            classPathList += project.file(libPath).path
-        }
-        project.j2objcConfig.translateClassPaths.each { library ->
-            def libPath = "${project.projectDir}/lib/" + library
-            classPathList += libPath
-        }    
-        classpathArg += classPathList.join(':')
-
+        String[] allLClassPathsArs = project.j2objcConfig.translateJ2objcLibs + project.j2objcConfig.translateClassPaths
+        def classPathsArg = J2objcUtils.getClasspathsArg(project, allLClassPathsArs)
+        
         try {
             project.exec {
                 executable j2objcExec
@@ -468,7 +474,7 @@ class J2objcTranslateTask extends DefaultTask {
                 args "-sourcepath", sourcepath
 
                 if (classPathsArg.size() > 0) {
-                  args "-classpath", classpathArgs
+                  args "-classpath", classPathsArg
                 }
                 
                 args "${project.j2objcConfig.translateFlags}".split()
