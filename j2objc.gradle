@@ -285,7 +285,7 @@ class J2objcUtils {
     }
     
     // Translates an array of library names into a javac conform -classpath args String
-    static def getClasspathsArg(Project proj, String[] libraries) {
+    static def getClassPathsArg(Project proj, String[] libraries) {
         def classPathsArg = ""
         def classPathList = []
         libraries.each { library ->
@@ -358,7 +358,7 @@ class J2objcCycleFinderTask extends DefaultTask {
                 project.j2objcConfig.translateIncludeRegex,
                 project.j2objcConfig.translateExcludeRegex)
 
-        def classPathsArg = J2objcUtils.getClasspathsArg(project, project.j2objcConfig.cycleFinderClassPaths)
+        def classPathsArg = J2objcUtils.getClassPathsArg(project, project.j2objcConfig.cycleFinderClassPaths)
 
         def output = new ByteArrayOutputStream()
         try {
@@ -463,7 +463,7 @@ class J2objcTranslateTask extends DefaultTask {
         }
         
         String[] allLClassPathsArs = project.j2objcConfig.translateJ2objcLibs + project.j2objcConfig.translateClassPaths
-        def classPathsArg = J2objcUtils.getClasspathsArg(project, allLClassPathsArs)
+        def classPathsArg = J2objcUtils.getClassPathsArg(project, allLClassPathsArs)
         
         try {
             project.exec {
