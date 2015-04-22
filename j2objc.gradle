@@ -105,7 +105,7 @@ class J2objcPluginExtension {
     // TRANSLATE
     // Flags copied verbatim to j2objc command
     String translateFlags = "--no-package-directories"
-    // Libraries in ${projectDir}/lib/ for classpath to j2objc command, e.g.: "json-20140107.jar", "somelib.jar"
+    // -classpath library additions from ${projectDir}/lib/, e.g.: "json-20140107.jar", "somelib.jar"
     String[] translateClassPaths = []
     
     // Additional libraries that are part of the j2objc release
@@ -282,16 +282,19 @@ class J2objcUtils {
         }
     }
     
-    // Translates an array of library names into a javac conform -classpath args String
-    static def getClassPathsArg(Project proj, String[] libraries) {
-        def classPathsArg = ""
+    // -classpath javac flag generation from set of libraries (includes j2objc default libraries)
+    static def getClassPathArg(Project proj, String[] libraries) {
         def classPathList = []
+        // user defined libraries
         libraries.each { library ->
-        def libPath = "${proj.projectDir}/lib/" + library
+            def libPath = "${proj.projectDir}/lib/" + library
             classPathList += libPath
         }
-        classPathsArg += classPathList.join(':')
-        return classPathsArg
+        // j2objc default libraries
+        proj.j2objcConfig.translateJ2objcLibs.each { library ->
+            classPathList += j2objcHome(proj) + "/lib/" + library
+        }
+        return classPathList.join(':')
     }
 }
 
@@ -349,8 +352,10 @@ class J2objcCycleFinderTask extends DefaultTask {
         def sourcepath = "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
 
         // Generated Files
-        srcFiles = J2objcUtils.addJavaFiles(project, srcFiles, project.j2objcConfig.generatedSourceDir)
-        sourcepath += J2objcUtils.absolutePathOrEmpty(project, project.j2objcConfig.generatedSourceDir)
+        srcFiles = J2objcUtils.addJavaFiles(
+                project, srcFiles, project.j2objcConfig.generatedSourceDir)
+        sourcepath += J2objcUtils.absolutePathOrEmpty(
+                project, project.j2objcConfig.generatedSourceDir)
 
         // Additional Sourcepaths, e.g. source jars
         if (project.j2objcConfig.translateSourcepaths) {
@@ -362,14 +367,8 @@ class J2objcCycleFinderTask extends DefaultTask {
                 project.j2objcConfig.translateIncludeRegex,
                 project.j2objcConfig.translateExcludeRegex)
 
-        def classPathsArg = J2objcUtils.getClassPathsArg(project, project.j2objcConfig.translateClassPaths)
-        
-        // j2objc default libraries
-        def classPathList = []
-        project.j2objcConfig.translateJ2objcLibs.each { library ->
-            classPathList += j2objcHome(proj) + "/lib/" + library
-        }
-        classPathsArg += classPathList.join(':')
+        def classPathArg = J2objcUtils.getClassPathArg(
+                project, project.j2objcConfig.translateClassPaths)
 
         def output = new ByteArrayOutputStream()
         try {
@@ -379,8 +378,8 @@ class J2objcCycleFinderTask extends DefaultTask {
                 args windowsOnlyArgs.split()
                 args "-sourcepath", sourcepath
 
-                if (classPathsArg.size() > 0) {
-                  args "-classpath", classPathsArg
+                if (classPathArg.size() > 0) {
+                  args "-classpath", classPathArg
                 }
 
                 args "${project.j2objcConfig.cycleFinderFlags}".split()
@@ -441,29 +440,29 @@ class J2objcTranslateTask extends DefaultTask {
         println "Deleting j2objc build dir: " + destDir.path
         project.delete destDir.path
 
-    def sourcepath = "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
+        def sourcepath = "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
 
-    // Additional Sourcepaths, e.g. source jars
-    if (project.j2objcConfig.translateSourcepaths) {
-        println "Add to sourcepath: ${project.j2objcConfig.translateSourcepaths}"
-        sourcepath += ":${project.j2objcConfig.translateSourcepaths}"
-    }
-
-    // Generated Files
-    srcFiles = J2objcUtils.addJavaFiles(project, srcFiles, project.j2objcConfig.generatedSourceDir)
-    sourcepath += J2objcUtils.absolutePathOrEmpty(project, project.j2objcConfig.generatedSourceDir)
-
-    // Project Dependencies
-    if (project.j2objcConfig.appendProjectDependenciesToSourcepath) {
-        def depSourcePaths = []
-        project.configurations.compile.allDependencies.each { dep ->
-            if (dep instanceof ProjectDependency) {
-                def depProj = ((ProjectDependency)dep).getDependencyProject()
-                depSourcePaths += depProj.sourceSets.main.java.srcDirs
-            }
+        // Additional Sourcepaths, e.g. source jars
+        if (project.j2objcConfig.translateSourcepaths) {
+            println "Add to sourcepath: ${project.j2objcConfig.translateSourcepaths}"
+            sourcepath += ":${project.j2objcConfig.translateSourcepaths}"
         }
-        sourcepath += ':' + depSourcePaths.join(':')
-    }
+
+        // Generated Files
+        srcFiles = J2objcUtils.addJavaFiles(project, srcFiles, project.j2objcConfig.generatedSourceDir)
+        sourcepath += J2objcUtils.absolutePathOrEmpty(project, project.j2objcConfig.generatedSourceDir)
+
+        // Project Dependencies
+        if (project.j2objcConfig.appendProjectDependenciesToSourcepath) {
+            def depSourcePaths = []
+            project.configurations.compile.allDependencies.each { dep ->
+                if (dep instanceof ProjectDependency) {
+                    def depProj = ((ProjectDependency)dep).getDependencyProject()
+                    depSourcePaths += depProj.sourceSets.main.java.srcDirs
+                }
+            }
+            sourcepath += ':' + depSourcePaths.join(':')
+        }
 
         srcFiles = J2objcUtils.fileFilter(srcFiles,
                 project.j2objcConfig.translateIncludeRegex,
@@ -473,15 +472,9 @@ class J2objcTranslateTask extends DefaultTask {
             J2objcUtils.filenameCollisionCheck(srcFiles)
         }
      
-        def classPathsArg = J2objcUtils.getClassPathsArg(project, project.j2objcConfig.translateClassPaths)
-        
-        // j2objc default libraries
-        def classPathList = []
-        project.j2objcConfig.translateJ2objcLibs.each { library ->
-            classPathList += j2objcHome(proj) + "/lib/" + library
-        }
-        classPathsArg += classPathList.join(':')
-        
+        def classPathArg = J2objcUtils.getClassPathArg(
+                project, project.j2objcConfig.translateClassPaths)
+
         try {
             project.exec {
                 executable j2objcExec
@@ -490,8 +483,8 @@ class J2objcTranslateTask extends DefaultTask {
                 args "-d", "${destDir}"
                 args "-sourcepath", sourcepath
 
-                if (classPathsArg.size() > 0) {
-                  args "-classpath", classPathsArg
+                if (classPathArg.size() > 0) {
+                  args "-classpath", classPathArg
                 }
                 
                 args "${project.j2objcConfig.translateFlags}".split()
