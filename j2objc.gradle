@@ -264,6 +264,7 @@ class J2objcUtils {
         }
     }
 
+    // add Java files to a FileCollection
     static def addJavaFiles(Project proj, FileCollection files, String generatedSourceDir) {
         if (generatedSourceDir) {
             println "include generatedSourceDir: "+generatedSourceDir
@@ -417,8 +418,8 @@ class J2objcCycleFinderTask extends DefaultTask {
         }
     }
 }
-
-
+     
+      
 // TODO: do translations and other tasks incrementally
 class J2objcTranslateTask extends DefaultTask {
 
@@ -426,7 +427,48 @@ class J2objcTranslateTask extends DefaultTask {
     @OutputDirectory File destDir
 
     @TaskAction
-    def translate() {
+    def translate(IncrementalTaskInputs inputs) {
+        println "Source files: "+srcFiles.getFiles().size()
+        FileCollection srcFilesChanged = project.files()
+        inputs.outOfDate { change ->
+        //  println "New or Updated file: "+change.file
+          srcFilesChanged += project.files(change.file)
+        }
+        def removedFileNames = []
+        inputs.removed { change ->
+          println "Removed file: "+change.file.name
+          def nameWithoutExt = file.name.toString().replaceFirst("\\..*","")
+          removedFileNames += nameWithoutExt
+        }
+        println "Removed files: "+removedFileNames.size()
+        
+        boolean freshBuild = false
+        if (srcFilesChanged.getFiles().size() == srcFiles.getFiles().size()) {
+          freshBuild = true
+        }
+        println "New or Updated files: "+srcFilesChanged.getFiles().size()
+        FileCollection translatedSrcFiles = srcFiles - srcFilesChanged
+        println "Unchanged files: "+translatedSrcFiles.getFiles().size()
+       
+        
+        if (destDir.exists()) {
+            FileCollection destFiles = project.files(project.fileTree(
+                        dir: destDir, includes: ["**/*.h", "**/*.m"]))
+            
+            // remove translated .h and .m files which has no corresponding .java files anymore
+            destFiles.each {File file ->
+              def nameWithoutExt = file.name.toString().replaceFirst("\\..*","")
+              if (removedFileNames.contains(nameWithoutExt)) {
+                file.delete()
+              }
+            }
+        }
+        
+               
+        // set the srcFiles to the files which need to be translated
+        srcFiles = srcFilesChanged
+
+        
         def j2objcHome = J2objcUtils.j2objcHome(getProject())
         def j2objcExec = j2objcHome + "/j2objc"
         def windowsOnlyArgs = ""
@@ -434,12 +476,14 @@ class J2objcTranslateTask extends DefaultTask {
             j2objcExec = "java"
             windowsOnlyArgs = "-jar ${j2objcHome}/lib/j2objc.jar"
         }
-
+        
         // Clean build directory to delete files that are no longer generated
         // Print command before operation to be helpful log if operation fails
-        println "Deleting j2objc build dir: " + destDir.path
-        project.delete destDir.path
-
+        if (freshBuild) {
+          println "Deleting j2objc build dir: " + destDir.path
+          project.delete destDir.path
+        }
+        
         def sourcepath = "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
 
         // Additional Sourcepaths, e.g. source jars
@@ -449,7 +493,7 @@ class J2objcTranslateTask extends DefaultTask {
         }
 
         // Generated Files
-        srcFiles = J2objcUtils.addJavaFiles(project, srcFiles, project.j2objcConfig.generatedSourceDir)
+       // srcFiles = J2objcUtils.addJavaFiles(project, srcFiles, project.j2objcConfig.generatedSourceDir)
         sourcepath += J2objcUtils.absolutePathOrEmpty(project, project.j2objcConfig.generatedSourceDir)
 
         // Project Dependencies
@@ -468,13 +512,45 @@ class J2objcTranslateTask extends DefaultTask {
                 project.j2objcConfig.translateIncludeRegex,
                 project.j2objcConfig.translateExcludeRegex)
 
+        // TODO perform file collision check with already translated files in the destDir
         if (project.j2objcConfig.filenameCollisionCheck) {
             J2objcUtils.filenameCollisionCheck(srcFiles)
         }
      
         def classPathArg = J2objcUtils.getClassPathArg(
                 project, project.j2objcConfig.translateClassPaths)
-
+          
+        
+        // TODO add translated .class files to classpath for incremental translation
+//        if (!freshBuild) {
+//          println("translatedSrcFiles size: "+translatedSrcFiles.getFiles().size())
+//          
+//          def classFileNames = []
+//          translatedSrcFiles.each {File file ->
+//              def classFileName = file.name.toString().replaceFirst("java","class")
+//              classFileNames += "**/"+classFileName
+//          }
+//  
+//          println "classFileNames: "+classFileNames.size()
+//                    
+//          // find the .class files
+//          FileCollection classFiles = project.files(
+//              project.fileTree(dir: project.buildDir,
+//                      includes: classFileNames))
+//
+//          def translatedClassFileArgPaths = []
+//          classFiles.each{File file ->
+//            translatedClassFileArgPaths += file.path.toString()
+//          }
+//                    
+//          if (translatedClassFileArgPaths.size() > 0) {
+//            if (classPathArg.size() > 0) {
+//              classPathArg += ':'
+//            }
+//            classPathArg += translatedClassFileArgPaths.join(':')
+//          }                    
+//        }    
+          
         try {
             project.exec {
                 executable j2objcExec
@@ -482,7 +558,7 @@ class J2objcTranslateTask extends DefaultTask {
                 args windowsOnlyArgs.split()
                 args "-d", "${destDir}"
                 args "-sourcepath", sourcepath
-
+                
                 if (classPathArg.size() > 0) {
                   args "-classpath", classPathArg
                 }
@@ -803,7 +879,10 @@ class j2objc implements Plugin<Project> {
                 srcFiles = files(
                         fileTree(dir: projectDir,
                                 include: "**/*.java",
-                                exclude: project.relativePath(buildDir)))
+                                exclude: project.relativePath(buildDir)) +
+                        fileTree(dir: "build/source/apt",     // TODO @Bruno must be project.j2objcConfig.generatedSourceDir no idea how to set it there
+                            include: "**/*.java")
+                        )
                 destDir = file("${buildDir}/j2objc")
             }
 
