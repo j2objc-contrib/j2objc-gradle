@@ -431,21 +431,17 @@ class J2objcTranslateTask extends DefaultTask {
         println "Source files: "+srcFiles.getFiles().size()
         FileCollection srcFilesChanged = project.files()
         inputs.outOfDate { change ->
-        //  println "New or Updated file: "+change.file
-          srcFilesChanged += project.files(change.file)
+            println "New or Updated file: "+change.file
+            srcFilesChanged += project.files(change.file)
         }
         def removedFileNames = []
         inputs.removed { change ->
-          println "Removed file: "+change.file.name
-          def nameWithoutExt = file.name.toString().replaceFirst("\\..*","")
-          removedFileNames += nameWithoutExt
+            println "Removed file: "+change.file.name
+            def nameWithoutExt = file.name.toString().replaceFirst("\\..*","")
+            removedFileNames += nameWithoutExt
         }
         println "Removed files: "+removedFileNames.size()
         
-        boolean freshBuild = false
-        if (srcFilesChanged.getFiles().size() == srcFiles.getFiles().size()) {
-          freshBuild = true
-        }
         println "New or Updated files: "+srcFilesChanged.getFiles().size()
         FileCollection translatedSrcFiles = srcFiles - srcFilesChanged
         println "Unchanged files: "+translatedSrcFiles.getFiles().size()
@@ -457,10 +453,10 @@ class J2objcTranslateTask extends DefaultTask {
             
             // remove translated .h and .m files which has no corresponding .java files anymore
             destFiles.each {File file ->
-              def nameWithoutExt = file.name.toString().replaceFirst("\\..*","")
-              if (removedFileNames.contains(nameWithoutExt)) {
-                file.delete()
-              }
+                def nameWithoutExt = file.name.toString().replaceFirst("\\..*","")
+                if (removedFileNames.contains(nameWithoutExt)) {
+                    file.delete()
+                }
             }
         }
         
@@ -475,15 +471,8 @@ class J2objcTranslateTask extends DefaultTask {
         if (J2objcUtils.isWindows()) {
             j2objcExec = "java"
             windowsOnlyArgs = "-jar ${j2objcHome}/lib/j2objc.jar"
-        }
-        
-        // Clean build directory to delete files that are no longer generated
-        // Print command before operation to be helpful log if operation fails
-        if (freshBuild) {
-          println "Deleting j2objc build dir: " + destDir.path
-          project.delete destDir.path
-        }
-        
+        } 
+       
         def sourcepath = "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
 
         // Additional Sourcepaths, e.g. source jars
@@ -493,7 +482,6 @@ class J2objcTranslateTask extends DefaultTask {
         }
 
         // Generated Files
-       // srcFiles = J2objcUtils.addJavaFiles(project, srcFiles, project.j2objcConfig.generatedSourceDir)
         sourcepath += J2objcUtils.absolutePathOrEmpty(project, project.j2objcConfig.generatedSourceDir)
 
         // Project Dependencies
@@ -522,34 +510,7 @@ class J2objcTranslateTask extends DefaultTask {
           
         
         // TODO add translated .class files to classpath for incremental translation
-//        if (!freshBuild) {
-//          println("translatedSrcFiles size: "+translatedSrcFiles.getFiles().size())
-//          
-//          def classFileNames = []
-//          translatedSrcFiles.each {File file ->
-//              def classFileName = file.name.toString().replaceFirst("java","class")
-//              classFileNames += "**/"+classFileName
-//          }
-//  
-//          println "classFileNames: "+classFileNames.size()
-//                    
-//          // find the .class files
-//          FileCollection classFiles = project.files(
-//              project.fileTree(dir: project.buildDir,
-//                      includes: classFileNames))
-//
-//          def translatedClassFileArgPaths = []
-//          classFiles.each{File file ->
-//            translatedClassFileArgPaths += file.path.toString()
-//          }
-//                    
-//          if (translatedClassFileArgPaths.size() > 0) {
-//            if (classPathArg.size() > 0) {
-//              classPathArg += ':'
-//            }
-//            classPathArg += translatedClassFileArgPaths.join(':')
-//          }                    
-//        }    
+   
           
         try {
             project.exec {
@@ -560,7 +521,7 @@ class J2objcTranslateTask extends DefaultTask {
                 args "-sourcepath", sourcepath
                 
                 if (classPathArg.size() > 0) {
-                  args "-classpath", classPathArg
+                    args "-classpath", classPathArg
                 }
                 
                 args "${project.j2objcConfig.translateFlags}".split()
@@ -808,16 +769,26 @@ class J2objcXcodeTask extends DefaultTask {
         try {
             project.exec {
                 // TODO: executable integratej2objcExec
-                executable "bundle"
-
-                args "exec"
-                args "integratej2objc"
+//                executable "bundle"
+//
+//                args "exec"
+//                args "integratej2objc"
+//                args "integrate_source"
+//                args "-p", "${xcodeProjectDir}"
+//                args "-x", "${xcodeProject}"
+//                args "-s", "${srcFolder}"
+//                args "-g", "${xcodeJ2objcGeneratedDir}"
+//                args "-t", "${xcodeTarget}"
+              
+              // TEST
+                executable "integratej2objc"
                 args "integrate_source"
                 args "-p", "${xcodeProjectDir}"
                 args "-x", "${xcodeProject}"
                 args "-s", "${srcFolder}"
                 args "-g", "${xcodeJ2objcGeneratedDir}"
                 args "-t", "${xcodeTarget}"
+                
             }
 
         } catch (Exception exception) {
@@ -908,7 +879,7 @@ class j2objc implements Plugin<Project> {
             }
             
             project.tasks.create(name: 'j2objcXcode', type: J2objcXcodeTask,
-                dependsOn: 'j2objcCopy') {
+                dependsOn: 'j2objcTranslate') {
                 description 'Depends on j2objc translation, link generated files to Xcode project'
                 srcDir = file("${buildDir}/j2objc")
             }
