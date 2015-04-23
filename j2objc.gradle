@@ -769,26 +769,16 @@ class J2objcXcodeTask extends DefaultTask {
         try {
             project.exec {
                 // TODO: executable integratej2objcExec
-//                executable "bundle"
-//
-//                args "exec"
-//                args "integratej2objc"
-//                args "integrate_source"
-//                args "-p", "${xcodeProjectDir}"
-//                args "-x", "${xcodeProject}"
-//                args "-s", "${srcFolder}"
-//                args "-g", "${xcodeJ2objcGeneratedDir}"
-//                args "-t", "${xcodeTarget}"
-              
-              // TEST
-                executable "integratej2objc"
+                executable "bundle"
+
+                args "exec"
+                args "integratej2objc"
                 args "integrate_source"
                 args "-p", "${xcodeProjectDir}"
                 args "-x", "${xcodeProject}"
                 args "-s", "${srcFolder}"
                 args "-g", "${xcodeJ2objcGeneratedDir}"
-                args "-t", "${xcodeTarget}"
-                
+                args "-t", "${xcodeTarget}"                
             }
 
         } catch (Exception exception) {
@@ -843,6 +833,7 @@ class j2objc implements Plugin<Project> {
                                 exclude: project.relativePath(buildDir)))
             }
 
+            // TODO @Bruno "build/source/apt" must be project.j2objcConfig.generatedSourceDir no idea how to set it there
             // Dependency may be added in project.plugins.withType for Java or Android plugin
             tasks.create(name: "j2objcTranslate", type: J2objcTranslateTask,
                     dependsOn: 'j2objcCycleFinder') {
@@ -851,8 +842,8 @@ class j2objc implements Plugin<Project> {
                         fileTree(dir: projectDir,
                                 include: "**/*.java",
                                 exclude: project.relativePath(buildDir)) +
-                        fileTree(dir: "build/source/apt",     // TODO @Bruno must be project.j2objcConfig.generatedSourceDir no idea how to set it there
-                            include: "**/*.java")
+                        fileTree(dir: "build/source/apt",
+                                include: "**/*.java")
                         )
                 destDir = file("${buildDir}/j2objc")
             }
@@ -879,7 +870,7 @@ class j2objc implements Plugin<Project> {
             }
             
             project.tasks.create(name: 'j2objcXcode', type: J2objcXcodeTask,
-                dependsOn: 'j2objcTranslate') {
+                dependsOn: 'j2objcCopy') {
                 description 'Depends on j2objc translation, link generated files to Xcode project'
                 srcDir = file("${buildDir}/j2objc")
             }
