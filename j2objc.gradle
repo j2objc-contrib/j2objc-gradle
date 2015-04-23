@@ -158,7 +158,8 @@ class J2objcPluginExtension {
     String testIncludeRegex = null
     // Warn if no tests are executed
     boolean testExecutedCheck = true
-    
+
+
     // LINK
     // directory of the target Xcode project
     String xcodeProjectDir = null // TODO(bruno): figure out what this should be "${projectDir}/Xcode"
@@ -301,9 +302,12 @@ class J2objcUtils {
 
 class J2objcCycleFinderTask extends DefaultTask {
 
-    @InputFiles FileCollection srcFiles
-    // TODO: declare @OutputXXX so gradle knows if task is up to date
-    // TODO: http://stackoverflow.com/questions/29599011/up-to-date-gradle-task-status-when-it-has-no-output
+    // TODO: @Input for relevant j2objcConfig args to make task as stale
+    // TODO: can't figure out how to do this for
+    @InputFiles
+    FileCollection srcFiles
+    @OutputFile
+    File reportFile = project.file("${project.buildDir}/reports/${name}.out")
 
     @TaskAction
     def cycleFinder() {
@@ -379,7 +383,7 @@ class J2objcCycleFinderTask extends DefaultTask {
                 args "-sourcepath", sourcepath
 
                 if (classPathArg.size() > 0) {
-                  args "-classpath", classPathArg
+                    args "-classpath", classPathArg
                 }
 
                 args "${project.j2objcConfig.cycleFinderFlags}".split()
@@ -388,7 +392,8 @@ class J2objcCycleFinderTask extends DefaultTask {
                     args file.path
                 }
 
-                standardOutput = output;
+                errorOutput output;
+                standardOutput output;
             }
 
         } catch (e) {
@@ -415,6 +420,9 @@ class J2objcCycleFinderTask extends DefaultTask {
             }
             // Suppress exception when cycles found == cycleFinderExpectedCycles
         }
+
+        reportFile.write(output.toString())
+        println "CycleFinder Output: ${reportFile.path}"
     }
 }
 
@@ -422,8 +430,11 @@ class J2objcCycleFinderTask extends DefaultTask {
 // TODO: do translations and other tasks incrementally
 class J2objcTranslateTask extends DefaultTask {
 
-    @InputFiles FileCollection srcFiles
-    @OutputDirectory File destDir
+    // TODO: @Input for relevant j2objcConfig args to make task as stale
+    @InputFiles
+    FileCollection srcFiles
+    @OutputDirectory
+    File destDir
 
     @TaskAction
     def translate() {
@@ -530,8 +541,11 @@ class J2objcTranslateTask extends DefaultTask {
 
 class J2objcCompileTask extends DefaultTask {
 
-    @InputDirectory File srcDir
-    @OutputFile File destFile
+    // TODO: @Input for relevant j2objcConfig args to make task as stale
+    @InputDirectory
+    File srcDir
+    @OutputFile
+    File destFile
 
     @TaskAction
     def compile() {
@@ -567,9 +581,13 @@ class J2objcCompileTask extends DefaultTask {
 
 class J2objcTestTask extends DefaultTask {
 
-    @InputFile File srcFile  // testrunner
-    @InputFiles FileCollection srcFiles  // *Test.java
-    // TODO: declare @OutputXXX so gradle knows if task is up to date
+    // TODO: @Input for relevant j2objcConfig args to make task as stale
+    @InputFile
+    File srcFile  // testrunner
+    @InputFiles
+    FileCollection srcFiles  // *Test.java
+    @OutputFile
+    File reportFile = project.file("${project.buildDir}/reports/${name}.out")
 
     @TaskAction
     def test() {
@@ -609,9 +627,9 @@ class J2objcTestTask extends DefaultTask {
         }
 
         def binary = "${srcFile.path}"
-        println "Testing with: " + srcFile.path
+        println "Test Binary: " + srcFile.path
 
-        def output = new ByteArrayOutputStream()
+        def outputStream = new ByteArrayOutputStream()
         project.exec {
             executable binary
             args "org.junit.runner.JUnitCore"
@@ -622,14 +640,17 @@ class J2objcTestTask extends DefaultTask {
                 args testName
             }
 
-            standardOutput = output;
+            errorOutput outputStream
+            standardOutput outputStream
         }
 
+        def output = outputStream.toString()
+        reportFile.write(output)
+        println "Test Output: ${reportFile.path}"
+
         // 0 tests => warn by default
-        def out = output.toString()
-        print out
         if (project.j2objcConfig.testExecutedCheck) {
-            if (out.contains("OK (0 tests)")) {
+            if (output.contains("OK (0 tests)")) {
                 def message =
                         "Zero unit tests were run. Tests are strongly encouraged with J2objc:\n" +
                         "\n" +
@@ -646,7 +667,9 @@ class J2objcTestTask extends DefaultTask {
 
 class J2objcCopyTask extends DefaultTask {
 
-    @InputDirectory File srcDir
+    // TODO: @Input for relevant j2objcConfig args to make task as stale
+    @InputDirectory
+    File srcDir
     // TODO: declare @OutputXXX so gradle knows if task is up to date
 
     @TaskAction
@@ -698,7 +721,10 @@ class J2objcCopyTask extends DefaultTask {
  */
 class J2objcXcodeTask extends DefaultTask {
 
-    @InputDirectory File srcDir
+    // TODO: @Input for relevant j2objcConfig args to make task as stale
+    @InputDirectory
+    File srcDir
+    // TODO: declare @OutputXXX so gradle knows if task is up to date
 
     @TaskAction
     def xcode() {
