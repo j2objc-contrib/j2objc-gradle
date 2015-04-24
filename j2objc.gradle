@@ -535,9 +535,9 @@ class J2objcTranslateTask extends DefaultTask {
         // make an incremental change which refers to a not yet translated class from a 
         // source lib. In this case due to not using --build-closure the dependent source 
         // we not be translated, this can be fixed with a clean and fresh build
-        def j2obcArgs = "${project.j2objcConfig.translateFlags}"
+        def translateFlags = "${project.j2objcConfig.translateFlags}"
         if (translatedFiles > 0) {
-          j2obcArgs = j2obcArgs.toString().replaceFirst("--build-closure","").trim()
+          translateFlags = translateFlags.toString().replaceFirst("--build-closure","").trim()
         }
           
         try {
@@ -552,7 +552,7 @@ class J2objcTranslateTask extends DefaultTask {
                     args "-classpath", classPathArg
                 }
                 
-                args j2obcArgs.split()
+                args translateFlags.split()
 
                 srcFiles.each { file ->
                     args file.path
