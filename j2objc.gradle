@@ -457,7 +457,7 @@ class J2objcTranslateTask extends DefaultTask {
         FileCollection translatedSrcFiles = srcFiles - srcFilesChanged
         println "Unchanged files: "+translatedSrcFiles.getFiles().size()
        
-        
+        def translatedFiles = 0
         if (destDir.exists()) {
             FileCollection destFiles = project.files(project.fileTree(
                         dir: destDir, includes: ["**/*.h", "**/*.m"]))
@@ -469,6 +469,8 @@ class J2objcTranslateTask extends DefaultTask {
                     file.delete()
                 }
             }
+            // compute the number of translated files
+            translatedFiles = destFiles.getFiles().size()
         }
         
                
@@ -518,10 +520,21 @@ class J2objcTranslateTask extends DefaultTask {
      
         def classPathArg = J2objcUtils.getClassPathArg(
                 project, project.j2objcConfig.translateClassPaths)
-          
         
-        // TODO add translated .class files to classpath for incremental translation
-   
+        classPathArg += ":${project.buildDir}/classes"  
+        
+        // add java classpath base to classpath for incremental translation
+        // we have to check if translation has been done before or not
+        // if it is only an incremental build we must remove the --build-closure
+        // argument to make fewer translations of dependent classes 
+        // NOTE: TODO there is one case which fails, when you have translated the code
+        // make an incremental change which refers to a not yet translated class from a 
+        // source lib. In this case due to not using --build-closure the dependent source 
+        // we not be translated, this can be fixed with a clean and fresh build
+        def translateFlags = "${project.j2objcConfig.translateFlags}"
+        if (translatedFiles > 0) {
+            translateFlags = translateFlags.toString().replaceFirst("--build-closure","").trim()
+        }
           
         try {
             project.exec {
@@ -535,7 +548,7 @@ class J2objcTranslateTask extends DefaultTask {
                     args "-classpath", classPathArg
                 }
                 
-                args "${project.j2objcConfig.translateFlags}".split()
+                args translateFlags.split()
 
                 srcFiles.each { file ->
                     args file.path
