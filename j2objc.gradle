@@ -521,11 +521,7 @@ class J2objcTranslateTask extends DefaultTask {
         def classPathArg = J2objcUtils.getClassPathArg(
                 project, project.j2objcConfig.translateClassPaths)
         
-        def javaClassPath = "${project.buildDir}/classes" 
-        if (classPathArg.size() > 0) {
-            javaClassPath += ":"
-        }
-        classPathArg = javaClassPath + classPathArg  
+        classPathArg += ":${project.buildDir}/classes"  
         
         // add java classpath base to classpath for incremental translation
         // we have to check if translation has been done before or not
