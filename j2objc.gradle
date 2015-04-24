@@ -523,7 +523,7 @@ class J2objcTranslateTask extends DefaultTask {
         
         def javaClassPath = "${project.buildDir}/classes" 
         if (classPathArg.size() > 0) {
-          javaClassPath += ":"
+            javaClassPath += ":"
         }
         classPathArg = javaClassPath + classPathArg  
         
