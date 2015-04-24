@@ -169,11 +169,11 @@ class J2objcUtils {
         }
     }
 
-    // Reads both settings from translateCmdArgs (last flag takes precedence)
+    // Reads both settings from translateArgs (last flag takes precedence)
     //   --prefixes dir/prefixes.properties --prefix com.ex.dir=Short --prefix com.ex.dir2=Short2
-    static def prefixProperties(Project proj, String translateCmdArgs) {
+    static def prefixProperties(Project proj, String translateArgs) {
         Properties props = new Properties()
-        def matcher = (translateCmdArgs =~ /--prefix(|es) +([^-]+)/)
+        def matcher = (translateArgs =~ /--prefix(|es) +([^-]+)/)
         def start = 0
         while (matcher.find(start)) {
             start = matcher.end()
@@ -261,7 +261,7 @@ class J2objcCycleFinderTask extends DefaultTask {
     boolean skip = true
     // Flags copied verbatim to cycle_finder command
     @Input
-    String cmdArgs = ""
+    String cycleFinderArgs = ""
     // Expected number of cycles, defaults to all those found in JRE
     // TODO(bruno): convert to a default whitelist and change expected cyles to 0
     @Input
@@ -286,7 +286,7 @@ class J2objcCycleFinderTask extends DefaultTask {
             windowsOnlyArgs = "-jar ${j2objcHome}/lib/cycle_finder.jar"
         }
 
-        if (cmdArgs == null) {
+        if (cycleFinderArgs == null) {
             // TODO: need to updated all the j2objcConfig comments
             def message =
                     "CycleFinder is more difficult to setup and use, though it's hoped to improve\n" +
@@ -348,7 +348,7 @@ class J2objcCycleFinderTask extends DefaultTask {
                     args "-classpath", classPathArg
                 }
 
-                args cmdArgs.split()
+                args cycleFinderArgs.split()
 
                 srcFiles.each { file ->
                     args file.path
@@ -394,14 +394,14 @@ class J2objcTranslateTask extends DefaultTask {
 
     // TODO: @Input for relevant j2objcConfig args to make task as stale
     @Input
-    String cmdArgs = "--no-package-directories"
+    String translateArgs = "--no-package-directories"
     // Xcode doesn't support directories for packages, so all files must be output
     // to a single directory. This check makes sure that the name don't collide.
     // TODO: automatically enable with --no-package-directories
     @Input
     boolean filenameCollisionCheck = true
-    // Set to true if java project dependencies of the current project should be appended to the sourcepath
-    // automatically.  You will most likely want to use --build-closure in the translateTask cmdArgs as well.
+    // Set to true if java project dependencies of the project should be appended to the sourcepath
+    // automatically. You will most likely want to use --build-closure in translateArgs as well.
     @Input
     boolean appendProjectDependenciesToSourcepath = false
 
@@ -504,7 +504,7 @@ class J2objcTranslateTask extends DefaultTask {
         // source lib. In this case due to not using --build-closure the dependent source 
         // we not be translated, this can be fixed with a clean and fresh build
         if (translatedFiles > 0) {
-            cmdArgs.replaceFirst("--build-closure","").trim()
+            translateArgs.replaceFirst("--build-closure","").trim()
         }
 
         try {
@@ -519,7 +519,7 @@ class J2objcTranslateTask extends DefaultTask {
                     args "-classpath", classPathArg
                 }
 
-                args cmdArgs.split()
+                args translateArgs.split()
 
                 srcFiles.each { file ->
                     args file.path
@@ -564,7 +564,7 @@ class J2objcCompileTask extends DefaultTask {
 
     // TODO: @Input for relevant j2objcConfig args to make task as stale
     @Input
-    String compileFlags = "-ObjC -lguava -ljavax_inject -ljre_emul -ljsr305 -ljunit -lmockito"
+    String compileArgs = "-ObjC -lguava -ljavax_inject -ljre_emul -ljsr305 -ljunit -lmockito"
     @InputDirectory
     File srcDir
     @OutputFile
@@ -590,7 +590,7 @@ class J2objcCompileTask extends DefaultTask {
             args "-I${srcDir}"
             args "-o", "${destFile.path}"
 
-            args compileFlags.split()
+            args compileArgs.split()
 
             def srcFiles = project.files(project.fileTree(
                     dir: srcDir, includes: ["**/*.h", "**/*.m"]))
@@ -607,9 +607,9 @@ class J2objcTestTask extends DefaultTask {
     // TODO: @Input for relevant j2objcConfig args to make task as stale
     // Flags copied verbatim to testrunner command
     @Input
-    String cmdArgs = ""
+    String testArgs = ""
     @Input
-    String translateCmdArgs = ""
+    String translateArgs = ""
     // Filter tests, applied in addition to translate filters (see above)
     @Input
     String testExcludeRegex = "^\$"  // default: exclude none
@@ -639,7 +639,7 @@ class J2objcTestTask extends DefaultTask {
                 testExcludeRegex)
 
         // Generate Test Names
-        def prefixesProperties = J2objcUtils.prefixProperties(project, translateCmdArgs)
+        def prefixesProperties = J2objcUtils.prefixProperties(project, translateArgs)
         def testNames = srcFiles.collect { file ->
             def testName = project.relativePath(file)
                             .replace('src/test/java/', '')
@@ -671,7 +671,7 @@ class J2objcTestTask extends DefaultTask {
                 executable binary
                 args "org.junit.runner.JUnitCore"
 
-                args cmdArgs.split()
+                args testArgs.split()
 
                 testNames.each { testName ->
                     args testName
