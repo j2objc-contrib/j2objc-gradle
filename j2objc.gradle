@@ -537,7 +537,7 @@ class J2objcTranslateTask extends DefaultTask {
         // we not be translated, this can be fixed with a clean and fresh build
         def translateFlags = "${project.j2objcConfig.translateFlags}"
         if (translatedFiles > 0) {
-          translateFlags = translateFlags.toString().replaceFirst("--build-closure","").trim()
+            translateFlags = translateFlags.toString().replaceFirst("--build-closure","").trim()
         }
           
         try {
