@@ -86,7 +86,7 @@ class J2objcPluginExtension {
 
     // Only generated source files, e.g. from dagger annotations. The script will
     // ignore changes in this directory so they must be limited to generated files.
-    String generatedSourceDir = null 
+    String[] generatedSourceDir = []  
     
     // Path to j2objc distribution
     String j2objcHome = null
@@ -266,19 +266,25 @@ class J2objcUtils {
     }
 
     // add Java files to a FileCollection
-    static def addJavaFiles(Project proj, FileCollection files, String generatedSourceDir) {
-        if (generatedSourceDir) {
-            println "include generatedSourceDir: "+generatedSourceDir
-            def buildSrcFiles = proj.files(proj.fileTree(dir: generatedSourceDir, includes: ["**/*.java"]))
-            files += buildSrcFiles
+    static def addJavaFiles(Project proj, FileCollection files, String[] generatedSourceDir) {
+        if (generatedSourceDir.size() > 0) {
+            generatedSourceDir.each { sourceDir ->
+                println "include generatedSourceDir: "+sourceDir
+                def buildSrcFiles = proj.files(proj.fileTree(dir: sourceDir, includes: ["**/*.java"]))
+                files += buildSrcFiles
+            }
         }
         return files
     }
 
-    static def absolutePathOrEmpty(Project proj, String relativePath) {
-        if (relativePath) {
-            println "Added to Path: " + relativePath
-            return ":${proj.file(relativePath).path}"
+    static def absolutePathOrEmpty(Project proj, String[] relativePaths) {
+        if (relativePaths.size() > 0) {
+            def tmpPaths = ""
+            relativePaths.each { relativePath ->
+                println "Added to Path: " + relativePath
+                tmpPaths += ":${proj.file(relativePath).path}"
+            }
+            return tmpPaths
         } else {
             return ""
         }
