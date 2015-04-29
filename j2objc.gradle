@@ -86,7 +86,7 @@ class J2objcPluginExtension {
 
     // Only generated source files, e.g. from dagger annotations. The script will
     // ignore changes in this directory so they must be limited to generated files.
-    String[] generatedSourceDir = []  
+    String[] generatedSourceDirs = []  
     
     // Path to j2objc distribution
     String j2objcHome = null
@@ -266,9 +266,9 @@ class J2objcUtils {
     }
 
     // add Java files to a FileCollection
-    static def addJavaFiles(Project proj, FileCollection files, String[] generatedSourceDir) {
-        if (generatedSourceDir.size() > 0) {
-            generatedSourceDir.each { sourceDir ->
+    static def addJavaFiles(Project proj, FileCollection files, String[] generatedSourceDirs) {
+        if (generatedSourceDirs.size() > 0) {
+            generatedSourceDirs.each { sourceDir ->
                 println "include generatedSourceDir: "+sourceDir
                 def buildSrcFiles = proj.files(proj.fileTree(dir: sourceDir, includes: ["**/*.java"]))
                 files += buildSrcFiles
@@ -364,9 +364,9 @@ class J2objcCycleFinderTask extends DefaultTask {
 
         // Generated Files
         srcFiles = J2objcUtils.addJavaFiles(
-                project, srcFiles, project.j2objcConfig.generatedSourceDir)
+                project, srcFiles, project.j2objcConfig.generatedSourceDirs)
         sourcepath += J2objcUtils.absolutePathOrEmpty(
-                project, project.j2objcConfig.generatedSourceDir)
+                project, project.j2objcConfig.generatedSourceDirs)
 
         // Additional Sourcepaths, e.g. source jars
         if (project.j2objcConfig.translateSourcepaths) {
@@ -501,7 +501,7 @@ class J2objcTranslateTask extends DefaultTask {
         }
 
         // Generated Files
-        sourcepath += J2objcUtils.absolutePathOrEmpty(project, project.j2objcConfig.generatedSourceDir)
+        sourcepath += J2objcUtils.absolutePathOrEmpty(project, project.j2objcConfig.generatedSourceDirs)
 
         // Project Dependencies
         if (project.j2objcConfig.appendProjectDependenciesToSourcepath) {
@@ -878,7 +878,7 @@ class j2objc implements Plugin<Project> {
                                 exclude: project.relativePath(buildDir)))
             }
 
-            // TODO @Bruno "build/source/apt" must be project.j2objcConfig.generatedSourceDir no idea how to set it there
+            // TODO @Bruno "build/source/apt" must be project.j2objcConfig.generatedSourceDirs no idea how to set it there
             // Dependency may be added in project.plugins.withType for Java or Android plugin
             tasks.create(name: "j2objcTranslate", type: J2objcTranslateTask,
                     dependsOn: 'j2objcCycleFinder') {
