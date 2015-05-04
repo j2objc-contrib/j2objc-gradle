@@ -920,7 +920,7 @@ class J2objcPodTask extends DefaultTask {
                      targetPodLine = line
                  }
                  if (isInOpenBlock) {
-                     if (line.contains("podName")) {
+                     if (line.contains(podName)) {
                          podspecExists = true
                      }
                  }
