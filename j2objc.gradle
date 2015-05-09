@@ -181,6 +181,17 @@ class J2objcUtils {
         return System.getProperty("os.name").toLowerCase().contains("windows")
     }
 
+    static def sourcepathJava(Project proj) {
+        def javaRoots = []
+        proj.sourceSets['main'].java.srcDirs.each {
+            javaRoots += it.path
+        }
+        proj.sourceSets['test'].java.srcDirs.each {
+            javaRoots += it.path
+        }
+        return javaRoots.join(':')
+    }
+
     static def j2objcHome(Project proj) {
         def result = proj.j2objcConfig.j2objcHome
         if (result == null) {
@@ -360,7 +371,7 @@ class J2objcCycleFinderTask extends DefaultTask {
             throw new InvalidUserDataException(message)
         }
 
-        def sourcepath = "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
+        def sourcepath = J2objcUtils.sourcepathJava(project)
 
         // Generated Files
         srcFiles = J2objcUtils.addJavaFiles(
@@ -492,7 +503,7 @@ class J2objcTranslateTask extends DefaultTask {
             windowsOnlyArgs = "-jar ${j2objcHome}/lib/j2objc.jar"
         } 
        
-        def sourcepath = "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
+        def sourcepath = J2objcUtils.sourcepathJava(project)
 
         // Additional Sourcepaths, e.g. source jars
         if (project.j2objcConfig.translateSourcepaths) {
