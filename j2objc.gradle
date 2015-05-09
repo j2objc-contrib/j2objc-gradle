@@ -857,8 +857,12 @@ class J2objcXcodeTask extends DefaultTask {
     }
 }
 
-/**
- * Create a podspec, insert it into project pod file and install it
+/*
+ * Updates the Xcode project with j2objc generated files and resources.
+ * This uses the CocoaPods dependency system. For more details see https://cocoapods.org/
+ * It creates a podspec file and inserts it into your project's pod file.
+ * If you haven't create a pod file yet you have to run `pod init` in your project folder 
+ * before you run this task.
  */
 class J2objcPodTask extends DefaultTask {
       
