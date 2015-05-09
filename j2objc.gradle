@@ -893,8 +893,6 @@ class J2objcPodTask extends DefaultTask {
           }  
           
           // create the podspec
-          def j2objcHome = J2objcUtils.j2objcHome(project)
-          
           def podName = "${project.name}"
           def podspecName = "${podName}.podspec"
           def podVersion = "${project.version}"
@@ -910,7 +908,7 @@ class J2objcPodTask extends DefaultTask {
               "s.resources = '${j2objcResourceDirName}/**/*.*'"+lineSeparator+
               "s.requires_arc = true"+lineSeparator+
               "s.libraries = 'ObjC', 'guava', 'javax_inject', 'jre_emul', 'jsr305', 'z', 'icucore'"+lineSeparator+
-              "s.xcconfig = { 'HEADER_SEARCH_PATHS' => '${j2objcHome}/include', 'LIBRARY_SEARCH_PATHS' => '${j2objcHome}/lib' }"+lineSeparator+
+              "s.xcconfig = { 'HEADER_SEARCH_PATHS' => '${J2objcUtils.j2objcHome(project)}/include', 'LIBRARY_SEARCH_PATHS' => '${j2objcHome}/lib' }"+lineSeparator+
               "end")
           
           // link the podspec in pod file
