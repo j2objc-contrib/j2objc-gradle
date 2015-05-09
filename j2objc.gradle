@@ -232,7 +232,7 @@ class J2objcUtils {
     //   --prefixes dir/prefixes.properties --prefix com.ex.dir=Short --prefix com.ex.dir2=Short2
     static def prefixProperties(Project proj) {
         Properties props = new Properties()
-        def matcher = (proj.j2objcConfig.translateFlags =~ /--prefix(|es) +([^-]+)/)
+        def matcher = (proj.j2objcConfig.translateFlags =~ /--prefix(|es)\s+(\S+)/)
         def start = 0
         while (matcher.find(start)) {
             start = matcher.end()
