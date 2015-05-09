@@ -965,7 +965,7 @@ class J2objcPodTask extends DefaultTask {
                      args "install"
                  }   
              } catch (Exception exception) {
-     
+                 // unrecognized errors are rethrown:    
                  if (exception.getMessage().find("A problem occurred starting process 'command 'pod install''")) {
                      // TODO: fix this installation description
                      def message =
