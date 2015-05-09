@@ -924,6 +924,10 @@ class J2objcPodTask extends DefaultTask {
              boolean isInOpenBlock = false
              
              List<String> lines = podFile.readLines()
+             // Search for `podName` within the Xcode build target
+             // `end` signifies the end of the build target
+             // if the `podName` does not exist in the Xcode build target of the pod
+             // it has to be added to the pod's target
              String targetPodLine = ""
              for (def line : lines) {
                  if (line.contains("'${xcodeTarget}'")) {
