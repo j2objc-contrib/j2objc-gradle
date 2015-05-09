@@ -893,7 +893,7 @@ class J2objcPodTask extends DefaultTask {
           }  
           
           // create the podspec
-          def j2objcHome = project.j2objcConfig.j2objcHome
+          def j2objcHome = J2objcUtils.j2objcHome(project)
           
           def podName = "${project.name}"
           def podspecName = "${podName}.podspec"
