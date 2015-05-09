@@ -1040,7 +1040,7 @@ class j2objc implements Plugin<Project> {
             }
             
             project.tasks.create(name: 'j2objcPod', type: J2objcPodTask,
-                dependsOn: 'j2objcTranslate') {
+                dependsOn: 'j2objcTest') {
                 description 'Depends on j2objc translation, create a Pod file link it to Xcode project'
                 srcDir = file("${buildDir}/j2objc")
             }    
