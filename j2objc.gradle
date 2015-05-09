@@ -881,7 +881,7 @@ class J2objcPodTask extends DefaultTask {
           def xcodeTarget = project.j2objcConfig.xcodeTarget
           def lineSeparator = System.getProperty("line.separator")
           
-          // include all resources in a temporary folder
+          // Resource Folder is copied to buildDir where it's accessed by the pod later
           String j2objcResourceDirName = "j2objcResources"
           String j2objcResourceDirPath = "${project.buildDir}/${j2objcResourceDirName}"
           project.delete j2objcResourceDirPath
