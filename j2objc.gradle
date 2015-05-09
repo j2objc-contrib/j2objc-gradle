@@ -914,7 +914,8 @@ class J2objcPodTask extends DefaultTask {
           // link the podspec in pod file
           File podFile = new File(xcodeProjectDir, "Podfile")
           if (!podFile.exists()) {
-              println "No podfile exists: execute 'pod init' first"
+              def message = "No podfile exists: execute 'pod init' first in your project directory"
+              throw new InvalidUserDataException(message)
           }
           else {
              println "exist pod"
