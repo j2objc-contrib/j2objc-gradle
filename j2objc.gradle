@@ -132,6 +132,29 @@ class J2objcPluginExtension {
     //     translateIncludeRegex ".*/TranslateOnlyMeAnd(|Test)\\.java"
     String translateExcludeRegex = null
     String translateIncludeRegex = null
+
+    private def classNameToFileRegex(def className) {
+        // Gradle java plugin convention dictates java roots end
+        // with a java directory.
+        return '^.*/java/' + className.replace('.', '/') + '\\.java$'
+    }
+    private def regexOr(def origRegex, def newPattern) {
+        if (origRegex == null || origRegex.empty) {
+            return newPattern
+        }
+        return "(${origRegex})|(${newPattern})"
+    }
+    // Excludes a fully qualified class name from translation.
+    // Example: translateExcludeClass 'java.lang.String'
+    def translateExcludeClass(def className) {
+        translateExcludeRegex = regexOr(translateExcludeRegex, classNameToFileRegex(className))
+    }
+    // Includes a fully qualified class name in translation.
+    // Example: translateIncludeClass 'java.lang.String'
+    def translateIncludeClass(def className) {
+        translateIncludeRegex = regexOr(translateIncludeRegex, classNameToFileRegex(className))
+    }
+
     // TODO: consider moving to include(s) / exclude(s) structure as used for filetree
 
     // Translation task additional paths
