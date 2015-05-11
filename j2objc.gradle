@@ -84,6 +84,11 @@ class J2objcPluginExtension {
     // Where to copy generated files (excludes test code and executable)
     String destDir = null
 
+    // Where to copy generated test files (excludes executable)
+    // If null, generated test files are discarded for final output.
+    // Can be the same directory as destDir.
+    String destDirTest = null
+
     // Only generated source files, e.g. from dagger annotations. The script will
     // ignore changes in this directory so they must be limited to generated files.
     String[] generatedSourceDirs = []  
@@ -280,7 +285,7 @@ class J2objcUtils {
     static def addJavaFiles(Project proj, FileCollection files, String[] generatedSourceDirs) {
         if (generatedSourceDirs.size() > 0) {
             generatedSourceDirs.each { sourceDir ->
-                logger.debug "include generatedSourceDir: "+sourceDir
+                logger.debug "include generatedSourceDir: " + sourceDir
                 def buildSrcFiles = proj.files(proj.fileTree(dir: sourceDir, includes: ["**/*.java"]))
                 files += buildSrcFiles
             }
@@ -431,7 +436,7 @@ class J2objcCycleFinderTask extends DefaultTask {
                 def cyclesFound = cycleCountStr.toInteger()
                 if (cyclesFound != project.j2objcConfig.cycleFinderExpectedCycles) {
                     logger.error out
-                    logger.error ("Cycles found (" + cyclesFound + ") != cycleFinderExpectedCycles (" +
+                    logger.error("Cycles found (" + cyclesFound + ") != cycleFinderExpectedCycles (" +
                             project.j2objcConfig.cycleFinderExpectedCycles + ")    ")
                     throw e
                 }
@@ -456,23 +461,23 @@ class J2objcTranslateTask extends DefaultTask {
 
     @TaskAction
     def translate(IncrementalTaskInputs inputs) {
-        logger.debug "Source files: "+srcFiles.getFiles().size()
+        logger.debug "Source files: " + srcFiles.getFiles().size()
         FileCollection srcFilesChanged = project.files()
         inputs.outOfDate { change ->
-            logger.debug "New or Updated file: "+change.file
+            logger.debug "New or Updated file: " + change.file
             srcFilesChanged += project.files(change.file)
         }
         def removedFileNames = []
         inputs.removed { change ->
-            logger.debug "Removed file: "+change.file.name
+            logger.debug "Removed file: " + change.file.name
             def nameWithoutExt = file.name.toString().replaceFirst("\\..*","")
             removedFileNames += nameWithoutExt
         }
-        logger.debug "Removed files: "+removedFileNames.size()
-        
-        logger.debug "New or Updated files: "+srcFilesChanged.getFiles().size()
+        logger.debug "Removed files: " + removedFileNames.size()
+
+        logger.debug "New or Updated files: " + srcFilesChanged.getFiles().size()
         FileCollection translatedSrcFiles = srcFiles - srcFilesChanged
-        logger.debug "Unchanged files: "+translatedSrcFiles.getFiles().size()
+        logger.debug "Unchanged files: " + translatedSrcFiles.getFiles().size()
        
         def translatedFiles = 0
         if (destDir.exists()) {
@@ -562,7 +567,7 @@ class J2objcTranslateTask extends DefaultTask {
                 args windowsOnlyArgs.split()
                 args "-d", "${destDir}"
                 args "-sourcepath", sourcepath
-                
+
                 if (classPathArg.size() > 0) {
                     args "-classpath", classPathArg
                 }
@@ -746,6 +751,25 @@ class J2objcCopyTask extends DefaultTask {
     File srcDir
     // TODO: declare @OutputXXX so gradle knows if task is up to date
 
+    private def clearDestDirWithChecks(File destDir, String name) {
+        def destFiles = project.files(project.fileTree(
+                dir: destDir, excludes: ["**/*.h", "**/*.m"]))
+        // Warn if deleting non-generated objc files from destDir
+        destFiles.each { file ->
+            def message =
+                    "Unexpected files in $name - this folder should contain ONLY j2objc\n" +
+                    "generated files Objective-C. The folder contents are deleted to remove\n" +
+                    "files that are nolonger generated. Please check the directory and remove\n" +
+                    "any files that don't end with Objective-C extensions '.h' and '.m'.\n" +
+                    "$name: ${destDir.path}\n" +
+                    "Unexpected file for deletion: ${file.path}"
+            throw new InvalidUserDataException(message)
+        }
+        // TODO: better if this was a sync operation as it does deletes automatically
+        logger.debug "Deleting $name to fill with generated objc files... " + destDir.path
+        project.delete destDir
+    }
+
     @TaskAction
     def destCopy() {
         if (project.j2objcConfig.destDir == null) {
@@ -758,32 +782,38 @@ class J2objcCopyTask extends DefaultTask {
             throw new InvalidUserDataException(message)
         }
 
-        // Warn if deleting non-generated objc files from destDir
         def destDir = project.file(project.j2objcConfig.destDir)
-        def destFiles = project.files(project.fileTree(
-                dir: destDir, excludes: ["**/*.h", "**/*.m"]))
-        destFiles.each { file ->
-            def message =
-                    "Unexpected files in destDir - this folder should contain ONLY j2objc\n" +
-                    "generated files Objective-C. The folder contents are deleted to remove\n" +
-                    "files that are nolonger generated. Please check the directory and remove\n" +
-                    "any files that don't end with Objective-C extensions '.h' and '.m'.\n" +
-                    "destDir: ${project.j2objcConfig.destDir}\n" +
-                    "Unexpected file for deletion: ${file.path}"
-            throw new InvalidUserDataException(message)
-        }
-        // TODO: better if this was a sync operation as it does deletes automatically
-        logger.debug "Deleting destDir to fill with generated objc files... " + destDir.path
-        project.delete destDir
+        clearDestDirWithChecks(destDir, 'destDir')
 
-        // TODO: setting to control whether to copy test files
         project.copy {
             includeEmptyDirs = false
             from srcDir
             into destDir
+            // TODO: this isn't precise, main source can be suffixed with Test as well.
+            // Would be best to somehow keep the metadata about whether a file was from the
+            // main sourceset or the test sourceset.
             // Don't copy the test code
             exclude "**/*Test.h"
             exclude "**/*Test.m"
+        }
+
+        if (project.j2objcConfig.destDirTest != null) {
+            def destDirTest = project.file(project.j2objcConfig.destDirTest)
+            if (destDirTest != destDir) {
+                // If we want main source and test source in one directory, then don't
+                // re-delete the main directory where we just put files!
+                clearDestDirWithChecks(destDirTest, 'destDirTest')
+            }
+            project.copy {
+                includeEmptyDirs = false
+                from srcDir
+                into destDirTest
+                // Only copy the test code
+                include "**/*Test.h"
+                include "**/*Test.m"
+            }
+        } else {
+            logger.debug 'Discard test sources since destDirTest == null'
         }
     }
 }
