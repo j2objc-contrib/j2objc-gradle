@@ -149,6 +149,8 @@ class J2objcPluginExtension {
         }
         return "(${origRegex})|(${newPattern})"
     }
+
+    // TODO: Consider improved include/exclude patterns, See issue #57.
     // Excludes a fully qualified class name from translation.
     // Example: translateExcludeClass 'java.lang.String'
     def translateExcludeClass(def className) {
