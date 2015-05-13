@@ -345,6 +345,10 @@ class J2objcUtils {
         }
         return classPathList.join(':')
     }
+
+    static def filterJ2objcOutputForErrorLines(String processOutput) {
+        return processOutput.tokenize('\n').grep(~/^(.*: )?error:.*/).join('\n')
+    }
 }
 
 
@@ -633,8 +637,16 @@ class J2objcTranslateTask extends DefaultTask {
                     logger.warn message
                 }
             }
+            def processOutput = output.toString()
+            logger.debug 'Translation output:'
+            logger.debug processOutput
+            // Put to stderr only the lines at fault.
+            // We do not separate standardOutput and errorOutput in the exec
+            // task, because the interleaved output is helpful for context.
             logger.error 'Error during translation:'
-            logger.error output.toString()
+            logger.error J2objcUtils.filterJ2objcOutputForErrorLines(processOutput)
+            // Gradle will helpfully tell the user to use --debug for more
+            // output when the build fails.
             throw e
         }
         logger.debug 'Translation output:'
