@@ -982,9 +982,9 @@ class J2objcPodTask extends DefaultTask {
                     errorOutput output
                 }   
             } catch (Exception exception) {
-                def processOutput = output.toString()
+                logger.debug output.toString()
                 logger.error 'Error during pod install:'
-                logger.error J2objcUtils.filterJ2objcOutputForErrorLines(processOutput)
+                logger.error output.toString()
                 
                 // unrecognized errors are rethrown:    
                 if (exception.getMessage().find("A problem occurred starting process 'command 'pod install''")) {
