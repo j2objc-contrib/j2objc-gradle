@@ -1,3 +1,11 @@
+## Quick start
+
+1. Fork it clicking on the top right "Fork" button
+2. Create your feature branch (`git checkout -b my-new-feature`)
+3. Commit your changes (`git commit -am 'Add some feature'`)
+4. Push to the branch (`git push origin my-new-feature`)
+5. Create a new Pull Request (once your PR has been reviewed and is ready to submit see 'Preparing your pull request for submission' below).
+
 ## Style guide
 TODO
 
