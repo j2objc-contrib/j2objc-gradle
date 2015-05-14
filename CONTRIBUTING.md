@@ -22,18 +22,23 @@ We'll assume you are working from your local repository
 which is a clone of a fork of brunobowden/j2objc-gradle, that your feature
 branch is called 'patch-1' and that your pull request is number 46.
 
+### Preperation
 ```
 # have a clean working directory and index
 # from the tip of your patch-1 branch: first save away your work
 git branch backup46
-# now don't checkout or touch branch backup46 from here on out.
-# if things go terribly wrong below, you can then return to a state of LKG sanity with:
-#git rebase --abort
-#git merge --abort
-#git checkout patch-1
-#git reset --hard backup46
-# this will return your patch-1 branch to the state before merging & rebasing
 ```
+
+Don't checkout or touch branch backup46 from here on out.  If things
+go terribly wrong below, you can return to a state of LKG sanity with:
+
+1.  `git rebase --abort`
+2.  `git merge --abort`
+3.  `git checkout patch-1`
+4.  `git reset --hard backup46`
+
+This will return your patch-1 branch to the state before merging & rebasing
+
 First ensure you've setup your upstream remote as per 
 https://help.github.com/articles/configuring-a-remote-for-a-fork/,
 then do https://help.github.com/articles/syncing-a-fork/.
@@ -44,6 +49,7 @@ Push your local master to your origin remote:
 git push
 ```
 
+### Rebasing and merging
 Now you can work on merging in master to your branch.  We'll assume a simple
 branch history here, where patch-1 first diverged from master at commit
 @5665f0a5ff774005ce30e088ab2e1b76caca5a43.
