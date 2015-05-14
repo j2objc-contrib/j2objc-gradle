@@ -65,6 +65,7 @@
  *     j2objcTest        - Run all java tests against the Objective-C binary
  *     j2objcCopy        - Copy generated Objective-C files to Xcode project
  *     j2objcXcode       - Xcode project file import and target configuration
+ *     j2objcPod         - Xcode project file import using CocoaPods
  *
  * Note that you can use the Gradle shorthand of "$ gradlew jCop" to do the j2objcCopy task.
  * The other shorthand expressions are "jTr", "jCom" and "jTe"
