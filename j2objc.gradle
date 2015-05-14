@@ -924,7 +924,7 @@ class J2objcPodTask extends DefaultTask {
             throw new InvalidUserDataException(message)
         }
         else {
-            println "pod exists"
+            logger.debug "Pod exists at path: ${xcodeProjectDir}"
             // check if this podspec has been included before
             boolean podspecExists = false
             boolean isInOpenBlock = false
