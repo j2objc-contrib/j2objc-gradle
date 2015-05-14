@@ -963,14 +963,21 @@ class J2objcPodTask extends DefaultTask {
                 println "Added pod ${podName} to Xcode target ${xcodeTarget} of podfile."
             }
              
-            // install the pod         
+            // install the pod   
+            def output = new ByteArrayOutputStream()
             try {
                  project.exec {
                     workingDir xcodeProjectDir
                     executable "pod"
                     args "install"
+                    standardOutput output
+                    errorOutput output
                 }   
             } catch (Exception exception) {
+                def processOutput = output.toString()
+                logger.error 'Error during pod install:'
+                logger.error J2objcUtils.filterJ2objcOutputForErrorLines(processOutput)
+                
                 // unrecognized errors are rethrown:    
                 if (exception.getMessage().find("A problem occurred starting process 'command 'pod install''")) {
                     // TODO: fix this installation description
@@ -981,6 +988,8 @@ class J2objcPodTask extends DefaultTask {
                 }
                 throw exception
             }
+            logger.debug 'Pod install output:'
+            logger.debug output.toString()
         }
     }
 }
