@@ -984,8 +984,7 @@ class J2objcPodTask extends DefaultTask {
             } catch (Exception exception) {
                 logger.debug output.toString()
                 logger.error 'Error during pod install:'
-                logger.error output.toString()
-                
+
                 // unrecognized errors are rethrown:    
                 if (exception.getMessage().find("A problem occurred starting process 'command 'pod install''")) {
                     // TODO: fix this installation description
