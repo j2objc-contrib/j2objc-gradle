@@ -26,6 +26,13 @@ j2objcConfig {
 
 See the ```J2objcPluginExtension``` class: https://github.com/brunobowden/j2objc-gradle/blob/master/j2objc.gradle#L79
 
+### Errors
+If you encounter a problem, please file a detailed bug at https://github.com/brunobowden/j2objc-gradle/issues/new
+
+Help is easier to give if you provide github git or gist links to your gradle source files, or (redacted) copies within the issue.
+
+Run gradle with the '--debug' flag to get more information that may be useful for the bug report.
+
 ### Future Plans
 
 The intent is to evolve this in to a full gradle plugin over time. Happy to accept contributions.
