@@ -11,14 +11,14 @@ Gradle plugin for j2objc (Java to Objective-C transpiler)
 apply from: 'j2objc.gradle'
 
 j2objcConfig {
-    // MODIFY to where your unzipped j2objc directory is located
-    // NOTE download the latest version from: https://github.com/google/j2objc/releases
-    j2objcHome null  // e.g. "${projectDir}/../../j2objc or absolute path
+        // MODIFY to where your unzipped j2objc directory is located
+        // NOTE download the latest version from: https://github.com/google/j2objc/releases
+        j2objcHome null  // e.g. "${projectDir}/../../j2objc or absolute path
 
-    // MODIFY to where generated objc files should be put for Xcode project
-    // NOTE these files should be checked in to the repository and updated as needed
-    // NOTE this should contain ONLY j2objc generated files, other contents will be deleted
-    destDir null  // e.g. "${projectDir}/../Xcode/j2objc-generated"
+        // MODIFY to where generated objc files should be put for Xcode project
+        // NOTE these files should be checked in to the repository and updated as needed
+        // NOTE this should contain ONLY j2objc generated files, other contents will be deleted
+        destDir null  // e.g. "${projectDir}/../Xcode/j2objc-generated"
 }
 ```
 4. Now you can run the following task in you Gradle project: 
