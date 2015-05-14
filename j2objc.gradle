@@ -305,8 +305,7 @@ class J2objcUtils {
         return classPathList.join(':')
     }
     
-    // checks if a pod is still integrated into a
-    // pod file 
+    // checks if a pod is still integrated into a pod file 
     // return the result as well as the target line 
     // of the podspec for insertion
     static def checkPodDefExistance(File podFile, String xcodeTarget, String podName) {
