@@ -59,3 +59,6 @@ git merge master
 # resolve and finish the merge as usual
 git push
 ```
+
+For guidance on doing the merge itself, see
+http://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging
