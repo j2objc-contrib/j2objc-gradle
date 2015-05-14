@@ -52,7 +52,9 @@ git push
 ### Rebasing and merging
 Now you can work on merging in master to your branch.  We'll assume a simple
 branch history here, where patch-1 first diverged from master at commit
-@5665f0a5ff774005ce30e088ab2e1b76caca5a43.
+@5665f0a5ff774005ce30e088ab2e1b76caca5a43.  If you are unfamiliar
+with rebasing and merging, first read:
+https://robots.thoughtbot.com/git-interactive-rebase-squash-amend-rewriting-history 
 ```
 git checkout patch-1
 # condense this down to one commit to preserve proper project history
