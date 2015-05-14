@@ -304,6 +304,39 @@ class J2objcUtils {
         }
         return classPathList.join(':')
     }
+    
+    // checks if a pod is still integrated into a
+    // pod file 
+    // return the result as well as the target line 
+    // of the podspec for insertion
+    static def checkPodDefExistance(File podFile, String xcodeTarget, String podName) {
+        boolean podspecExists = false
+        boolean isInOpenBlock = false
+        List<String> lines = podFile.readLines()
+        // Search for `podName` within the Xcode build target
+        // `end` signifies the end of the build target
+        // if the `podName` does not exist in the Xcode build target of the pod
+        // it has to be added to the pod's target
+        String targetPodLine = ""
+        for (def line : lines) {
+            if (line.contains("'${xcodeTarget}'")) {
+                isInOpenBlock = true
+                targetPodLine = line
+            }
+            if (isInOpenBlock) {
+                if (line.contains(podName)) {
+                    podspecExists = true
+                }
+            }
+            if (line.contains("end")) {
+                if (isInOpenBlock) {
+                    isInOpenBlock = false
+                    break
+                }
+            }
+        }
+        return [podspecExists, targetPodLine]
+    }
 }
 
 
@@ -928,34 +961,11 @@ class J2objcPodTask extends DefaultTask {
         else {
             logger.debug "Pod exists at path: ${xcodeProjectDir}"
             // check if this podspec has been included before
-            boolean podspecExists = false
-            boolean isInOpenBlock = false
-             
-            List<String> lines = podFile.readLines()
-            // Search for `podName` within the Xcode build target
-            // `end` signifies the end of the build target
-            // if the `podName` does not exist in the Xcode build target of the pod
-            // it has to be added to the pod's target
-            String targetPodLine = ""
-            for (def line : lines) {
-                if (line.contains("'${xcodeTarget}'")) {
-                    isInOpenBlock = true
-                    targetPodLine = line
-                }
-                if (isInOpenBlock) {
-                    if (line.contains(podName)) {
-                        podspecExists = true
-                    }
-                }
-                if (line.contains("end")) {
-                    if (isInOpenBlock) {
-                        isInOpenBlock = false
-                        break
-                    }
-                }              
-            }
+            def result = J2objcUtils.checkPodDefExistance(podFile, xcodeTarget, podName) 
+            boolean podIntegrationExists = result[0]
+            String targetPodLine = result[1]
                           
-            if (!podspecExists) {
+            if (!podIntegrationExists) {
                 // add pod to podfile, e.g., pod 'projectName', :path => '/pathToJ2objcProject/projectName/build'
                 String text = podFile.getText()
                 String replacement = targetPodLine + lineSeparator + 
