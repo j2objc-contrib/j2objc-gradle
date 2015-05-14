@@ -38,7 +38,7 @@ Run gradle with the '--debug' flag to get more information that may be useful fo
 The intent is to evolve this in to a full gradle plugin over time. Happy to accept contributions.
 
 ### Contributing
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md#quick-start).
 
 ### License
 
