@@ -894,7 +894,7 @@ class J2objcPodTask extends DefaultTask {
         project.copy {
             from project.files(
                     project.fileTree(dir: "${project.projectDir}/src/main/resources",
-                        include: "**/*.*"))
+                        include: "**/*"))
             into j2objcResourceDirPath
         }  
           
