@@ -960,7 +960,7 @@ class J2objcPodTask extends DefaultTask {
                     "pod '${podName}', :path => '${project.buildDir}'"
                 String newText = text.replaceFirst(targetPodLine, replacement)
                 podFile.write(newText)                              
-                println "Added pod ${podName} to Xcode target ${xcodeTarget} of podfile."
+                logger.debug "Added pod ${podName} to Xcode target ${xcodeTarget} of podfile."
             }
              
             // install the pod   
