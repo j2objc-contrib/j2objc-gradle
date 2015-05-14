@@ -904,7 +904,7 @@ class J2objcPodTask extends DefaultTask {
         def podName = "${project.name}"
         def podspecName = "${podName}.podspec"
         def podVersion = "${project.version}"
-        File podspecFile = new File(project.buildDir, "${podspecName}")
+        File podspecFile = new File(project.buildDir, podspecName)
         podspecFile.write("")
         podspecFile.append(
             "Pod::Spec.new do |s|" + lineSeparator + 
