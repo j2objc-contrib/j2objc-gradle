@@ -931,7 +931,7 @@ class J2objcPodTask extends DefaultTask {
         // create the podspec
         def podName = project.name
         def podspecName = podName + ".podspec"
-        def podVersion = "${project.version}"
+        def podVersion = project.version
         File podspecFile = new File(project.buildDir, podspecName)
         podspecFile.write("")
         // TODO s.libraries: this will not function for anyone who has their own list of linked libraries in the compileFlags
