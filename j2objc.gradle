@@ -924,9 +924,7 @@ class J2objcPodTask extends DefaultTask {
         String j2objcResourceDirPath = "${project.buildDir}/${j2objcResourceDirName}"
         project.delete j2objcResourceDirPath
         project.copy {
-            from project.files(
-                    project.fileTree(dir: "${project.projectDir}/src/main/resources",
-                        include: "**/*"))
+            from project.sourceSets['main'].resources.srcDirs
             into j2objcResourceDirPath
         }  
           
