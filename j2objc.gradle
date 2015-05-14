@@ -931,7 +931,7 @@ class J2objcPodTask extends DefaultTask {
         }  
           
         // create the podspec
-        def compilerFlagArgs = "${project.j2objcConfig.compileFlags}".split(" ").collect {
+        def compilerFlagArgs = project.j2objcConfig.compileFlags.split(" ").collect {
             "'"+it.replaceFirst("-","")+"'"}.join(',')
         def podName = "${project.name}"
         def podspecName = "${podName}.podspec"
