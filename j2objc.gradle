@@ -84,6 +84,11 @@ class J2objcPluginExtension {
     // Where to copy generated files (excludes test code and executable)
     String destDir = null
 
+    // Where to copy generated test files (excludes executable)
+    // If null, generated test files are discarded for final output.
+    // Can be the same directory as destDir.
+    String destDirTest = null
+
     // Only generated source files, e.g. from dagger annotations. The script will
     // ignore changes in this directory so they must be limited to generated files.
     String[] generatedSourceDirs = []  
@@ -132,6 +137,31 @@ class J2objcPluginExtension {
     //     translateIncludeRegex ".*/TranslateOnlyMeAnd(|Test)\\.java"
     String translateExcludeRegex = null
     String translateIncludeRegex = null
+
+    private def classNameToFileRegex(def className) {
+        // Gradle java plugin convention dictates java roots end
+        // with a java directory.
+        return '^.*/java/' + className.replace('.', '/') + '\\.java$'
+    }
+    private def regexOr(def origRegex, def newPattern) {
+        if (origRegex == null || origRegex.empty) {
+            return newPattern
+        }
+        return "(${origRegex})|(${newPattern})"
+    }
+
+    // TODO: Consider improved include/exclude patterns, See issue #57.
+    // Excludes a fully qualified class name from translation.
+    // Example: translateExcludeClass 'java.lang.String'
+    def translateExcludeClass(def className) {
+        translateExcludeRegex = regexOr(translateExcludeRegex, classNameToFileRegex(className))
+    }
+    // Includes a fully qualified class name in translation.
+    // Example: translateIncludeClass 'java.lang.String'
+    def translateIncludeClass(def className) {
+        translateIncludeRegex = regexOr(translateIncludeRegex, classNameToFileRegex(className))
+    }
+
     // TODO: consider moving to include(s) / exclude(s) structure as used for filetree
 
     // Translation task additional paths
@@ -181,6 +211,17 @@ class J2objcUtils {
         return System.getProperty("os.name").toLowerCase().contains("windows")
     }
 
+    static def sourcepathJava(Project proj) {
+        def javaRoots = []
+        proj.sourceSets['main'].java.srcDirs.each {
+            javaRoots += it.path
+        }
+        proj.sourceSets['test'].java.srcDirs.each {
+            javaRoots += it.path
+        }
+        return javaRoots.join(':')
+    }
+
     static def j2objcHome(Project proj) {
         def result = proj.j2objcConfig.j2objcHome
         if (result == null) {
@@ -221,7 +262,7 @@ class J2objcUtils {
     //   --prefixes dir/prefixes.properties --prefix com.ex.dir=Short --prefix com.ex.dir2=Short2
     static def prefixProperties(Project proj) {
         Properties props = new Properties()
-        def matcher = (proj.j2objcConfig.translateFlags =~ /--prefix(|es) +([^-]+)/)
+        def matcher = (proj.j2objcConfig.translateFlags =~ /--prefix(|es)\s+(\S+)/)
         def start = 0
         while (matcher.find(start)) {
             start = matcher.end()
@@ -239,7 +280,7 @@ class J2objcUtils {
             props.putAll(newProps)
         }
 //        for (key in props.keys()) {
-//            println key + ": " + props.getProperty(key)
+//            logger.debug key + ": " + props.getProperty(key)
 //        }
 
         return props
@@ -269,7 +310,7 @@ class J2objcUtils {
     static def addJavaFiles(Project proj, FileCollection files, String[] generatedSourceDirs) {
         if (generatedSourceDirs.size() > 0) {
             generatedSourceDirs.each { sourceDir ->
-                println "include generatedSourceDir: "+sourceDir
+                logger.debug "include generatedSourceDir: " + sourceDir
                 def buildSrcFiles = proj.files(proj.fileTree(dir: sourceDir, includes: ["**/*.java"]))
                 files += buildSrcFiles
             }
@@ -281,7 +322,7 @@ class J2objcUtils {
         if (relativePaths.size() > 0) {
             def tmpPaths = ""
             relativePaths.each { relativePath ->
-                println "Added to Path: " + relativePath
+                logger.debug "Added to Path: " + relativePath
                 tmpPaths += ":${proj.file(relativePath).path}"
             }
             return tmpPaths
@@ -335,6 +376,11 @@ class J2objcUtils {
             }
         }
         return [podspecExists, targetPodLine]
+	}
+
+
+    static def filterJ2objcOutputForErrorLines(String processOutput) {
+        return processOutput.tokenize('\n').grep(~/^(.*: )?error:.*/).join('\n')
     }
 }
 
@@ -352,7 +398,7 @@ class J2objcCycleFinderTask extends DefaultTask {
     def cycleFinder() {
 
         if (! project.j2objcConfig.cycleFinder) {
-            println "Skipping j2objcCycleFinder"
+            logger.debug "Skipping j2objcCycleFinder"
             return
         }
 
@@ -392,7 +438,7 @@ class J2objcCycleFinderTask extends DefaultTask {
             throw new InvalidUserDataException(message)
         }
 
-        def sourcepath = "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
+        def sourcepath = J2objcUtils.sourcepathJava(project)
 
         // Generated Files
         srcFiles = J2objcUtils.addJavaFiles(
@@ -402,7 +448,7 @@ class J2objcCycleFinderTask extends DefaultTask {
 
         // Additional Sourcepaths, e.g. source jars
         if (project.j2objcConfig.translateSourcepaths) {
-            println "Add to sourcepath: ${project.j2objcConfig.translateSourcepaths}"
+            logger.debug "Add to sourcepath: ${project.j2objcConfig.translateSourcepaths}"
             sourcepath += ":${project.j2objcConfig.translateSourcepaths}"
         }
 
@@ -441,18 +487,18 @@ class J2objcCycleFinderTask extends DefaultTask {
 
             def matcher = (out =~ /(\d+) CYCLES FOUND/)
             if (! matcher.find()) {
-                print out
+                logger.error out
                 throw new InvalidUserDataException("Can't find XX CYCLES FOUND")
             } else {
                 def cycleCountStr = matcher[0][1]
                 if (! cycleCountStr.isInteger()) {
-                    print out
+                    logger.error out
                     throw new InvalidUserDataException("XX CYCLES FOUND isn't integer: " + matcher[0][0])
                 }
                 def cyclesFound = cycleCountStr.toInteger()
                 if (cyclesFound != project.j2objcConfig.cycleFinderExpectedCycles) {
-                    print out
-                    print ("Cycles found (" + cyclesFound + ") != cycleFinderExpectedCycles (" +
+                    logger.error out
+                    logger.error("Cycles found (" + cyclesFound + ") != cycleFinderExpectedCycles (" +
                             project.j2objcConfig.cycleFinderExpectedCycles + ")    ")
                     throw e
                 }
@@ -461,7 +507,7 @@ class J2objcCycleFinderTask extends DefaultTask {
         }
 
         reportFile.write(output.toString())
-        println "CycleFinder Output: ${reportFile.path}"
+        logger.debug "CycleFinder Output: ${reportFile.path}"
     }
 }
      
@@ -477,23 +523,23 @@ class J2objcTranslateTask extends DefaultTask {
 
     @TaskAction
     def translate(IncrementalTaskInputs inputs) {
-        println "Source files: "+srcFiles.getFiles().size()
+        logger.debug "Source files: " + srcFiles.getFiles().size()
         FileCollection srcFilesChanged = project.files()
         inputs.outOfDate { change ->
-            println "New or Updated file: "+change.file
+            logger.debug "New or Updated file: " + change.file
             srcFilesChanged += project.files(change.file)
         }
         def removedFileNames = []
         inputs.removed { change ->
-            println "Removed file: "+change.file.name
+            logger.debug "Removed file: " + change.file.name
             def nameWithoutExt = file.name.toString().replaceFirst("\\..*","")
             removedFileNames += nameWithoutExt
         }
-        println "Removed files: "+removedFileNames.size()
-        
-        println "New or Updated files: "+srcFilesChanged.getFiles().size()
+        logger.debug "Removed files: " + removedFileNames.size()
+
+        logger.debug "New or Updated files: " + srcFilesChanged.getFiles().size()
         FileCollection translatedSrcFiles = srcFiles - srcFilesChanged
-        println "Unchanged files: "+translatedSrcFiles.getFiles().size()
+        logger.debug "Unchanged files: " + translatedSrcFiles.getFiles().size()
        
         def translatedFiles = 0
         if (destDir.exists()) {
@@ -524,11 +570,11 @@ class J2objcTranslateTask extends DefaultTask {
             windowsOnlyArgs = "-jar ${j2objcHome}/lib/j2objc.jar"
         } 
        
-        def sourcepath = "${project.file("src/main/java").path}:${project.file("src/test/java").path}"
+        def sourcepath = J2objcUtils.sourcepathJava(project)
 
         // Additional Sourcepaths, e.g. source jars
         if (project.j2objcConfig.translateSourcepaths) {
-            println "Add to sourcepath: ${project.j2objcConfig.translateSourcepaths}"
+            logger.debug "Add to sourcepath: ${project.j2objcConfig.translateSourcepaths}"
             sourcepath += ":${project.j2objcConfig.translateSourcepaths}"
         }
 
@@ -573,7 +619,9 @@ class J2objcTranslateTask extends DefaultTask {
         if (translatedFiles > 0) {
             translateFlags = translateFlags.toString().replaceFirst("--build-closure","").trim()
         }
-          
+
+        def output = new ByteArrayOutputStream()
+
         try {
             project.exec {
                 executable j2objcExec
@@ -581,7 +629,7 @@ class J2objcTranslateTask extends DefaultTask {
                 args windowsOnlyArgs.split()
                 args "-d", "${destDir}"
                 args "-sourcepath", sourcepath
-                
+
                 if (classPathArg.size() > 0) {
                     args "-classpath", classPathArg
                 }
@@ -591,6 +639,8 @@ class J2objcTranslateTask extends DefaultTask {
                 srcFiles.each { file ->
                     args file.path
                 }
+                standardOutput output
+                errorOutput output
             }
 
         } catch (e) {
@@ -617,12 +667,23 @@ class J2objcTranslateTask extends DefaultTask {
                         "    translateExcludeRegex \".*/(SkipThisClass|AlsoSkipThisClass)\\.java\"\n" +
                         "}\n"
 
-                    print message
+                    logger.warn message
                 }
             }
-
+            def processOutput = output.toString()
+            logger.debug 'Translation output:'
+            logger.debug processOutput
+            // Put to stderr only the lines at fault.
+            // We do not separate standardOutput and errorOutput in the exec
+            // task, because the interleaved output is helpful for context.
+            logger.error 'Error during translation:'
+            logger.error J2objcUtils.filterJ2objcOutputForErrorLines(processOutput)
+            // Gradle will helpfully tell the user to use --debug for more
+            // output when the build fails.
             throw e
         }
+        logger.debug 'Translation output:'
+        logger.debug output.toString()
     }
 }
 
@@ -649,7 +710,7 @@ class J2objcCompileTask extends DefaultTask {
 
         // No include / exclude regex as unlikely for compile to fail after successful translation
 
-        println "Compiling test binary: " + destFile.path
+        logger.debug "Compiling test binary: " + destFile.path
         project.exec {
             executable binary
             args "-I${srcDir}"
@@ -715,7 +776,7 @@ class J2objcTestTask extends DefaultTask {
         }
 
         def binary = "${srcFile.path}"
-        println "Test Binary: " + srcFile.path
+        logger.debug "Test Binary: " + srcFile.path
 
         def outputStream = new ByteArrayOutputStream()
         project.exec {
@@ -734,7 +795,7 @@ class J2objcTestTask extends DefaultTask {
 
         def output = outputStream.toString()
         reportFile.write(output)
-        println "Test Output: ${reportFile.path}"
+        logger.debug "Test Output: ${reportFile.path}"
 
         // 0 tests => warn by default
         if (project.j2objcConfig.testExecutedCheck) {
@@ -760,6 +821,25 @@ class J2objcCopyTask extends DefaultTask {
     File srcDir
     // TODO: declare @OutputXXX so gradle knows if task is up to date
 
+    private def clearDestDirWithChecks(File destDir, String name) {
+        def destFiles = project.files(project.fileTree(
+                dir: destDir, excludes: ["**/*.h", "**/*.m"]))
+        // Warn if deleting non-generated objc files from destDir
+        destFiles.each { file ->
+            def message =
+                    "Unexpected files in $name - this folder should contain ONLY j2objc\n" +
+                    "generated files Objective-C. The folder contents are deleted to remove\n" +
+                    "files that are nolonger generated. Please check the directory and remove\n" +
+                    "any files that don't end with Objective-C extensions '.h' and '.m'.\n" +
+                    "$name: ${destDir.path}\n" +
+                    "Unexpected file for deletion: ${file.path}"
+            throw new InvalidUserDataException(message)
+        }
+        // TODO: better if this was a sync operation as it does deletes automatically
+        logger.debug "Deleting $name to fill with generated objc files... " + destDir.path
+        project.delete destDir
+    }
+
     @TaskAction
     def destCopy() {
         if (project.j2objcConfig.destDir == null) {
@@ -772,32 +852,38 @@ class J2objcCopyTask extends DefaultTask {
             throw new InvalidUserDataException(message)
         }
 
-        // Warn if deleting non-generated objc files from destDir
         def destDir = project.file(project.j2objcConfig.destDir)
-        def destFiles = project.files(project.fileTree(
-                dir: destDir, excludes: ["**/*.h", "**/*.m"]))
-        destFiles.each { file ->
-            def message =
-                    "Unexpected files in destDir - this folder should contain ONLY j2objc\n" +
-                    "generated files Objective-C. The folder contents are deleted to remove\n" +
-                    "files that are nolonger generated. Please check the directory and remove\n" +
-                    "any files that don't end with Objective-C extensions '.h' and '.m'.\n" +
-                    "destDir: ${project.j2objcConfig.destDir}\n" +
-                    "Unexpected file for deletion: ${file.path}"
-            throw new InvalidUserDataException(message)
-        }
-        // TODO: better if this was a sync operation as it does deletes automatically
-        println "Deleting destDir to fill with generated objc files... " + destDir.path
-        project.delete destDir
+        clearDestDirWithChecks(destDir, 'destDir')
 
-        // TODO: setting to control whether to copy test files
         project.copy {
             includeEmptyDirs = false
             from srcDir
             into destDir
+            // TODO: this isn't precise, main source can be suffixed with Test as well.
+            // Would be best to somehow keep the metadata about whether a file was from the
+            // main sourceset or the test sourceset.
             // Don't copy the test code
             exclude "**/*Test.h"
             exclude "**/*Test.m"
+        }
+
+        if (project.j2objcConfig.destDirTest != null) {
+            def destDirTest = project.file(project.j2objcConfig.destDirTest)
+            if (destDirTest != destDir) {
+                // If we want main source and test source in one directory, then don't
+                // re-delete the main directory where we just put files!
+                clearDestDirWithChecks(destDirTest, 'destDirTest')
+            }
+            project.copy {
+                includeEmptyDirs = false
+                from srcDir
+                into destDirTest
+                // Only copy the test code
+                include "**/*Test.h"
+                include "**/*Test.m"
+            }
+        } else {
+            logger.debug 'Discard test sources since destDirTest == null'
         }
     }
 }
@@ -871,7 +957,7 @@ class J2objcXcodeTask extends DefaultTask {
         }
 
         def srcFilesSize = project.files(project.fileTree(dir: srcDir)).getFiles().size()
-        println "Linked ${srcFilesSize} files to Xcode project ${xcodeProject}"
+        logger.debug "Linked ${srcFilesSize} files to Xcode project ${xcodeProject}"
 
         // Xcode bug workaround when it fails to find files with "$$" in the filename.
         // This occurs because Xcode converts "x$$y" to "x$y" when it looks for a file.
@@ -1081,7 +1167,7 @@ class j2objc implements Plugin<Project> {
                         "plugin (which was expected). When this is found, the j2objc plugin\n" +
                         "will build and run that first to make sure the project builds correctly.\n"
                         "This will not be done here as it can't be found."
-                println message
+                logger.warn message
             }
         }
     }
