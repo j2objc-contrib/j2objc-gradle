@@ -233,7 +233,7 @@ class J2objcUtils {
 
     // Retrieves the configured source directories per specification indicated
     // in documentation of 'customSourceDirectories'.
-    private final static def DEFAULT_SORUCE_DIRECTORIES =
+    private final static def DEFAULT_SOURCE_DIRECTORIES =
             [main: [java: ['src/main/java'], resources: ['src/main/resources']],
              test: [java: ['src/test/java'], resources: ['src/test/resources']]]
     static def srcDirs(Project proj, String sourceSetName, String fileType) {
@@ -255,7 +255,7 @@ class J2objcUtils {
                 return sourceSet.getProperty(fileType).srcDirs
             }
         }
-        return DEFAULT_SORUCE_DIRECTORIES[sourceSetName][fileType].collect({ proj.file(it) })
+        return DEFAULT_SOURCE_DIRECTORIES[sourceSetName][fileType].collect({ proj.file(it) })
     }
     static def javaSrcDirs(Project proj, String sourceSetName) {
         return srcDirs(proj, sourceSetName, 'java')
