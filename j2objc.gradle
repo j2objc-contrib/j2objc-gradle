@@ -99,7 +99,7 @@ class J2objcPluginExtension {
 
     // CYCLEFINDER
     // TODO(bruno): consider enabling cycleFinder by default
-    boolean cycleFinder = false
+    boolean cycleFinderSkip = true
     // Flags copied verbatim to cycle_finder command
     String cycleFinderFlags = null
     // Expected number of cycles, defaults to all those found in JRE
@@ -183,6 +183,8 @@ class J2objcPluginExtension {
 
 
     // TEST
+    // Skip test task if true
+    boolean testSkip = false
     // Flags copied verbatim to testrunner command
     String testFlags = ""
     // Filter tests, applied in addition to translate filters (see above)
@@ -399,7 +401,7 @@ class J2objcCycleFinderTask extends DefaultTask {
     @TaskAction
     def cycleFinder() {
 
-        if (! project.j2objcConfig.cycleFinder) {
+        if (project.j2objcConfig.cycleFinderSkip) {
             logger.debug "Skipping j2objcCycleFinder"
             return
         }
@@ -742,6 +744,12 @@ class J2objcTestTask extends DefaultTask {
 
     @TaskAction
     def test() {
+    
+    	 if (project.j2objcConfig.testSkip) {
+            logger.debug "Skipping j2objcTest"
+            return
+        }
+    
         // Generate list of tests from the source java files
         // src/test/java/com/example/dir/ClassTest.java => "com.example.dir.ClassTest"
 
