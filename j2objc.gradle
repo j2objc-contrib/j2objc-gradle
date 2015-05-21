@@ -98,21 +98,24 @@ class J2objcPluginExtension {
 
     // Input source files for this plugin can be configured in a few ways.  The
     // plugin will use the first valid option:
-    // 1. The flags below.  You may override 0 to 4 of the directories
-    //    for {main, test} x {java, resources}.  The plugin will use any non-null
-    //    list values, and backoff to the remaining options for ones that are null.
-    //    Example:
-    //    customSourceDirectories = [main: [java: ["src-gen/core"], resources: null],
-    //                               test: [java: ["src-gen/test"], resources: null]]
-    // 2. Project SourceSets.
+    // 1. The flags below.  You can override 0 to 4 of the flags; any that are null
+    //    will backoff to the following.
+    // 2. Project SourceSets.  For example, if you use the 'java' or related plugins.
     // 3. "Conventional" defaults for each directory, namely:
-    //    src/{main|test}/{java|resources}
+    //    src/{main|test}/{java|resources}.  For example, if you use an automatically
+    //    converted Ant build.
     //
-    // If you use the standard java plugin, this works automatically, and will
-    // take into account any customizations you have made of the 'main' and/or
-    // 'test' SourceSets, and you do not need to repeat such customization here.
-    def customSourceDirectories = [main: [java: null, resources: null],
-                                   test: [java: null, resources: null]]
+    // WARNING:
+    // We recommend using the standard java plugin (or derivatives) instead of
+    // configuring this plugin's source directories manually:
+    //     apply plugin: 'java'
+    // If you use the standard java plugin, any source set customization will be
+    // applied to this plugin as well, and many other plugins will understand
+    // your customizations without duplicating configuration.
+    String[] customMainSrcDirs = null  // defaults to ['src/main/java']
+    String[] customTestSrcDirs = null  // defaults to ['src/test/java']
+    String[] customMainResourcesSrcDirs = null  // defaults to ['src/main/resources']
+    String[] customTestResourcesSrcDirs = null  // defaults to ['src/test/resources']
 
 
     // CYCLEFINDER
@@ -232,15 +235,26 @@ class J2objcUtils {
     }
 
     // Retrieves the configured source directories per specification indicated
-    // in documentation of 'customSourceDirectories'.
+    // in documentation of 'custom.*SrcDirs'.
     private final static def DEFAULT_SOURCE_DIRECTORIES =
             [main: [java: ['src/main/java'], resources: ['src/main/resources']],
              test: [java: ['src/test/java'], resources: ['src/test/resources']]]
     static def srcDirs(Project proj, String sourceSetName, String fileType) {
+        assert fileType == 'java' || fileType == 'resources'
+        assert sourceSetName == 'main' || sourceSetName == 'test'
         // Note that subprojects can also be passed to this method; such projects
         // may not have j2objcConfig.
         if (proj.hasProperty('j2objcConfig')) {
-            def custom = proj.j2objcConfig.customSourceDirectories[sourceSetName][fileType]
+            String custom = null
+            if (fileType == 'java') {
+                custom = sourceSetName == 'test' ?
+                    proj.j2objcConfig.customTestSrcDirs :
+                    proj.j2objcConfig.customMainSrcDirs
+            } else if (fileType == 'resources') {
+                custom = sourceSetName == 'test' ?
+                    proj.j2objcConfig.customTestResourcesSrcDirs :
+                    proj.j2objcConfig.customMainResourcesSrcDirs
+            }
             // We intentionally check for nulls only.  It is valid to desire
             // an empty list of (i.e. no) source directories.
             if (custom != null) {
@@ -257,19 +271,13 @@ class J2objcUtils {
         }
         return DEFAULT_SOURCE_DIRECTORIES[sourceSetName][fileType].collect({ proj.file(it) })
     }
-    static def javaSrcDirs(Project proj, String sourceSetName) {
-        return srcDirs(proj, sourceSetName, 'java')
-    }
-    static def resourcesSrcDirs(Project proj, String sourceSetName) {
-        return srcDirs(proj, sourceSetName, 'resources')
-    }
 
     static def sourcepathJava(Project proj) {
         def javaRoots = []
-        javaSrcDirs(proj, 'main').each {
+        srcDirs(proj, 'main', 'java').each {
             javaRoots += it.path
         }
-        javaSrcDirs(proj, 'test').each {
+        srcDirs(proj, 'test', 'java').each {
             javaRoots += it.path
         }
         return javaRoots.join(':')
@@ -640,7 +648,7 @@ class J2objcTranslateTask extends DefaultTask {
             project.configurations.compile.allDependencies.each { dep ->
                 if (dep instanceof ProjectDependency) {
                     def depProj = ((ProjectDependency)dep).getDependencyProject()
-                    depSourcePaths += J2objcUtils.javaSrcDirs(depProj, 'main')
+                    depSourcePaths += J2objcUtils.srcDirs(depProj, 'main', 'java')
                 }
             }
             sourcepath += ':' + depSourcePaths.join(':')
@@ -1063,7 +1071,7 @@ class J2objcPodTask extends DefaultTask {
         String j2objcResourceDirPath = "${project.buildDir}/${j2objcResourceDirName}"
         project.delete j2objcResourceDirPath
         project.copy {
-            from J2objcUtils.resourcesSrcDirs(depProj, 'main')
+            from J2objcUtils.srcDirs(depProj, 'main', 'resources')
             into j2objcResourceDirPath
         }
 
