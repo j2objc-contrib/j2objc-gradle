@@ -745,7 +745,7 @@ class J2objcTestTask extends DefaultTask {
     @TaskAction
     def test() {
     
-    	if (project.j2objcConfig.testSkip) {
+    	 if (project.j2objcConfig.testSkip) {
             logger.debug "Skipping j2objcTest"
             return
         }
