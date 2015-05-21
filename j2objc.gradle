@@ -104,8 +104,8 @@ class J2objcPluginExtension {
     //    Example:
     //    customSourceDirectories = [main: [java: ["src-gen/core"], resources: null],
     //                               test: [java: ["src-gen/test"], resources: null]]
-    // 1. Project SourceSets.
-    // 2. "Conventional" defaults for each directory, namely:
+    // 2. Project SourceSets.
+    // 3. "Conventional" defaults for each directory, namely:
     //    src/{main|test}/{java|resources}
     //
     // If you use the standard java plugin, this works automatically, and will
