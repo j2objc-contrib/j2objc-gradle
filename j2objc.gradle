@@ -91,10 +91,28 @@ class J2objcPluginExtension {
 
     // Only generated source files, e.g. from dagger annotations. The script will
     // ignore changes in this directory so they must be limited to generated files.
-    String[] generatedSourceDirs = []  
-    
+    String[] generatedSourceDirs = []
+
     // Path to j2objc distribution
     String j2objcHome = null
+
+    // Input source files for this plugin can be configured in a few ways.  The
+    // plugin will use the first valid option:
+    // 1. The flags below.  You may override 0 to 4 of the directories
+    //    for {main, test} x {java, resources}.  The plugin will use any non-null
+    //    list values, and backoff to the remaining options for ones that are null.
+    //    Example:
+    //    customSourceDirectories = [main: [java: ["src-gen/core"], resources: null],
+    //                               test: [java: ["src-gen/test"], resources: null]]
+    // 1. Project SourceSets.
+    // 2. "Conventional" defaults for each directory, namely:
+    //    src/{main|test}/{java|resources}
+    //
+    // If you use the standard java plugin, this works automatically, and will
+    // take into account any customizations you have made of the 'main' and/or
+    // 'test' SourceSets, and you do not need to repeat such customization here.
+    def customSourceDirectories = [main: [java: null, resources: null],
+                                   test: [java: null, resources: null]]
 
 
     // CYCLEFINDER
@@ -213,12 +231,45 @@ class J2objcUtils {
         return System.getProperty("os.name").toLowerCase().contains("windows")
     }
 
+    // Retrieves the configured source directories per specification indicated
+    // in documentation of 'customSourceDirectories'.
+    private final static def DEFAULT_SORUCE_DIRECTORIES =
+            [main: [java: ['src/main/java'], resources: ['src/main/resources']],
+             test: [java: ['src/test/java'], resources: ['src/test/resources']]]
+    static def srcDirs(Project proj, String sourceSetName, String fileType) {
+        // Note that subprojects can also be passed to this method; such projects
+        // may not have j2objcConfig.
+        if (proj.hasProperty('j2objcConfig')) {
+            def custom = proj.j2objcConfig.customSourceDirectories[sourceSetName][fileType]
+            // We intentionally check for nulls only.  It is valid to desire
+            // an empty list of (i.e. no) source directories.
+            if (custom != null) {
+                return custom.collect({ proj.file(it) })
+            }
+        }
+        if (proj.hasProperty('sourceSets')) {
+            def sourceSet = proj.sourceSets.findByName(sourceSetName)
+            if (sourceSet != null) {
+                // For standard fileTypes 'java' and 'resources,' per contract
+                // this cannot be null.
+                return sourceSet.getProperty(fileType).srcDirs
+            }
+        }
+        return DEFAULT_SORUCE_DIRECTORIES[sourceSetName][fileType].collect({ proj.file(it) })
+    }
+    static def javaSrcDirs(Project proj, String sourceSetName) {
+        return srcDirs(proj, sourceSetName, 'java')
+    }
+    static def resourcesSrcDirs(Project proj, String sourceSetName) {
+        return srcDirs(proj, sourceSetName, 'resources')
+    }
+
     static def sourcepathJava(Project proj) {
         def javaRoots = []
-        proj.sourceSets['main'].java.srcDirs.each {
+        javaSrcDirs(proj, 'main').each {
             javaRoots += it.path
         }
-        proj.sourceSets['test'].java.srcDirs.each {
+        javaSrcDirs(proj, 'test').each {
             javaRoots += it.path
         }
         return javaRoots.join(':')
@@ -378,7 +429,7 @@ class J2objcUtils {
             }
         }
         return [podspecExists, targetPodLine]
-	}
+    }
 
 
     static def filterJ2objcOutputForErrorLines(String processOutput) {
@@ -589,7 +640,7 @@ class J2objcTranslateTask extends DefaultTask {
             project.configurations.compile.allDependencies.each { dep ->
                 if (dep instanceof ProjectDependency) {
                     def depProj = ((ProjectDependency)dep).getDependencyProject()
-                    depSourcePaths += depProj.sourceSets.main.java.srcDirs
+                    depSourcePaths += J2objcUtils.javaSrcDirs(depProj, 'main')
                 }
             }
             sourcepath += ':' + depSourcePaths.join(':')
@@ -987,35 +1038,35 @@ class J2objcXcodeTask extends DefaultTask {
  * project folder before you run this task.
  */
 class J2objcPodTask extends DefaultTask {
-      
+
     @InputDirectory File srcDir
-  
+
     @TaskAction
     def pod(IncrementalTaskInputs inputs) {
-        
+
         if (project.j2objcConfig.xcodeProjectDir == null) {
             def message = "You must specify the xcodeProjectDir"
             throw new InvalidUserDataException(message)
         }
-          
+
         if (project.j2objcConfig.xcodeTarget == null) {
             def message = "You must specify the xcodeTarget"
             throw new InvalidUserDataException(message)
         }
-          
+
         def xcodeProjectDir = project.j2objcConfig.xcodeProjectDir
         def xcodeTarget = project.j2objcConfig.xcodeTarget
         def lineSeparator = System.getProperty("line.separator")
-          
+
         // Resource Folder is copied to buildDir where it's accessed by the pod later
         String j2objcResourceDirName = "j2objcResources"
         String j2objcResourceDirPath = "${project.buildDir}/${j2objcResourceDirName}"
         project.delete j2objcResourceDirPath
         project.copy {
-            from project.sourceSets['main'].resources.srcDirs
+            from J2objcUtils.resourcesSrcDirs(depProj, 'main')
             into j2objcResourceDirPath
-        }  
-          
+        }
+
         // create the podspec
         def podName = project.name
         def podspecName = podName + ".podspec"
@@ -1104,6 +1155,7 @@ class j2objc implements Plugin<Project> {
 
             tasks.create(name: "j2objcCycleFinder", type: J2objcCycleFinderTask) {
                 description "Run the cycle_finder tool on all Java source files"
+                // TODO: Once this is a proper plugin, we can switch this to use SourceSets.
                 srcFiles = files(
                         fileTree(dir: projectDir,
                                 include: "**/*.java",
@@ -1115,6 +1167,7 @@ class j2objc implements Plugin<Project> {
             tasks.create(name: "j2objcTranslate", type: J2objcTranslateTask,
                     dependsOn: 'j2objcCycleFinder') {
                 description "Translates all the java source files in to Objective-C using j2objc"
+                // TODO: Once this is a proper plugin, we can switch this to use SourceSets.
                 srcFiles = files(
                         fileTree(dir: projectDir,
                                 include: "**/*.java",
@@ -1137,6 +1190,7 @@ class j2objc implements Plugin<Project> {
                 description 'Runs all tests in the generated Objective-C code'
                 srcFile = file("${buildDir}/j2objcc/testrunner")
                 // Doesn't use 'buildDir' as missing full path with --no-package-directories flag
+                // TODO: Once this is a proper plugin, we can switch this to use SourceSets.
                 srcFiles = files(fileTree(dir: projectDir, includes: ["**/*Test.java"]))
             }
 
