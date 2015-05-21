@@ -185,7 +185,7 @@ class J2objcPluginExtension {
     // TEST
     // Flags copied verbatim to testrunner command
     // Skip test task if true
-    boolean skipTest = false
+    boolean testSkip = false
     String testFlags = ""
     // Filter tests, applied in addition to translate filters (see above)
     String testExcludeRegex = null
@@ -745,7 +745,7 @@ class J2objcTestTask extends DefaultTask {
     @TaskAction
     def test() {
     
-    	if (project.j2objcConfig.skipTest) {
+    	if (project.j2objcConfig.testSkip) {
             logger.debug "Skipping j2objcTest"
             return
         }
