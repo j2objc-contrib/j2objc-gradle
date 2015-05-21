@@ -183,9 +183,9 @@ class J2objcPluginExtension {
 
 
     // TEST
-    // Flags copied verbatim to testrunner command
     // Skip test task if true
     boolean testSkip = false
+    // Flags copied verbatim to testrunner command
     String testFlags = ""
     // Filter tests, applied in addition to translate filters (see above)
     String testExcludeRegex = null
