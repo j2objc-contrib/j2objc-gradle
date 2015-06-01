@@ -198,6 +198,8 @@ class J2objcPluginExtension {
 
 
     // COMPILE
+    // Skip compile task if true
+    boolean compileSkip = false
     // Flags copied verbatim to j2objcc command
     // J2objc default libraries
     String compileFlags = "-ObjC -lguava -ljavax_inject -ljre_emul -ljsr305 -ljunit -lmockito"
@@ -761,7 +763,10 @@ class J2objcCompileTask extends DefaultTask {
 
     @TaskAction
     def compile() {
-
+        if (project.j2objcConfig.compileSkip) {
+             logger.debug "Skipping j2objcCompile"
+             return
+        }
         if (J2objcUtils.isWindows()) {
             throw new InvalidUserDataException(
                     "Windows only supports j2objc translation. To compile and test code, " +
@@ -804,7 +809,7 @@ class J2objcTestTask extends DefaultTask {
     @TaskAction
     def test() {
     
-    	 if (project.j2objcConfig.testSkip) {
+        if (project.j2objcConfig.testSkip) {
             logger.debug "Skipping j2objcTest"
             return
         }
