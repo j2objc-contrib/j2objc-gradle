@@ -764,6 +764,11 @@ class J2objcCompileTask extends DefaultTask {
     @TaskAction
     def compile() {
         if (project.j2objcConfig.compileSkip) {
+             assert project.j2objcConfig.testSkip
+             // TODO: When we use task.enabled, dependencies will handle
+             //       this correctly.  Currently, touching the file is required to
+             //       avoid j2objcTest from complaining about a lack of input files.
+             destFile.createNewFile()
              logger.debug "Skipping j2objcCompile"
              return
         }
