@@ -64,7 +64,6 @@
  *     j2objcCompile     - Compile Objective-C files and build Objective-C binary (named 'runner')
  *     j2objcTest        - Run all java tests against the Objective-C binary
  *     j2objcCopy        - Copy generated Objective-C files to Xcode project
- *     j2objcXcode       - Xcode project file import and target configuration
  *
  * Note that you can use the Gradle shorthand of "$ gradlew jCop" to do the j2objcCopy task.
  * The other shorthand expressions are "jTr", "jCom" and "jTe"
@@ -96,6 +95,7 @@ class J2objcPluginExtension {
     // Path to j2objc distribution
     String j2objcHome = null
 
+    // TODO: consider removing support for non Java plugin projects
     // Input source files for this plugin can be configured in a few ways.  The
     // plugin will use the first valid option:
     // 1. The flags below.  You can override 0 to 4 of the flags; any that are null
@@ -122,6 +122,8 @@ class J2objcPluginExtension {
     // TODO(bruno): consider enabling cycleFinder by default
     boolean cycleFinderSkip = true
     // Flags copied verbatim to cycle_finder command
+    // Would prefer default of null but that can't be used for @Input
+    // Warning will ask user to configure this within j2objcConfig
     String cycleFinderFlags = null
     // Expected number of cycles, defaults to all those found in JRE
     // TODO(bruno): convert to a default whitelist and change expected cyles to 0
@@ -165,8 +167,9 @@ class J2objcPluginExtension {
     // Example:
     //     translateExcludeRegex ".*/src/(main|test)/java/com/example/EXCLUDE_DIR/.*"
     //     translateIncludeRegex ".*/TranslateOnlyMeAnd(|Test)\\.java"
-    String translateExcludeRegex = null
-    String translateIncludeRegex = null
+    // Would prefer to set as null but this doesn't work as @Input for incremental compile
+    String translateExcludeRegex = "^\$"
+    String translateIncludeRegex = "^.*\$"
 
     private def classNameToFileRegex(def className) {
         // Gradle java plugin convention dictates java roots end
@@ -195,13 +198,12 @@ class J2objcPluginExtension {
     // TODO: consider moving to include(s) / exclude(s) structure as used for filetree
 
     // Translation task additional paths
-    // e.g., ${projectDir}/libSrc/dagger-2.0-SNAPSHOT-sources.jar:${projectDir}/libSrc/javax.inject-1-sources.jar
-    // TODO dagger2 should be detected and automatically change this parameter
     String translateSourcepaths = null
 
     // Set to true if java project dependencies of the current project should be appended to the sourcepath
     // automatically.  You will most likely want to use --build-closure in the translateFlags as well.
     boolean appendProjectDependenciesToSourcepath = false
+
 
     // COMPILE
     // Skip compile task if true
@@ -217,8 +219,9 @@ class J2objcPluginExtension {
     // Flags copied verbatim to testrunner command
     String testFlags = ""
     // Filter tests, applied in addition to translate filters (see above)
-    String testExcludeRegex = null
-    String testIncludeRegex = null
+    // Would prefer to set as null but this doesn't work as @Input for incremental compile
+    String testExcludeRegex = "^\$"
+    String testIncludeRegex = "^.*\$"
     // Warn if no tests are executed
     boolean testExecutedCheck = true
 
@@ -293,6 +296,8 @@ class J2objcUtils {
         return javaRoots.join(':')
     }
 
+    // MUST be used only in @Input getJ2ObjCHome() methods to ensure UP-TO-DATE checks are correct
+    // @Input getJ2ObjCHome() method can be used freely inside the task action
     static def j2objcHome(Project proj) {
         def result = proj.j2objcConfig.j2objcHome
         if (result == null) {
@@ -319,21 +324,19 @@ class J2objcUtils {
     // must match includeRegex and NOT match excludeRegex, regex ignored if null
     static def fileFilter(FileCollection files, String includeRegex, String excludeRegex) {
         return files.filter { file ->
-            if (includeRegex == null)
-                return true
             return file.path.matches(includeRegex)
         }.filter { file ->
-            if (excludeRegex == null)
-                return true
             return ! file.path.matches(excludeRegex)
         }
     }
 
-    // Reads both settings from translateFlags (last flag takes precedence)
+    // Reads properties file and flags from translateFlags (last flag takes precedence)
     //   --prefixes dir/prefixes.properties --prefix com.ex.dir=Short --prefix com.ex.dir2=Short2
-    static def prefixProperties(Project proj) {
+    // TODO: separate this out to a distinct flag that's added to translateFlags
+    // TODO: @InputFile conversion for this
+    static def prefixProperties(Project proj, String translateFlags) {
         Properties props = new Properties()
-        def matcher = (proj.j2objcConfig.translateFlags =~ /--prefix(|es)\s+(\S+)/)
+        def matcher = (translateFlags =~ /--prefix(|es)\s+(\S+)/)
         def start = 0
         while (matcher.find(start)) {
             start = matcher.end()
@@ -378,7 +381,7 @@ class J2objcUtils {
     }
 
     // add Java files to a FileCollection
-    static def addJavaFiles(Project proj, FileCollection files, String[] generatedSourceDirs) {
+    static def addJavaFiles(Project proj, FileCollection files, List<String> generatedSourceDirs) {
         if (generatedSourceDirs.size() > 0) {
             generatedSourceDirs.each { sourceDir ->
                 logger.debug "include generatedSourceDir: " + sourceDir
@@ -389,7 +392,7 @@ class J2objcUtils {
         return files
     }
 
-    static def absolutePathOrEmpty(Project proj, String[] relativePaths) {
+    static def absolutePathOrEmpty(Project proj, List<String> relativePaths) {
         if (relativePaths.size() > 0) {
             def tmpPaths = ""
             relativePaths.each { relativePath ->
@@ -403,7 +406,11 @@ class J2objcUtils {
     }
     
     // -classpath javac flag generation from set of libraries (includes j2objc default libraries)
-    static def getClassPathArg(Project proj, String[] libraries) {
+    // TODO: @InputFiles for libraries and j2objcLibs
+    static def getClassPathArg(Project proj,
+                               String j2objcHome,
+                               List<String> libraries,
+                               List<String> translateJ2objcLibs) {
         def classPathList = []
         // user defined libraries
         libraries.each { library ->
@@ -411,8 +418,8 @@ class J2objcUtils {
             classPathList += libPath
         }
         // j2objc default libraries
-        proj.j2objcConfig.translateJ2objcLibs.each { library ->
-            classPathList += j2objcHome(proj) + "/lib/" + library
+        translateJ2objcLibs.each { library ->
+            classPathList += j2objcHome + "/lib/" + library
         }
         return classPathList.join(':')
     }
@@ -458,30 +465,42 @@ class J2objcUtils {
 
 class J2objcCycleFinderTask extends DefaultTask {
 
-    // TODO: @Input for relevant j2objcConfig args to make task as stale
-    // TODO: can't figure out how to do this for
-    @InputFiles
-    FileCollection srcFiles
-    @OutputFile
-    File reportFile = project.file("${project.buildDir}/reports/${name}.out")
+    // Java source files
+    @InputFiles FileCollection srcFiles
+
+    // CycleFinder output - Gradle requires output for UP-TO-DATE checks
+    @OutputFile File reportFile = project.file("${project.buildDir}/reports/${name}.out")
+
+    // j2objcConfig dependencies for UP-TO-DATE checks
+    @Input int getCycleFinderExpectedCycles() { return project.j2objcConfig.cycleFinderExpectedCycles }
+    @Input String getJ2ObjCHome() { return J2objcUtils.j2objcHome(project) }
+    @Input String getTranslateExcludeRegex() { return project.j2objcConfig.translateExcludeRegex }
+    @Input String getTranslateIncludeRegex() { return project.j2objcConfig.translateIncludeRegex }
+    @Input @Optional String getCycleFinderFlags() { return project.j2objcConfig.cycleFinderFlags }
+    @Input @Optional String getTranslateSourcepaths() { return project.j2objcConfig.translateSourcepaths }
+    @Input boolean getCycleFinderSkip() { return project.j2objcConfig.cycleFinderSkip }
+    @Input boolean getFilenameCollisionCheck() { return project.j2objcConfig.filenameCollisionCheck }
+    @Input List<String> getGeneratedSourceDirs() { return project.j2objcConfig.generatedSourceDirs }
+    @Input List<String> getTranslateClassPaths() { return project.j2objcConfig.translateClassPaths }
+    @Input List<String> getTranslateJ2objcLibs() { return project.j2objcConfig.translateJ2objcLibs }
+
 
     @TaskAction
     def cycleFinder() {
 
-        if (project.j2objcConfig.cycleFinderSkip) {
+        if (getCycleFinderSkip()) {
             logger.debug "Skipping j2objcCycleFinder"
             return
         }
 
-        def j2objcHome = J2objcUtils.j2objcHome(getProject())
-        def cycleFinderExec = j2objcHome + "/cycle_finder"
+        def cycleFinderExec = getJ2ObjCHome() + "/cycle_finder"
         def windowsOnlyArgs = ""
         if (J2objcUtils.isWindows()) {
             cycleFinderExec = "java"
-            windowsOnlyArgs = "-jar ${j2objcHome}/lib/cycle_finder.jar"
+            windowsOnlyArgs = "-jar ${getJ2ObjCHome()}/lib/cycle_finder.jar"
         }
 
-        if (project.j2objcConfig.cycleFinderFlags == null) {
+        if (getCycleFinderFlags() == null) {
             def message =
                     "CycleFinder is more difficult to setup and use, though it's hoped to improve\n" +
                     "this for the future. For now there are two ways to set it up:\n" +
@@ -513,22 +532,22 @@ class J2objcCycleFinderTask extends DefaultTask {
 
         // Generated Files
         srcFiles = J2objcUtils.addJavaFiles(
-                project, srcFiles, project.j2objcConfig.generatedSourceDirs)
+                project, srcFiles, getGeneratedSourceDirs())
         sourcepath += J2objcUtils.absolutePathOrEmpty(
-                project, project.j2objcConfig.generatedSourceDirs)
+                project, getGeneratedSourceDirs())
 
         // Additional Sourcepaths, e.g. source jars
-        if (project.j2objcConfig.translateSourcepaths) {
-            logger.debug "Add to sourcepath: ${project.j2objcConfig.translateSourcepaths}"
-            sourcepath += ":${project.j2objcConfig.translateSourcepaths}"
+        if (getTranslateSourcepaths()) {
+            logger.debug "Add to sourcepath: ${getTranslateSourcepaths()}"
+            sourcepath += ":${getTranslateSourcepaths()}"
         }
 
         srcFiles = J2objcUtils.fileFilter(srcFiles,
-                project.j2objcConfig.translateIncludeRegex,
-                project.j2objcConfig.translateExcludeRegex)
+                getTranslateIncludeRegex(),
+                getTranslateExcludeRegex())
 
         def classPathArg = J2objcUtils.getClassPathArg(
-                project, project.j2objcConfig.translateClassPaths)
+                project, getJ2ObjCHome(), getTranslateClassPaths(), getTranslateJ2objcLibs())
 
         def output = new ByteArrayOutputStream()
         try {
@@ -542,7 +561,7 @@ class J2objcCycleFinderTask extends DefaultTask {
                     args "-classpath", classPathArg
                 }
 
-                args "${project.j2objcConfig.cycleFinderFlags}".split()
+                args getCycleFinderFlags().split()
 
                 srcFiles.each { file ->
                     args file.path
@@ -567,10 +586,10 @@ class J2objcCycleFinderTask extends DefaultTask {
                     throw new InvalidUserDataException("XX CYCLES FOUND isn't integer: " + matcher[0][0])
                 }
                 def cyclesFound = cycleCountStr.toInteger()
-                if (cyclesFound != project.j2objcConfig.cycleFinderExpectedCycles) {
+                if (cyclesFound != getCycleFinderExpectedCycles()) {
                     logger.error out
-                    logger.error("Cycles found (" + cyclesFound + ") != cycleFinderExpectedCycles (" +
-                            project.j2objcConfig.cycleFinderExpectedCycles + ")    ")
+                    logger.error("Cycles found (${cyclesFound}) != " +
+                            "cycleFinderExpectedCycles (${getCycleFinderExpectedCycles()})")
                     throw e
                 }
             }
@@ -586,11 +605,24 @@ class J2objcCycleFinderTask extends DefaultTask {
 // TODO: do translations and other tasks incrementally
 class J2objcTranslateTask extends DefaultTask {
 
-    // TODO: @Input for relevant j2objcConfig args to make task as stale
-    @InputFiles
-    FileCollection srcFiles
-    @OutputDirectory
-    File destDir
+    // Java source files
+    @InputFiles FileCollection srcFiles
+
+    // Generated ObjC files
+    @OutputDirectory @Optional File destDir
+
+    // j2objcConfig dependencies for UP-TO-DATE checks
+    @Input String getJ2ObjCHome() { return J2objcUtils.j2objcHome(project) }
+    @Input String getTranslateFlags() { return project.j2objcConfig.translateFlags }
+    @Input String getTranslateExcludeRegex() { return project.j2objcConfig.translateExcludeRegex }
+    @Input String getTranslateIncludeRegex() { return project.j2objcConfig.translateIncludeRegex }
+    @Input @Optional String getTranslateSourcepaths() { return project.j2objcConfig.translateSourcepaths }
+    @Input boolean getAppendProjectDependenciesToSourcepath() { return project.j2objcConfig.appendProjectDependenciesToSourcepath }
+    @Input boolean getFilenameCollisionCheck() { return project.j2objcConfig.filenameCollisionCheck }
+    @Input List<String> getGeneratedSourceDirs() { return project.j2objcConfig.generatedSourceDirs }
+    @Input List<String> getTranslateClassPaths() { return project.j2objcConfig.translateClassPaths }
+    @Input List<String> getTranslateJ2objcLibs() { return project.j2objcConfig.translateJ2objcLibs }
+
 
     @TaskAction
     def translate(IncrementalTaskInputs inputs) {
@@ -633,27 +665,26 @@ class J2objcTranslateTask extends DefaultTask {
         srcFiles = srcFilesChanged
 
         
-        def j2objcHome = J2objcUtils.j2objcHome(getProject())
-        def j2objcExec = j2objcHome + "/j2objc"
+        def j2objcExec = getJ2ObjCHome() + "/j2objc"
         def windowsOnlyArgs = ""
         if (J2objcUtils.isWindows()) {
             j2objcExec = "java"
-            windowsOnlyArgs = "-jar ${j2objcHome}/lib/j2objc.jar"
+            windowsOnlyArgs = "-jar ${getJ2ObjCHome()}/lib/j2objc.jar"
         } 
-       
+
         def sourcepath = J2objcUtils.sourcepathJava(project)
 
         // Additional Sourcepaths, e.g. source jars
-        if (project.j2objcConfig.translateSourcepaths) {
-            logger.debug "Add to sourcepath: ${project.j2objcConfig.translateSourcepaths}"
-            sourcepath += ":${project.j2objcConfig.translateSourcepaths}"
+        if (getTranslateSourcepaths()) {
+            logger.debug "Add to sourcepath: ${getTranslateSourcepaths()}"
+            sourcepath += ":${getTranslateSourcepaths()}"
         }
 
         // Generated Files
-        sourcepath += J2objcUtils.absolutePathOrEmpty(project, project.j2objcConfig.generatedSourceDirs)
+        sourcepath += J2objcUtils.absolutePathOrEmpty(project, getGeneratedSourceDirs())
 
         // Project Dependencies
-        if (project.j2objcConfig.appendProjectDependenciesToSourcepath) {
+        if (getAppendProjectDependenciesToSourcepath()) {
             def depSourcePaths = []
             project.configurations.compile.allDependencies.each { dep ->
                 if (dep instanceof ProjectDependency) {
@@ -665,16 +696,16 @@ class J2objcTranslateTask extends DefaultTask {
         }
 
         srcFiles = J2objcUtils.fileFilter(srcFiles,
-                project.j2objcConfig.translateIncludeRegex,
-                project.j2objcConfig.translateExcludeRegex)
+                getTranslateIncludeRegex(),
+                getTranslateExcludeRegex())
 
         // TODO perform file collision check with already translated files in the destDir
-        if (project.j2objcConfig.filenameCollisionCheck) {
+        if (getFilenameCollisionCheck()) {
             J2objcUtils.filenameCollisionCheck(srcFiles)
         }
      
         def classPathArg = J2objcUtils.getClassPathArg(
-                project, project.j2objcConfig.translateClassPaths)
+                project, getJ2ObjCHome(), getTranslateClassPaths(), getTranslateJ2objcLibs())
         
         classPathArg += ":${project.buildDir}/classes"  
         
@@ -685,7 +716,7 @@ class J2objcTranslateTask extends DefaultTask {
         // NOTE: There is one case which fails, when you have translated the code
         // make an incremental change which refers to a not yet translated class from a 
         // source lib. In this case due to not using --build-closure the dependent source 
-        // we not be translated, this can be fixed with a clean and fresh build.
+        // will not be translated, this can be fixed with a clean and fresh build.
         // Due to this issue, incremental builds with --build-closure are enabled ONLY
         // if the user requests it with the UNSAFE_incrementalBuildClosure flag.
         def translateFlags = project.j2objcConfig.translateFlags
@@ -700,7 +731,7 @@ class J2objcTranslateTask extends DefaultTask {
                 executable j2objcExec
 
                 args windowsOnlyArgs.split()
-                args "-d", "${destDir}"
+                args "-d", destDir
                 args "-sourcepath", sourcepath
 
                 if (classPathArg.size() > 0) {
@@ -717,10 +748,12 @@ class J2objcTranslateTask extends DefaultTask {
             }
 
         } catch (e) {
-            // Warn and explain typical case of Android application, then rethrow error
+            // Warn and explain typical case of Android application trying to translate
+            // what can't be translated. Suggest instead excluding incompatible files.
+            // Then finally rethrow the existing error.
             if (! project.plugins.findPlugin('java')) {
-                if (project.j2objcConfig.translateIncludeRegex == null &&
-                    project.j2objcConfig.translateIncludeRegex == null) {
+                if (getTranslateExcludeRegex() == "^\$" &&
+                    getTranslateIncludeRegex() == "^.*\$") {
 
                     def message =
                         "\n" +
@@ -763,16 +796,23 @@ class J2objcTranslateTask extends DefaultTask {
 
 class J2objcCompileTask extends DefaultTask {
 
-    // TODO: @Input for relevant j2objcConfig args to make task as stale
-    @InputDirectory
-    File srcDir
-    @OutputFile
-    File destFile
+    // Generated ObjC source files
+    @InputDirectory File srcDir
+
+    // TestRunner for running ObjC unit tests
+    @OutputFile File destFile
+
+    // j2objcConfig dependencies for UP-TO-DATE checks
+    @Input String getJ2ObjCHome() { return J2objcUtils.j2objcHome(project) }
+    @Input String getCompileFlags() { return project.j2objcConfig.compileFlags }
+    @Input boolean getCompileSkip() { return project.j2objcConfig.compileSkip }
+    @Input boolean getTestSkip() { return project.j2objcConfig.testSkip }
+
 
     @TaskAction
     def compile() {
-        if (project.j2objcConfig.compileSkip) {
-             assert project.j2objcConfig.testSkip
+        if (getCompileSkip()) {
+             assert getTestSkip()
              // TODO: When we use task.enabled, dependencies will handle
              //       this correctly.  Currently, touching the file is required to
              //       avoid j2objcTest from complaining about a lack of input files.
@@ -786,18 +826,17 @@ class J2objcCompileTask extends DefaultTask {
                             "please develop on a Mac.");
         }
 
-        def binary = J2objcUtils.j2objcHome(getProject()) + "/j2objcc"
         // TODO: copy / reference test resources
 
         // No include / exclude regex as unlikely for compile to fail after successful translation
 
         logger.debug "Compiling test binary: " + destFile.path
         project.exec {
-            executable binary
+            executable getJ2ObjCHome() + "/j2objcc"
             args "-I${srcDir}"
-            args "-o", "${destFile.path}"
+            args "-o", destFile.path
 
-            args "${project.j2objcConfig.compileFlags}".split()
+            args getCompileFlags().split()
 
             def srcFiles = project.files(project.fileTree(
                     dir: srcDir, includes: ["**/*.h", "**/*.m"]))
@@ -811,18 +850,28 @@ class J2objcCompileTask extends DefaultTask {
 
 class J2objcTestTask extends DefaultTask {
 
-    // TODO: @Input for relevant j2objcConfig args to make task as stale
-    @InputFile
-    File srcFile  // testrunner
-    @InputFiles
-    FileCollection srcFiles  // *Test.java
-    @OutputFile
-    File reportFile = project.file("${project.buildDir}/reports/${name}.out")
+    // *Test.java files and TestRunner binary
+    @InputFile File srcFile
+    @InputFiles FileCollection srcFiles
+
+    // Report of test failures
+    @OutputFile File reportFile = project.file("${project.buildDir}/reports/${name}.out")
+
+    // j2objcConfig dependencies for UP-TO-DATE checks
+    @Input String getTestFlags() { return project.j2objcConfig.testFlags }
+    @Input String getTestExcludeRegex() { return project.j2objcConfig.testExcludeRegex }
+    @Input String getTestIncludeRegex() { return project.j2objcConfig.testIncludeRegex }
+    @Input String getTranslateExcludeRegex() { return project.j2objcConfig.translateExcludeRegex }
+    @Input String getTranslateFlags() { return project.j2objcConfig.translateFlags }
+    @Input String getTranslateIncludeRegex() { return project.j2objcConfig.translateIncludeRegex }
+    @Input boolean getTestExecutedCheck() { return project.j2objcConfig.testExecutedCheck }
+    @Input boolean getTestSkip() { return project.j2objcConfig.testSkip }
+
 
     @TaskAction
     def test() {
     
-        if (project.j2objcConfig.testSkip) {
+        if (getTestSkip()) {
             logger.debug "Skipping j2objcTest"
             return
         }
@@ -832,14 +881,14 @@ class J2objcTestTask extends DefaultTask {
 
         // Already filtered by ".*Test.java" before it arrives here
         srcFiles = J2objcUtils.fileFilter(srcFiles,
-                project.j2objcConfig.translateIncludeRegex,
-                project.j2objcConfig.translateExcludeRegex)
+                getTranslateIncludeRegex(),
+                getTranslateExcludeRegex())
         srcFiles = J2objcUtils.fileFilter(srcFiles,
-                project.j2objcConfig.testIncludeRegex,
-                project.j2objcConfig.testExcludeRegex)
+                getTestIncludeRegex(),
+                getTestExcludeRegex())
 
         // Generate Test Names
-        def prefixesProperties = J2objcUtils.prefixProperties(project)
+        def prefixesProperties = J2objcUtils.prefixProperties(project, getTranslateFlags())
         def testNames = srcFiles.collect { file ->
             def testName = project.relativePath(file)
                             .replace('src/test/java/', '')
@@ -862,7 +911,7 @@ class J2objcTestTask extends DefaultTask {
             return testName
         }
 
-        def binary = "${srcFile.path}"
+        def binary = srcFile.path
         logger.debug "Test Binary: " + srcFile.path
 
         def outputStream = new ByteArrayOutputStream()
@@ -870,7 +919,7 @@ class J2objcTestTask extends DefaultTask {
             executable binary
             args "org.junit.runner.JUnitCore"
 
-            args "${project.j2objcConfig.testFlags}".split()
+            args getTestFlags().split()
 
             testNames.each { testName ->
                 args testName
@@ -885,7 +934,7 @@ class J2objcTestTask extends DefaultTask {
         logger.debug "Test Output: ${reportFile.path}"
 
         // 0 tests => warn by default
-        if (project.j2objcConfig.testExecutedCheck) {
+        if (getTestExecutedCheck()) {
             if (output.contains("OK (0 tests)")) {
                 def message =
                         "Zero unit tests were run. Tests are strongly encouraged with J2objc:\n" +
@@ -903,10 +952,14 @@ class J2objcTestTask extends DefaultTask {
 
 class J2objcCopyTask extends DefaultTask {
 
-    // TODO: @Input for relevant j2objcConfig args to make task as stale
-    @InputDirectory
-    File srcDir
-    // TODO: declare @OutputXXX so gradle knows if task is up to date
+    // Generated ObjC source files
+    @InputDirectory File srcDir
+
+    // TODO: needs output for UP-TO-DATE checks
+
+    // j2objcConfig dependencies for UP-TO-DATE checks
+    @Input @Optional String getDestDir() { return project.j2objcConfig.destDir }
+    @Input @Optional String getDestDirTest() { return project.j2objcConfig.destDirTest }
 
     private def clearDestDirWithChecks(File destDir, String name) {
         def destFiles = project.files(project.fileTree(
@@ -929,7 +982,7 @@ class J2objcCopyTask extends DefaultTask {
 
     @TaskAction
     def destCopy() {
-        if (project.j2objcConfig.destDir == null) {
+        if (getDestDir() == null) {
             def message = "You must configure the location where the generated files are " +
                     "copied for Xcode. This is done in your build.gradle, for example:\n" +
                     "\n" +
@@ -939,7 +992,7 @@ class J2objcCopyTask extends DefaultTask {
             throw new InvalidUserDataException(message)
         }
 
-        def destDir = project.file(project.j2objcConfig.destDir)
+        def destDir = project.file(getDestDir())
         clearDestDirWithChecks(destDir, 'destDir')
 
         project.copy {
@@ -954,8 +1007,8 @@ class J2objcCopyTask extends DefaultTask {
             exclude "**/*Test.m"
         }
 
-        if (project.j2objcConfig.destDirTest != null) {
-            def destDirTest = project.file(project.j2objcConfig.destDirTest)
+        if (getDestDirTest() != null) {
+            def destDirTest = project.file(getDestDirTest())
             if (destDirTest != destDir) {
                 // If we want main source and test source in one directory, then don't
                 // re-delete the main directory where we just put files!
@@ -976,92 +1029,6 @@ class J2objcCopyTask extends DefaultTask {
 }
 
 
-/**
- * Note: This task requires https://github.com/developertown/integratej2objc
- * 
- */
-class J2objcXcodeTask extends DefaultTask {
-
-    // TODO: @Input for relevant j2objcConfig args to make task as stale
-    @InputDirectory
-    File srcDir
-    // TODO: declare @OutputXXX so gradle knows if task is up to date
-
-    @TaskAction
-    def xcode() {
-        
-        if (project.j2objcConfig.xcodeProjectDir == null) {
-            def message = "You must specify the xcodeProjectDir"
-            throw new InvalidUserDataException(message)
-        }
-
-        if (project.j2objcConfig.xcodeJ2objcGeneratedDir == null) {
-            def message = "You must specify the xcodeJ2objcGeneratedDir"
-            throw new InvalidUserDataException(message)
-        }
-        if (project.j2objcConfig.xcodeTarget == null) {
-            def message = "You must specify the xcodeTarget"
-            throw new InvalidUserDataException(message)
-        }
-        if (project.j2objcConfig.xcodeProject == null) {
-            def message = "You must specify the xcodeProject"
-            throw new InvalidUserDataException(message)
-        }
-
-        def xcodeProjectDir = project.j2objcConfig.xcodeProjectDir
-        def xcodeJ2objcGeneratedDir = project.j2objcConfig.xcodeJ2objcGeneratedDir
-        def xcodeTarget = project.j2objcConfig.xcodeTarget
-        def xcodeProject = project.j2objcConfig.xcodeProject
-
-        def srcFolder = srcDir.toString().replaceFirst(".*${project.name}","../${project.name}")
-        def integratej2objcExec = "integratej2objc"
-
-        try {
-            project.exec {
-                // TODO: executable integratej2objcExec
-                executable "bundle"
-
-                args "exec"
-                args "integratej2objc"
-                args "integrate_source"
-                args "-p", "${xcodeProjectDir}"
-                args "-x", "${xcodeProject}"
-                args "-s", "${srcFolder}"
-                args "-g", "${xcodeJ2objcGeneratedDir}"
-                args "-t", "${xcodeTarget}"                
-            }
-
-        } catch (Exception exception) {
-
-            if (exception.getMessage().find("A problem occurred starting process 'command 'integratej2objc''")) {
-                // TODO: fix this installation description
-                def message =
-                        "To install integratej2objc:\n" +
-                        "https://github.com/developertown/integratej2objc/#installation"
-                throw new InvalidUserDataException(message)
-            }
-            throw exception
-        }
-
-        def srcFilesSize = project.files(project.fileTree(dir: srcDir)).getFiles().size()
-        logger.debug "Linked ${srcFilesSize} files to Xcode project ${xcodeProject}"
-
-        // Xcode bug workaround when it fails to find files with "$$" in the filename.
-        // This occurs because Xcode converts "x$$y" to "x$y" when it looks for a file.
-        // Generating temp "x$y" file works. Common case is dagger generated files.
-        // http://stackoverflow.com/questions/29555225/xcode-no-such-file-or-directory-if-filename-contains-sign
-        def srcFiles = project.files(project.fileTree(dir: srcDir)).getFiles()
-        def col = srcFiles.findAll { file -> file.name.contains("\$\$") }
-        project.copy {
-            from(col)
-            into(srcDir)
-            rename { name ->
-                name.replace('\$\$', '\$')
-            }
-        }
-    }
-}
-
 /*
  * TODO J2objcPodTask should replace J2objcXcodeTask task
  * Updates the Xcode project with j2objc generated files and resources.
@@ -1075,12 +1042,17 @@ class J2objcPodTask extends DefaultTask {
 
     @InputDirectory File srcDir
 
+    // j2objcConfig dependencies for UP-TO-DATE checks
+    @Input String getJ2ObjCHome() { return J2objcUtils.j2objcHome(project) }
+    @Input String getXcodeProjectDir() { return project.j2objcConfig.xcodeProjectDir }
+    @Input String getXcodeTarget() { return project.j2objcConfig.xcodeTarget }
+
+
     @TaskAction
     def pod(IncrementalTaskInputs inputs) {
 
-        if (project.j2objcConfig.xcodeProjectDir == null ||
-            project.j2objcConfig.xcodeTarget == null) {
-
+        if (getXcodeProjectDir() == null ||
+            getXcodeTarget() == null) {
             def message =
                     "Xcode settings needs to be configured in the build.gradle file:\n" +
                     "\n" +
@@ -1091,12 +1063,9 @@ class J2objcPodTask extends DefaultTask {
             throw new InvalidUserDataException(message)
         }
 
-        def xcodeProjectDir = project.j2objcConfig.xcodeProjectDir
-        def xcodeTarget = project.j2objcConfig.xcodeTarget
         def lineSeparator = System.getProperty("line.separator")
 
         // Resource Folder is copied to buildDir where it's accessed by the pod later
-        def j2objcHome = J2objcUtils.j2objcHome(getProject())
         String j2objcResourceDirName = "j2objcResources"
         String j2objcResourceDirPath = "${project.buildDir}/${j2objcResourceDirName}"
         project.delete j2objcResourceDirPath
@@ -1113,7 +1082,7 @@ class J2objcPodTask extends DefaultTask {
         // TODO s.libraries: this will not function for anyone who has their own list of linked libraries in the compileFlags
         podspecFile.append(
             "Pod::Spec.new do |s|" + lineSeparator + 
-            "s.name = '${podName}'" + lineSeparator + 
+            "s.name = '${podName}'" + lineSeparator +
             "s.version = '1.0'" + lineSeparator +
             "s.summary = 'Generated by the j2objc.gradle plugin.'" + lineSeparator + 
             "s.source_files = 'j2objc/**/*.{h,m}'" + lineSeparator + 
@@ -1121,11 +1090,11 @@ class J2objcPodTask extends DefaultTask {
             "s.resources = '${j2objcResourceDirName}/**/*'" + lineSeparator + 
             "s.requires_arc = true" + lineSeparator + 
             "s.libraries = 'ObjC', 'guava', 'javax_inject', 'jre_emul', 'jsr305', 'z', 'icucore'" + lineSeparator + 
-            "s.xcconfig = { 'HEADER_SEARCH_PATHS' => '${j2objcHome}/include', 'LIBRARY_SEARCH_PATHS' => '${j2objcHome}/lib' }" + lineSeparator +
+            "s.xcconfig = { 'HEADER_SEARCH_PATHS' => '${getJ2ObjCHome()}/include', 'LIBRARY_SEARCH_PATHS' => '${getJ2ObjCHome()}/lib' }" + lineSeparator +
             "end")
           
         // link the podspec in pod file
-        File podFile = new File(xcodeProjectDir, "Podfile")
+        File podFile = new File(getXcodeProjectDir(), "Podfile")
         if (!podFile.exists()) {
             // TODO: offer to run the setup commands
             def message =
@@ -1137,7 +1106,7 @@ class J2objcPodTask extends DefaultTask {
                     "    sudo gem install cocoapods"
             throw new InvalidUserDataException(message)
         } else {
-            logger.debug "Pod exists at path: ${xcodeProjectDir}"
+            logger.debug "Pod exists at path: ${getXcodeProjectDir()}"
             // check if this podspec has been included before
             def result = J2objcUtils.checkPodDefExistence(podFile, xcodeTarget, podName) 
             boolean podIntegrationExists = result[0]
@@ -1157,7 +1126,7 @@ class J2objcPodTask extends DefaultTask {
             def output = new ByteArrayOutputStream()
             try {
                  project.exec {
-                    workingDir xcodeProjectDir
+                    workingDir getXcodeProjectDir()
                     executable "pod"
                     args "install"
                     standardOutput output
@@ -1174,14 +1143,6 @@ class J2objcPodTask extends DefaultTask {
                             "See: https://cocoapods.org/"
                     throw new InvalidUserDataException(message)
                 }
-                if (output.toString().find("ArgumentError - Malformed version number string unspecified")) {
-                    // TODO: Add instructions on how to configure project.version
-                    def message =
-                            "Fix this by specifying a project version:\n" +
-                            "<ADD INSTRUCTIONS>"
-                    throw new InvalidUserDataException(message)
-                }
-
                 // unrecognized errors are rethrown:
                 throw exception
             }
@@ -1196,10 +1157,11 @@ class j2objc implements Plugin<Project> {
 
     @Override
     void apply(Project project) {
+        // This avoids a lot of "project." prefixes, such as "project.tasks.create"
         project.with {
             // TODO: dependency on project.j2objcConfig, so any setting change
             // TODO: invalidates all (ideally some) tasks and causes a rebuild
-            project.extensions.create("j2objcConfig", J2objcPluginExtension)
+            extensions.create("j2objcConfig", J2objcPluginExtension)
 
             // Produces a modest amount of output
             logging.captureStandardOutput LogLevel.INFO
@@ -1210,7 +1172,7 @@ class j2objc implements Plugin<Project> {
                 srcFiles = files(
                         fileTree(dir: projectDir,
                                 include: "**/*.java",
-                                exclude: project.relativePath(buildDir)))
+                                exclude: relativePath(buildDir)))
             }
 
             // TODO @Bruno "build/source/apt" must be project.j2objcConfig.generatedSourceDirs no idea how to set it there
@@ -1222,21 +1184,21 @@ class j2objc implements Plugin<Project> {
                 srcFiles = files(
                         fileTree(dir: projectDir,
                                 include: "**/*.java",
-                                exclude: project.relativePath(buildDir)) +
+                                exclude: relativePath(buildDir)) +
                         fileTree(dir: "build/source/apt",
                                 include: "**/*.java")
                         )
                 destDir = file("${buildDir}/j2objc")
             }
 
-            project.tasks.create(name: "j2objcCompile", type: J2objcCompileTask,
+            tasks.create(name: "j2objcCompile", type: J2objcCompileTask,
                     dependsOn: 'j2objcTranslate') {
                 description "Compiles the j2objc generated Objective-C code to 'testrunner' binary"
                 srcDir = file("${buildDir}/j2objc")
                 destFile = file("${buildDir}/j2objcc/testrunner")
             }
 
-            project.tasks.create(name: "j2objcTest", type: J2objcTestTask,
+            tasks.create(name: "j2objcTest", type: J2objcTestTask,
                     dependsOn: 'j2objcCompile') {
                 description 'Runs all tests in the generated Objective-C code'
                 srcFile = file("${buildDir}/j2objcc/testrunner")
@@ -1245,29 +1207,24 @@ class j2objc implements Plugin<Project> {
                 srcFiles = files(fileTree(dir: projectDir, includes: ["**/*Test.java"]))
             }
 
-            project.tasks.create(name: 'j2objcCopy', type: J2objcCopyTask,
+            tasks.create(name: 'j2objcCopy', type: J2objcCopyTask,
                     dependsOn: 'j2objcTest') {
                 description 'Depends on j2objc translation and test, copies to destDir'
                 srcDir = file("${buildDir}/j2objc")
             }
-            
-            project.tasks.create(name: 'j2objcXcode', type: J2objcXcodeTask,
-                dependsOn: 'j2objcCopy') {
-                description 'Depends on j2objc translation, link generated files to Xcode project'
-                srcDir = file("${buildDir}/j2objc")
-            }
-            
-            project.tasks.create(name: 'j2objcPod', type: J2objcPodTask,
+
+            tasks.create(name: 'j2objcPod', type: J2objcPodTask,
                 dependsOn: 'j2objcTest') {
                 description 'Depends on j2objc translation, create a Pod file link it to Xcode project'
                 srcDir = file("${buildDir}/j2objc")
-            }    
+            }
 
             // Make sure the wider project builds successfully
-            if (project.plugins.findPlugin('java')) {
-                project.tasks.findByName('j2objcCycleFinder').dependsOn('test')
-            } else if (project.plugins.findPlugin('com.android.application')) {
-                project.tasks.findByName('j2objcCycleFinder').dependsOn('assemble')
+            if (plugins.findPlugin('java')) {
+                tasks.findByName('j2objcCycleFinder').dependsOn('test')
+            // TODO: consider removing the com.android.application plugin support
+            } else if (plugins.findPlugin('com.android.application')) {
+                tasks.findByName('j2objcCycleFinder').dependsOn('assemble')
             } else {
                 def message =
                         "j2objc plugin didn't find either 'java' or 'com.android.application'\n" +
