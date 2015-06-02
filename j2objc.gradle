@@ -64,7 +64,6 @@
  *     j2objcCompile     - Compile Objective-C files and build Objective-C binary (named 'runner')
  *     j2objcTest        - Run all java tests against the Objective-C binary
  *     j2objcCopy        - Copy generated Objective-C files to Xcode project
- *     j2objcXcode       - Xcode project file import and target configuration
  *
  * Note that you can use the Gradle shorthand of "$ gradlew jCop" to do the j2objcCopy task.
  * The other shorthand expressions are "jTr", "jCom" and "jTe"
@@ -976,92 +975,6 @@ class J2objcCopyTask extends DefaultTask {
 }
 
 
-/**
- * Note: This task requires https://github.com/developertown/integratej2objc
- * 
- */
-class J2objcXcodeTask extends DefaultTask {
-
-    // TODO: @Input for relevant j2objcConfig args to make task as stale
-    @InputDirectory
-    File srcDir
-    // TODO: declare @OutputXXX so gradle knows if task is up to date
-
-    @TaskAction
-    def xcode() {
-        
-        if (project.j2objcConfig.xcodeProjectDir == null) {
-            def message = "You must specify the xcodeProjectDir"
-            throw new InvalidUserDataException(message)
-        }
-
-        if (project.j2objcConfig.xcodeJ2objcGeneratedDir == null) {
-            def message = "You must specify the xcodeJ2objcGeneratedDir"
-            throw new InvalidUserDataException(message)
-        }
-        if (project.j2objcConfig.xcodeTarget == null) {
-            def message = "You must specify the xcodeTarget"
-            throw new InvalidUserDataException(message)
-        }
-        if (project.j2objcConfig.xcodeProject == null) {
-            def message = "You must specify the xcodeProject"
-            throw new InvalidUserDataException(message)
-        }
-
-        def xcodeProjectDir = project.j2objcConfig.xcodeProjectDir
-        def xcodeJ2objcGeneratedDir = project.j2objcConfig.xcodeJ2objcGeneratedDir
-        def xcodeTarget = project.j2objcConfig.xcodeTarget
-        def xcodeProject = project.j2objcConfig.xcodeProject
-
-        def srcFolder = srcDir.toString().replaceFirst(".*${project.name}","../${project.name}")
-        def integratej2objcExec = "integratej2objc"
-
-        try {
-            project.exec {
-                // TODO: executable integratej2objcExec
-                executable "bundle"
-
-                args "exec"
-                args "integratej2objc"
-                args "integrate_source"
-                args "-p", "${xcodeProjectDir}"
-                args "-x", "${xcodeProject}"
-                args "-s", "${srcFolder}"
-                args "-g", "${xcodeJ2objcGeneratedDir}"
-                args "-t", "${xcodeTarget}"                
-            }
-
-        } catch (Exception exception) {
-
-            if (exception.getMessage().find("A problem occurred starting process 'command 'integratej2objc''")) {
-                // TODO: fix this installation description
-                def message =
-                        "To install integratej2objc:\n" +
-                        "https://github.com/developertown/integratej2objc/#installation"
-                throw new InvalidUserDataException(message)
-            }
-            throw exception
-        }
-
-        def srcFilesSize = project.files(project.fileTree(dir: srcDir)).getFiles().size()
-        logger.debug "Linked ${srcFilesSize} files to Xcode project ${xcodeProject}"
-
-        // Xcode bug workaround when it fails to find files with "$$" in the filename.
-        // This occurs because Xcode converts "x$$y" to "x$y" when it looks for a file.
-        // Generating temp "x$y" file works. Common case is dagger generated files.
-        // http://stackoverflow.com/questions/29555225/xcode-no-such-file-or-directory-if-filename-contains-sign
-        def srcFiles = project.files(project.fileTree(dir: srcDir)).getFiles()
-        def col = srcFiles.findAll { file -> file.name.contains("\$\$") }
-        project.copy {
-            from(col)
-            into(srcDir)
-            rename { name ->
-                name.replace('\$\$', '\$')
-            }
-        }
-    }
-}
-
 /*
  * TODO J2objcPodTask should replace J2objcXcodeTask task
  * Updates the Xcode project with j2objc generated files and resources.
@@ -1250,13 +1163,7 @@ class j2objc implements Plugin<Project> {
                 description 'Depends on j2objc translation and test, copies to destDir'
                 srcDir = file("${buildDir}/j2objc")
             }
-            
-            project.tasks.create(name: 'j2objcXcode', type: J2objcXcodeTask,
-                dependsOn: 'j2objcCopy') {
-                description 'Depends on j2objc translation, link generated files to Xcode project'
-                srcDir = file("${buildDir}/j2objc")
-            }
-            
+
             project.tasks.create(name: 'j2objcPod', type: J2objcPodTask,
                 dependsOn: 'j2objcTest') {
                 description 'Depends on j2objc translation, create a Pod file link it to Xcode project'
