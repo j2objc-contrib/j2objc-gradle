@@ -29,7 +29,6 @@ Gradle plugin for j2objc (Java to Objective-C transpiler)
     j2objcCompile     - Compile Objective-C files and build Objective-C binary (named 'runner')
     j2objcTest        - Run all java tests against the Objective-C binary
     j2objcCopy        - Copy generated Objective-C files to Xcode project
-    j2objcXcode       - Xcode project file import
     ```
 
 #### Further Configuration
