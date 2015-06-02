@@ -135,7 +135,14 @@ class J2objcPluginExtension {
     String translateFlags = "--no-package-directories"
     // -classpath library additions from ${projectDir}/lib/, e.g.: "json-20140107.jar", "somelib.jar"
     String[] translateClassPaths = []
-    
+
+    // WARNING: Do not use this unless you know what you are doing.
+    // If true, incremental builds will be supported even if --build-closure is included in
+    // translateFlags. This may break the build in unexpected ways if you change the dependencies
+    // (e.g. adding new files or changing translateClassPaths). When you change the dependencies and
+    // the build breaks, you need to do a clean build.
+    boolean UNSAFE_incrementalBuildClosure = false
+
     // Additional libraries that are part of the j2objc release
     // TODO: warn if different versions than testCompile from Java plugin
     // TODO: just import everything in the j2objc/lib/ directory?
@@ -195,7 +202,6 @@ class J2objcPluginExtension {
     // Set to true if java project dependencies of the current project should be appended to the sourcepath
     // automatically.  You will most likely want to use --build-closure in the translateFlags as well.
     boolean appendProjectDependenciesToSourcepath = false
-
 
     // COMPILE
     // Skip compile task if true
@@ -676,12 +682,14 @@ class J2objcTranslateTask extends DefaultTask {
         // we have to check if translation has been done before or not
         // if it is only an incremental build we must remove the --build-closure
         // argument to make fewer translations of dependent classes 
-        // NOTE: TODO there is one case which fails, when you have translated the code
+        // NOTE: There is one case which fails, when you have translated the code
         // make an incremental change which refers to a not yet translated class from a 
         // source lib. In this case due to not using --build-closure the dependent source 
-        // we not be translated, this can be fixed with a clean and fresh build
-        def translateFlags = "${project.j2objcConfig.translateFlags}"
-        if (translatedFiles > 0) {
+        // we not be translated, this can be fixed with a clean and fresh build.
+        // Due to this issue, incremental builds with --build-closure are enabled ONLY
+        // if the user requests it with the UNSAFE_incrementalBuildClosure flag.
+        def translateFlags = project.j2objcConfig.translateFlags
+        if (translatedFiles > 0 && project.j2objcConfig.UNSAFE_incrementalBuildClosure) {
             translateFlags = translateFlags.toString().replaceFirst("--build-closure","").trim()
         }
 
