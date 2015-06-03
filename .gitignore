@@ -1,2 +1,5 @@
 # Temp files
 *~
+.gradle
+build
+
