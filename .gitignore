@@ -2,4 +2,8 @@
 *~
 .gradle
 build
-
+# Don't save away IntelliJ config, except code-style which all commits must follow.
+.idea/*
+!.idea/codeStyleSettings.xml
+j2objc-gradle.iml
+gradlew.bat
