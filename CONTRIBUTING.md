@@ -1,4 +1,4 @@
-## Quick start
+i## Quick start
 
 1. Fork it clicking on the top right "Fork" button
 2. Create your feature branch (`git checkout -b my-new-feature`)
@@ -59,21 +59,30 @@ git push
 
 ### Rebasing and merging
 Now you can work on merging in master to your branch.  We'll assume a simple
-branch history here, where patch-1 first diverged from master at commit
-@5665f0a5ff774005ce30e088ab2e1b76caca5a43.  If you are unfamiliar
+branch history here, where patch-1 diverged from master and has never been
+merged back in yet.  If you are unfamiliar
 with rebasing and merging, first read:
 https://robots.thoughtbot.com/git-interactive-rebase-squash-amend-rewriting-history 
+
+The following steps will:
+
+1. Update your repository with changes upstream.
+2. Allow you to merge those change in to yours.
+3. Allow you to squash all your commits into a single well-described commit.
+
 ```
 git checkout patch-1
 # condense this down to one commit to preserve proper project history
-git rebase -i 5665f0a5ff774005ce30e088ab2e1b76caca5a43
+git rebase -i master
 # within the rebase editor, replace the word 'pick' with 'fixup' on
-# every line except the very first one. 
-# when you exit that editor, you should be given a chance to give
+# every line except the very first one.  On the first line, replace
+# 'pick' with 'reword'.
+# When you exit that editor, you should be given a chance to give
 # your entire PR a single detailed commit message.
-git merge master
-# resolve and finish the merge as usual
-git push
+# resolve and finish the merge as usual.
+# The -f forces a push, since you will have rewritten part of your branch's
+# history.
+git push -f
 ```
 
 For guidance on doing the merge itself, see
