@@ -1,4 +1,4 @@
-i## Quick start
+## Quick start
 
 1. Fork it clicking on the top right "Fork" button
 2. Create your feature branch (`git checkout -b my-new-feature`)
