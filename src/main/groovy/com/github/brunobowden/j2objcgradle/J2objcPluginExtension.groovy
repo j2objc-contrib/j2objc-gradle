@@ -33,9 +33,6 @@ class J2objcPluginExtension {
     // ignore changes in this directory so they must be limited to generated files.
     String[] generatedSourceDirs = []
 
-    // Path to j2objc distribution
-    String j2objcHome = null
-
     // TODO: consider removing support for non Java plugin projects
     // Input source files for this plugin can be configured in a few ways.  The
     // plugin will use the first valid option:

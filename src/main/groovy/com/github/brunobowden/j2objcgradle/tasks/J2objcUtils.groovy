@@ -86,17 +86,28 @@ class J2objcUtils {
     // MUST be used only in @Input getJ2ObjCHome() methods to ensure UP-TO-DATE checks are correct
     // @Input getJ2ObjCHome() method can be used freely inside the task action
     static def j2objcHome(Project proj) {
-        def result = proj.j2objcConfig.j2objcHome
+        def localPropertiesFile = new File(proj.rootDir, 'local.properties')
+        String result = null
+        if (localPropertiesFile.exists()) {
+            Properties localProperties = new Properties();
+            localPropertiesFile.withInputStream {
+                localProperties.load it
+            }
+            result = localProperties.getProperty('j2objc.home')
+        }
+        if (result == null) {
+            result = System.getenv('J2OBJC_HOME')
+        }
         if (result == null) {
             def message =
-                    "j2objcHome not set, this should be configured in the parent gradle file with " +
-                    "this syntax:\n" +
+                    "j2objc home not set, this should be configured either:\n" +
+                    "1) in a 'local.properties' file in the project root directory as:\n" +
+                    "   j2objc.home=/PATH/TO/J2OBJC/DISTRIBUTION\n" +
+                    "2) as the J2OBJC_HOME system environment variable\n" +
                     "\n" +
-                    "j2objcConfig {\n" +
-                    "    j2objcHome null // e.g. \"\${projectDir}/../j2objc\"\n" +
-                    "}\n" +
+                    "If both are configured the value in the properties file will be used.\n" +
                     "\n" +
-                    "It must be the path of the unzipped j2objc release. Download releases here:\n" +
+                    "It must be the path of the unzipped j2objc distribution. Download releases here:\n" +
                     "https://github.com/google/j2objc/releases"
             throw new InvalidUserDataException(message)
         }
