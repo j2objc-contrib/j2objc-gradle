@@ -30,7 +30,7 @@ We'll assume you are working from your local repository
 which is a clone of a fork of brunobowden/j2objc-gradle, that your feature
 branch is called 'patch-1' and that your pull request is number 46.
 
-### Preperation
+### Preparation
 ```
 # have a clean working directory and index
 # from the tip of your patch-1 branch: first save away your work
