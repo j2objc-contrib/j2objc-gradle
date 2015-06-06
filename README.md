@@ -1,5 +1,5 @@
 # j2objc-gradle
-Gradle plugin for j2objc (Java to Objective-C transpiler)
+Gradle plugin for [J2ObjC](https://github.com/google/j2objc) (Java to Objective-C transpiler)
 
 ### Usage
 
