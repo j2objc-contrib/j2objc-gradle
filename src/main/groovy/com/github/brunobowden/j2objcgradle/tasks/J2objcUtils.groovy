@@ -24,7 +24,6 @@ import org.gradle.api.file.FileCollection
 /**
  * Internal utilities supporting plugin implementation.
  */
-@PackageScope
 class J2objcUtils {
     // TODO: ideally bundle j2objc binaries with plugin jar and load at runtime with
     // TODO: ClassLoader.getResourceAsStream(), extract, chmod and then execute

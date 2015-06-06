@@ -142,13 +142,6 @@ class J2objcPluginExtension {
     // automatically.  You will most likely want to use --build-closure in the translateFlags as well.
     boolean appendProjectDependenciesToSourcepath = false
 
-    // COMPILE
-    // Skip compile task if true
-    boolean compileSkip = false
-    // Flags copied verbatim to j2objcc command
-    // J2objc default libraries
-    String compileFlags = "-ObjC -lguava -ljavax_inject -ljre_emul -ljsr305 -ljunit -lmockito"
-
     // TEST
     // Skip test task if true
     boolean testSkip = false
