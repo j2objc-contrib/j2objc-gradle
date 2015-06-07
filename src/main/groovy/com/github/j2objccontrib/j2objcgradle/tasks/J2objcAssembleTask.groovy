@@ -15,37 +15,59 @@
  */
 
 package com.github.j2objccontrib.j2objcgradle.tasks
-
 import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
-import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
-
 /**
  *
  */
-class J2objcCopyTask extends DefaultTask {
+class J2objcAssembleTask extends DefaultTask {
 
     // Generated ObjC source files
     @InputDirectory
     File srcDir
 
-    // TODO: needs output for UP-TO-DATE checks
+    // Generated ObjC binaries
+    @InputDirectory
+    File libDir
+
+    @OutputDirectory
+    File getDestSrcDir() {
+        return project.file(destSrcDirPath)
+    }
+
+    @OutputDirectory
+    File getDestSrcDirTest() {
+        return project.file(destSrcDirTestPath)
+    }
+
+    @OutputDirectory
+    File getDestLibDir() {
+        return project.file(destLibDirPath)
+    }
 
     // j2objcConfig dependencies for UP-TO-DATE checks
-    @Input @Optional
-    String getDestDir() { return project.j2objcConfig.destDir }
 
-    @Input @Optional
-    String getDestDirTest() { return project.j2objcConfig.destDirTest }
+    // We keep these strings as @Input properties in addition to the @OutputDirectory methods above because,
+    // for example, whether or not the main source and test source are identical affects execution of this task.
+    @Input
+    String getDestSrcDirPath() { return project.j2objcConfig.destSrcDir }
 
-    private def clearDestDirWithChecks(File destDir, String name) {
-        def destFiles = project.files(project.fileTree(
+    @Input
+    String getDestSrcDirTestPath() { return project.j2objcConfig.destSrcDirTest }
+
+    @Input
+    String getDestLibDirPath() { return project.j2objcConfig.destLibDir }
+
+
+    private def clearDestSrcDirWithChecks(File destDir, String name) {
+        def nonObjcDestFiles = project.files(project.fileTree(
                 dir: destDir, excludes: ["**/*.h", "**/*.m"]))
         // Warn if deleting non-generated objc files from destDir
-        destFiles.each { file ->
+        nonObjcDestFiles.each { file ->
             def message =
                     "Unexpected files in $name - this folder should contain ONLY j2objc\n" +
                     "generated files Objective-C. The folder contents are deleted to remove\n" +
@@ -62,23 +84,11 @@ class J2objcCopyTask extends DefaultTask {
 
     @TaskAction
     def destCopy() {
-        if (getDestDir() == null) {
-            def message = "You must configure the location where the generated files are " +
-                          "copied for Xcode. This is done in your build.gradle, for example:\n" +
-                          "\n" +
-                          "j2objcConfig {\n" +
-                          "    destDir null // e.g. \"\${" + "projectDir}/../Xcode/j2objc-generated\"\n" +
-                          "}"
-            throw new InvalidUserDataException(message)
-        }
-
-        def destDir = project.file(getDestDir())
-        clearDestDirWithChecks(destDir, 'destDir')
-
+        clearDestSrcDirWithChecks(destSrcDir, 'destSrcDir')
         project.copy {
             includeEmptyDirs = false
             from srcDir
-            into destDir
+            into destSrcDir
             // TODO: this isn't precise, main source can be suffixed with Test as well.
             // Would be best to somehow keep the metadata about whether a file was from the
             // main sourceset or the test sourceset.
@@ -87,23 +97,27 @@ class J2objcCopyTask extends DefaultTask {
             exclude "**/*Test.m"
         }
 
-        if (getDestDirTest() != null) {
-            def destDirTest = project.file(getDestDirTest())
-            if (destDirTest != destDir) {
-                // If we want main source and test source in one directory, then don't
-                // re-delete the main directory where we just put files!
-                clearDestDirWithChecks(destDirTest, 'destDirTest')
-            }
-            project.copy {
-                includeEmptyDirs = false
-                from srcDir
-                into destDirTest
-                // Only copy the test code
-                include "**/*Test.h"
-                include "**/*Test.m"
-            }
-        } else {
-            logger.debug 'Discard test sources since destDirTest == null'
+        if (destSrcDirTest.absolutePath != destSrcDir.absolutePath) {
+            // If we want main source and test source in one directory, then don't
+            // re-delete the main directory where we just put files!
+            clearDestSrcDirWithChecks(destSrcDirTest, 'destSrcDirTest')
+        }
+        project.copy {
+            includeEmptyDirs = false
+            from srcDir
+            into destSrcDirTest
+            // Only copy the test code
+            include "**/*Test.h"
+            include "**/*Test.m"
+        }
+
+        // We don't need to clear out the library path, our libraries can co-exist
+        // with other libraries if the user wishes them to.
+        project.copy {
+            includeEmptyDirs = true
+            from libDir
+            into destLibDir
+            include "**/*.a"
         }
     }
 }

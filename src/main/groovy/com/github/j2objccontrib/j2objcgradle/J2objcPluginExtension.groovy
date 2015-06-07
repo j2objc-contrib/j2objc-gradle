@@ -15,6 +15,9 @@
  */
 
 package com.github.j2objccontrib.j2objcgradle
+
+import groovy.transform.PackageScope
+import org.gradle.api.Project
 import org.gradle.api.tasks.util.PatternSet
 import org.gradle.util.ConfigureUtil
 /**
@@ -22,13 +25,18 @@ import org.gradle.util.ConfigureUtil
  */
 class J2objcPluginExtension {
 
-    // Where to copy generated files (excludes test code and executable)
-    String destDir = null
+    // Where to assemble generated main source files.
+    // Defaults to $buildDir/j2objcOutputs/src/main/objc
+    String destSrcDir = null
 
-    // Where to copy generated test files (excludes executable)
-    // If null, generated test files are discarded for final output.
+    // Where to assemble generated test source files.
     // Can be the same directory as destDir.
-    String destDirTest = null
+    // Defaults to $buildDir/j2objcOutputs/src/test/objc
+    String destSrcDirTest = null
+
+    // Where to assemble generated main libraries.
+    // Defaults to $buildDir/j2objcOutputs/lib
+    String destLibDir = null
 
     // Only generated source files, e.g. from dagger annotations. The script will
     // ignore changes in this directory so they must be limited to files generated
@@ -135,4 +143,19 @@ class J2objcPluginExtension {
     String xcodeProjectDir = null
     // Xcode target the generated files should be linked to
     String xcodeTarget = null
+
+    // Configures defaults whose values are dependent on the project.
+    @PackageScope
+    def configureDefaults(Project project) {
+        // Provide defaults for assembly output locations.
+        if (destSrcDir == null) {
+            destSrcDir = "${project.buildDir}/j2objcOutputs/src/main/objc"
+        }
+        if (destSrcDirTest == null) {
+            destSrcDirTest = "${project.buildDir}/j2objcOutputs/src/test/objc"
+        }
+        if (destLibDir == null) {
+            destLibDir = "${project.buildDir}/j2objcOutputs/lib"
+        }
+    }
 }

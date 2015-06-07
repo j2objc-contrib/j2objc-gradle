@@ -78,7 +78,7 @@ class J2objcTranslateTask extends DefaultTask {
     }
 
     // Generated ObjC files
-    @OutputDirectory @Optional
+    @OutputDirectory
     File destDir
 
 
