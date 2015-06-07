@@ -22,7 +22,7 @@ class J2objcNativeCompilation {
                 // For example task 'compileDebugTestJ2objcExecutableTestJ2objcObjc' compiles the debug
                 // buildType of the executable binary 'testJ2objc' from the 'testJ2objc' component.
                 if ((task.name =~ /^compile.*Objc$/).matches()) {
-                    task.dependsOn j2objcTranslate
+                    task.dependsOn 'j2objcTranslate'
                 }
             }
 

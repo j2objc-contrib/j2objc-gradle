@@ -20,6 +20,7 @@ import com.github.j2objccontrib.j2objcgradle.tasks.J2objcCycleFinderTask
 import com.github.j2objccontrib.j2objcgradle.tasks.J2objcTestTask
 import com.github.j2objccontrib.j2objcgradle.tasks.J2objcTranslateTask
 import com.github.j2objccontrib.j2objcgradle.tasks.J2objcXcodeTask
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel
@@ -71,20 +72,34 @@ class J2objcPlugin implements Plugin<Project> {
     void apply(Project project) {
         // This avoids a lot of "project." prefixes, such as "project.tasks.create"
         project.with {
-            // TODO: dependency on project.j2objcConfig, so any setting change
-            // TODO: invalidates all (ideally some) tasks and causes a rebuild
+            if (!plugins.hasPlugin('java')) {
+                def message =
+                        "j2objc plugin didn't find the 'java' plugin in the '${project.name}' project.\n"+
+                        "This is a requirement for using j2objc. If you are migrating an existing\n" +
+                        "Android app, it is suggested that you create a separate 'shared' project\n" +
+                        "without android dependencies and gradually migrate shared code there.\n" +
+                        "Within that project, first apply the 'java' then 'j2objc' plugins by adding\n" +
+                        "the following lines to the build.gradle file:\n" +
+                        "\n" +
+                        "    apply plugin: 'java'\n" +
+                        "    apply plugin: 'j2objc'\n" +
+                        "\n" +
+                        "    j2objcConfig {\n" +
+                        "        // j2objc settings here\n" +
+                        "    }\n" +
+                        "\n" +
+                        "More Info: https://github.com/j2objc-contrib/j2objc-gradle/#usage"
+                throw new InvalidUserDataException(message)
+            }
+
             extensions.create("j2objcConfig", J2objcPluginExtension)
 
             // Produces a modest amount of output
             logging.captureStandardOutput LogLevel.INFO
 
-            tasks.create(name: "j2objcCycleFinder", type: J2objcCycleFinderTask) {
+            tasks.create(name: "j2objcCycleFinder", type: J2objcCycleFinderTask,
+                    dependsOn: 'test') {
                 description "Run the cycle_finder tool on all Java source files"
-                // TODO: Once this is a proper plugin, we can switch this to use SourceSets.
-                srcFiles = files(
-                        fileTree(dir: projectDir,
-                                include: "**/*.java",
-                                exclude: relativePath(buildDir)))
             }
 
             // TODO @Bruno "build/source/apt" must be project.j2objcConfig.generatedSourceDirs no idea how to set it
@@ -93,11 +108,7 @@ class J2objcPlugin implements Plugin<Project> {
             tasks.create(name: "j2objcTranslate", type: J2objcTranslateTask,
                     dependsOn: 'j2objcCycleFinder') {
                 description "Translates all the java source files in to Objective-C using j2objc"
-                // TODO: Once this is a proper plugin, we can switch this to use SourceSets.
-                srcFiles = files(
-                        fileTree(dir: projectDir,
-                                include: "**/*.java",
-                                exclude: relativePath(buildDir)) +
+                additionalSrcFiles = files(
                         fileTree(dir: "build/source/apt",
                                 include: "**/*.java")
                 )
@@ -112,13 +123,11 @@ class J2objcPlugin implements Plugin<Project> {
             tasks.create(name: "j2objcTest", type: J2objcTestTask,
                     dependsOn: 'debugTestJ2objcExecutable') {
                 description 'Runs all tests in the generated Objective-C code'
-                srcFile = file("${buildDir}/binaries/testJ2objcExecutable/debug/testJ2objc")
-                // Doesn't use 'buildDir' as missing full path with --no-package-directories flag
-                // TODO: Once this is a proper plugin, we can switch this to use SourceSets.
-                srcFiles = files(fileTree(dir: projectDir, includes: ["**/*Test.java"]))
+                testBinaryFile = file("${buildDir}/binaries/testJ2objcExecutable/debug/testJ2objc")
             }
-            // Check task is added by lifecycle plugin.
-            lateDependsOn(project, 'j2objcTest', 'check')
+            // 'check' task is added by 'java' plugin, it depends on 'test' and all the other verification tasks,
+            // now including 'j2objcTest'.
+            lateDependsOn(project, 'check', 'j2objcTest')
 
             // TODO: Copy the built binaries to the destination directory, not just the source files.
             tasks.create(name: 'j2objcCopy', type: J2objcCopyTask,
@@ -127,27 +136,12 @@ class J2objcPlugin implements Plugin<Project> {
                 // TODO: make "${buildDir}/j2objc" a shared config variable.
                 srcDir = file("${buildDir}/j2objc")
             }
-            lateDependsOn(project, 'j2objcCopy', 'assemble')
+            lateDependsOn(project, 'assemble', 'j2objcCopy')
 
             tasks.create(name: 'j2objcXcode', type: J2objcXcodeTask,
                     dependsOn: 'j2objcTest') {
                 description 'Depends on j2objc translation, create a Pod file link it to Xcode project'
                 srcDir = file("${buildDir}/j2objc")
-            }
-
-            // Make sure the wider project builds successfully
-            if (plugins.findPlugin('java')) {
-                tasks.findByName('j2objcCycleFinder').dependsOn('test')
-                // TODO: consider removing the com.android.application plugin support
-            } else if (plugins.findPlugin('com.android.application')) {
-                tasks.findByName('j2objcCycleFinder').dependsOn('assemble')
-            } else {
-                def message =
-                        "j2objc plugin didn't find either 'java' or 'com.android.application'\n" +
-                        "plugin (which was expected). When this is found, the j2objc plugin\n" +
-                        "will build and run that first to make sure the project builds correctly.\n" +
-                        "This will not be done here as it can't be found."
-                logger.warn message
             }
         }
     }
@@ -155,7 +149,7 @@ class J2objcPlugin implements Plugin<Project> {
     // Has task named afterTaskName depend on the task named beforeTaskName, regardless of
     // whether afterTaskName has been created yet or not.
     // The before task must already exist.
-    private def lateDependsOn(Project proj, String beforeTaskName, String afterTaskName) {
+    private def lateDependsOn(Project proj, String afterTaskName, String beforeTaskName) {
         assert null != proj.tasks.findByName(beforeTaskName)
         def afterTask = proj.tasks.findByName(afterTaskName)
         if (afterTask != null) {

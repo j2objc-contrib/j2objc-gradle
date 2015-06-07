@@ -15,7 +15,6 @@
  */
 
 package com.github.j2objccontrib.j2objcgradle.tasks
-
 import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.file.FileCollection
@@ -24,15 +23,41 @@ import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-
 /**
  *
  */
 class J2objcCycleFinderTask extends DefaultTask {
 
-    // Java source files
     @InputFiles
-    FileCollection srcFiles
+    FileCollection getSrcFiles() {
+        // Note that translatePattern does not need to be an @Input because it is
+        // solely an input to this method, which is already an input (via @InputFiles).
+        def allFiles = J2objcUtils.srcDirs(project, 'main', 'java')
+        allFiles = allFiles.plus(J2objcUtils.srcDirs(project, 'test', 'java'))
+        if (project.j2objcConfig.translatePattern != null) {
+            allFiles = allFiles.matching(project.j2objcConfig.translatePattern)
+        }
+        return allFiles
+    }
+
+    // All input files that could affect translation output, except those in j2objc itself.
+    @InputFiles
+    FileCollection getAllInputFiles() {
+        FileCollection allFiles = srcFiles
+        if (getTranslateSourcepaths()) {
+            def translateSourcepathPaths = getTranslateSourcepaths().split(':') as List<String>
+            translateSourcepathPaths.each {
+                allFiles = allFiles.plus(project.files(it))
+            }
+        }
+        generatedSourceDirs.each {
+            allFiles = allFiles.plus(project.files(it))
+        }
+        translateClassPaths.each {
+            allFiles = allFiles.plus(project.files('lib/' + it))
+        }
+        return allFiles
+    }
 
     // CycleFinder output - Gradle requires output for UP-TO-DATE checks
     @OutputFile
@@ -44,12 +69,6 @@ class J2objcCycleFinderTask extends DefaultTask {
 
     @Input
     String getJ2ObjCHome() { return J2objcUtils.j2objcHome(project) }
-
-    @Input
-    String getTranslateExcludeRegex() { return project.j2objcConfig.translateExcludeRegex }
-
-    @Input
-    String getTranslateIncludeRegex() { return project.j2objcConfig.translateIncludeRegex }
 
     @Input
     @Optional
@@ -122,7 +141,10 @@ class J2objcCycleFinderTask extends DefaultTask {
         def sourcepath = J2objcUtils.sourcepathJava(project)
 
         // Generated Files
-        srcFiles = J2objcUtils.addJavaFiles(
+        // TODO: Need to understand why generated source dirs are treated differently by CycleFinder
+        // vs. translate task.  Here they are directly passed to the binary, but in translate
+        // they are only on the translate source path (meaning they will only be translated with --build-closure).
+        def fullSrcFiles = J2objcUtils.addJavaFiles(
                 project, srcFiles, getGeneratedSourceDirs())
         sourcepath += J2objcUtils.absolutePathOrEmpty(
                 project, getGeneratedSourceDirs())
@@ -132,10 +154,6 @@ class J2objcCycleFinderTask extends DefaultTask {
             logger.debug "Add to sourcepath: ${getTranslateSourcepaths()}"
             sourcepath += ":${getTranslateSourcepaths()}"
         }
-
-        srcFiles = J2objcUtils.fileFilter(srcFiles,
-                getTranslateIncludeRegex(),
-                getTranslateExcludeRegex())
 
         def classPathArg = J2objcUtils.getClassPathArg(
                 project, getJ2ObjCHome(), getTranslateClassPaths(), getTranslateJ2objcLibs())
@@ -154,7 +172,7 @@ class J2objcCycleFinderTask extends DefaultTask {
 
                 args getCycleFinderFlags().split()
 
-                srcFiles.each { file ->
+                fullSrcFiles.each { file ->
                     args file.path
                 }
 

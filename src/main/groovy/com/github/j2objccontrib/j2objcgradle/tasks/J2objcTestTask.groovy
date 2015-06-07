@@ -32,9 +32,22 @@ class J2objcTestTask extends DefaultTask {
 
     // *Test.java files and TestRunner binary
     @InputFile
-    File srcFile
+    File testBinaryFile
+
     @InputFiles
-    FileCollection srcFiles
+    FileCollection getSrcFiles() {
+        // Note that neither testPattern nor translatePattern need  to be @Input methods because they are solely
+        // inputs to this method, which is already an input via @InputFiles.
+        def allFiles = J2objcUtils.srcDirs(project, 'test', 'java')
+
+        if (project.j2objcConfig.translatePattern != null) {
+            allFiles = allFiles.matching(project.j2objcConfig.translatePattern)
+        }
+        if (project.j2objcConfig.testPattern != null) {
+            allFiles = allFiles.matching(project.j2objcConfig.testPattern)
+        }
+        return allFiles
+    }
 
     // Report of test failures
     @OutputFile
@@ -45,19 +58,7 @@ class J2objcTestTask extends DefaultTask {
     String getTestFlags() { return project.j2objcConfig.testFlags }
 
     @Input
-    String getTestExcludeRegex() { return project.j2objcConfig.testExcludeRegex }
-
-    @Input
-    String getTestIncludeRegex() { return project.j2objcConfig.testIncludeRegex }
-
-    @Input
-    String getTranslateExcludeRegex() { return project.j2objcConfig.translateExcludeRegex }
-
-    @Input
     String getTranslateFlags() { return project.j2objcConfig.translateFlags }
-
-    @Input
-    String getTranslateIncludeRegex() { return project.j2objcConfig.translateIncludeRegex }
 
     @Input
     boolean getTestExecutedCheck() { return project.j2objcConfig.testExecutedCheck }
@@ -76,14 +77,6 @@ class J2objcTestTask extends DefaultTask {
 
         // Generate list of tests from the source java files
         // src/test/java/com/example/dir/ClassTest.java => "com.example.dir.ClassTest"
-
-        // Already filtered by ".*Test.java" before it arrives here
-        srcFiles = J2objcUtils.fileFilter(srcFiles,
-                getTranslateIncludeRegex(),
-                getTranslateExcludeRegex())
-        srcFiles = J2objcUtils.fileFilter(srcFiles,
-                getTestIncludeRegex(),
-                getTestExcludeRegex())
 
         // Generate Test Names
         def prefixesProperties = J2objcUtils.prefixProperties(project, getTranslateFlags())
@@ -109,8 +102,8 @@ class J2objcTestTask extends DefaultTask {
             return testName
         }
 
-        def binary = srcFile.path
-        logger.debug "Test Binary: " + srcFile.path
+        def binary = testBinaryFile.path
+        logger.debug "Test Binary: $binary"
 
         def outputStream = new ByteArrayOutputStream()
         project.exec {

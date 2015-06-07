@@ -15,7 +15,8 @@
  */
 
 package com.github.j2objccontrib.j2objcgradle
-
+import org.gradle.api.tasks.util.PatternSet
+import org.gradle.util.ConfigureUtil
 /**
  * Further configuration uses the following fields, setting them in j2objcConfig within build.gradle
  */
@@ -30,30 +31,9 @@ class J2objcPluginExtension {
     String destDirTest = null
 
     // Only generated source files, e.g. from dagger annotations. The script will
-    // ignore changes in this directory so they must be limited to generated files.
+    // ignore changes in this directory so they must be limited to files generated
+    // solely from files within your main and/or test sourceSets.
     String[] generatedSourceDirs = []
-
-    // TODO: consider removing support for non Java plugin projects
-    // Input source files for this plugin can be configured in a few ways.  The
-    // plugin will use the first valid option:
-    // 1. The flags below.  You can override 0 to 4 of the flags; any that are null
-    //    will backoff to the following.
-    // 2. Project SourceSets.  For example, if you use the 'java' or related plugins.
-    // 3. "Conventional" defaults for each directory, namely:
-    //    src/{main|test}/{java|resources}.  For example, if you use an automatically
-    //    converted Ant build.
-    //
-    // WARNING:
-    // We recommend using the standard java plugin (or derivatives) instead of
-    // configuring this plugin's source directories manually:
-    //     apply plugin: 'java'
-    // If you use the standard java plugin, any source set customization will be
-    // applied to this plugin as well, and many other plugins will understand
-    // your customizations without duplicating configuration.
-    String[] customMainSrcDirs = null  // defaults to ['src/main/java']
-    String[] customTestSrcDirs = null  // defaults to ['src/test/java']
-    String[] customMainResourcesSrcDirs = null  // defaults to ['src/main/resources']
-    String[] customTestResourcesSrcDirs = null  // defaults to ['src/test/resources']
 
     // CYCLEFINDER
     // TODO(bruno): consider enabling cycleFinder by default
@@ -97,43 +77,23 @@ class J2objcPluginExtension {
             // Libraries that don't need CycleFinder fixes
             "javax.inject-1.jar", "jsr305-3.0.0.jar",
             "mockito-core-1.9.5.jar"]
-    // Filter on files to translate:
-    // a) Regexes are ignored if null
-    // b) Matches on path + filename
-    // c) Must match IncludeRegex and NOT match ExcludeRegex
-    // Example:
-    //     translateExcludeRegex ".*/src/(main|test)/java/com/example/EXCLUDE_DIR/.*"
-    //     translateIncludeRegex ".*/TranslateOnlyMeAnd(|Test)\\.java"
-    // Would prefer to set as null but this doesn't work as @Input for incremental compile
-    String translateExcludeRegex = "^\$"
-    String translateIncludeRegex = "^.*\$"
 
-    private def classNameToFileRegex(def className) {
-        // Gradle java plugin convention dictates java roots end
-        // with a java directory.
-        return '^.*/java/' + className.replace('.', '/') + '\\.java$'
-    }
-
-    private def regexOr(def origRegex, def newPattern) {
-        if (origRegex == null || origRegex.empty) {
-            return newPattern
+    // Filter on files to translate.
+    // This filter is applied on top of all files within the 'main' and 'test'
+    // java sourceSets, example:
+    // translatePattern {
+    //     include '**/*.java'
+    //     exclude '**/SomeNativeCode.java'
+    // }
+    // If no pattern is specified, all files within the sourceSets are translated.
+    PatternSet translatePattern = null
+    // DSL method to conveniently configure the translatePattern.
+    def translatePattern(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = PatternSet) Closure cl) {
+        if (translatePattern == null) {
+            translatePattern = new PatternSet()
         }
-        return "(${origRegex})|(${newPattern})"
+        return ConfigureUtil.configure(cl, translatePattern)
     }
-
-    // TODO: Consider improved include/exclude patterns, See issue #57.
-    // Excludes a fully qualified class name from translation.
-    // Example: translateExcludeClass 'java.lang.String'
-    def translateExcludeClass(def className) {
-        translateExcludeRegex = regexOr(translateExcludeRegex, classNameToFileRegex(className))
-    }
-    // Includes a fully qualified class name in translation.
-    // Example: translateIncludeClass 'java.lang.String'
-    def translateIncludeClass(def className) {
-        translateIncludeRegex = regexOr(translateIncludeRegex, classNameToFileRegex(className))
-    }
-
-    // TODO: consider moving to include(s) / exclude(s) structure as used for filetree
 
     // Translation task additional paths
     String translateSourcepaths = null
@@ -147,10 +107,25 @@ class J2objcPluginExtension {
     boolean testSkip = false
     // Flags copied verbatim to testrunner command
     String testFlags = ""
-    // Filter tests, applied in addition to translate filters (see above)
-    // Would prefer to set as null but this doesn't work as @Input for incremental compile
-    String testExcludeRegex = "^\$"
-    String testIncludeRegex = "^.*\$"
+
+    // Filter on files to test.  Note this has no effect on which tests are
+    // translated, just which tests are executed by the j2objcTest task.
+    // This filter is applied on top of all files within the 'test'
+    // java sourceSet, example:
+    // testPattern {
+    //     include '**/*.java'
+    //     exclude '**/SomeNativeCodeTest.java'
+    // }
+    // If no pattern is specified, all files within the sourceSet are tested.
+    PatternSet testPattern = null
+    // DSL method to conveniently configure the testPattern.
+    def testPattern(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = PatternSet) Closure cl) {
+        if (testPattern == null) {
+            testPattern = new PatternSet()
+        }
+        return ConfigureUtil.configure(cl, testPattern)
+    }
+
     // Warn if no tests are executed
     boolean testExecutedCheck = true
 
