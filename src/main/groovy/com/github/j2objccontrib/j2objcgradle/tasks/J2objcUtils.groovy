@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.github.brunobowden.j2objcgradle.tasks
+package com.github.j2objccontrib.j2objcgradle.tasks
 
 import groovy.transform.PackageScope
 import org.gradle.api.InvalidUserDataException

@@ -1,6 +1,6 @@
-package com.github.brunobowden.j2objcgradle
+package com.github.j2objccontrib.j2objcgradle
 
-import com.github.brunobowden.j2objcgradle.tasks.J2objcUtils
+import com.github.j2objccontrib.j2objcgradle.tasks.J2objcUtils
 import org.gradle.api.Project
 import org.gradle.nativeplatform.NativeExecutableSpec
 import org.gradle.nativeplatform.NativeLibraryBinary

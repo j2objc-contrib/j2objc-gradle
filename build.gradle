@@ -32,7 +32,7 @@ repositories {
     mavenCentral()
 }
 
-group = 'com.github.brunobowden.j2objcgradle'
+group = 'com.github.j2objccontrib.j2objcgradle'
 version = '0.1.0-alpha'
 
 dependencies {

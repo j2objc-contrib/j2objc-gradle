@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.github.brunobowden.j2objcgradle
+package com.github.j2objccontrib.j2objcgradle
 
 /**
  * Further configuration uses the following fields, setting them in j2objcConfig within build.gradle

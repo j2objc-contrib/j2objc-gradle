@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.github.brunobowden.j2objcgradle
-import com.github.brunobowden.j2objcgradle.tasks.J2objcCopyTask
-import com.github.brunobowden.j2objcgradle.tasks.J2objcCycleFinderTask
-import com.github.brunobowden.j2objcgradle.tasks.J2objcTestTask
-import com.github.brunobowden.j2objcgradle.tasks.J2objcTranslateTask
-import com.github.brunobowden.j2objcgradle.tasks.J2objcXcodeTask
+package com.github.j2objccontrib.j2objcgradle
+import com.github.j2objccontrib.j2objcgradle.tasks.J2objcCopyTask
+import com.github.j2objccontrib.j2objcgradle.tasks.J2objcCycleFinderTask
+import com.github.j2objccontrib.j2objcgradle.tasks.J2objcTestTask
+import com.github.j2objccontrib.j2objcgradle.tasks.J2objcTranslateTask
+import com.github.j2objccontrib.j2objcgradle.tasks.J2objcXcodeTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel
