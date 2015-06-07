@@ -15,8 +15,6 @@
  */
 
 package com.github.brunobowden.j2objcgradle
-
-import com.github.brunobowden.j2objcgradle.tasks.J2objcCompileTask
 import com.github.brunobowden.j2objcgradle.tasks.J2objcCopyTask
 import com.github.brunobowden.j2objcgradle.tasks.J2objcCycleFinderTask
 import com.github.brunobowden.j2objcgradle.tasks.J2objcTestTask
@@ -25,7 +23,6 @@ import com.github.brunobowden.j2objcgradle.tasks.J2objcXcodeTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel
-
 /*
  * Usage:
  * 1) Download a j2objc release and unzip it to a directory:
@@ -107,28 +104,30 @@ class J2objcPlugin implements Plugin<Project> {
                 destDir = file("${buildDir}/j2objc")
             }
 
-            tasks.create(name: "j2objcCompile", type: J2objcCompileTask,
-                    dependsOn: 'j2objcTranslate') {
-                description "Compiles the j2objc generated Objective-C code to 'testrunner' binary"
-                srcDir = file("${buildDir}/j2objc")
-                destFile = file("${buildDir}/j2objcc/testrunner")
-            }
+            // Configures native compilation for the production library and the test executable.
+            new J2objcNativeCompilation().apply(project)
 
+            // Note the 'debugTestJ2objcExecutable' task is dynamically created by the objective-c plugin applied
+            // on the above line.  It is specified by the testJ2objc native component.
             tasks.create(name: "j2objcTest", type: J2objcTestTask,
-                    dependsOn: 'j2objcCompile') {
+                    dependsOn: 'debugTestJ2objcExecutable') {
                 description 'Runs all tests in the generated Objective-C code'
-                srcFile = file("${buildDir}/j2objcc/testrunner")
+                srcFile = file("${buildDir}/binaries/testJ2objcExecutable/debug/testJ2objc")
                 // Doesn't use 'buildDir' as missing full path with --no-package-directories flag
                 // TODO: Once this is a proper plugin, we can switch this to use SourceSets.
                 srcFiles = files(fileTree(dir: projectDir, includes: ["**/*Test.java"]))
             }
+            // Check task is added by lifecycle plugin.
+            lateDependsOn(project, 'j2objcTest', 'check')
 
+            // TODO: Copy the built binaries to the destination directory, not just the source files.
             tasks.create(name: 'j2objcCopy', type: J2objcCopyTask,
                     dependsOn: 'j2objcTest') {
                 description 'Depends on j2objc translation and test, copies to destDir'
                 // TODO: make "${buildDir}/j2objc" a shared config variable.
                 srcDir = file("${buildDir}/j2objc")
             }
+            lateDependsOn(project, 'j2objcCopy', 'assemble')
 
             tasks.create(name: 'j2objcXcode', type: J2objcXcodeTask,
                     dependsOn: 'j2objcTest') {
@@ -149,6 +148,23 @@ class J2objcPlugin implements Plugin<Project> {
                         "will build and run that first to make sure the project builds correctly.\n" +
                         "This will not be done here as it can't be found."
                 logger.warn message
+            }
+        }
+    }
+
+    // Has task named afterTaskName depend on the task named beforeTaskName, regardless of
+    // whether afterTaskName has been created yet or not.
+    // The before task must already exist.
+    private def lateDependsOn(Project proj, String beforeTaskName, String afterTaskName) {
+        assert null != proj.tasks.findByName(beforeTaskName)
+        def afterTask = proj.tasks.findByName(afterTaskName)
+        if (afterTask != null) {
+            afterTask.dependsOn beforeTaskName
+        } else {
+            proj.tasks.whenTaskAdded { task ->
+                if (task.name == afterTaskName) {
+                    task.dependsOn beforeTaskName
+                }
             }
         }
     }
