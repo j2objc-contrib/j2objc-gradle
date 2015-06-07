@@ -15,7 +15,6 @@
  */
 
 package com.github.j2objccontrib.j2objcgradle.tasks
-
 import org.gradle.api.DefaultTask
 import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.file.FileCollection
@@ -25,19 +24,63 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
-
 /**
  *
  */
 class J2objcTranslateTask extends DefaultTask {
 
-    // Java source files
+    // Source files outside of the Java sourceSets of main and test.
+    FileCollection additionalSrcFiles
+
+    // Source files part of the Java sourceSets of main and test.
     @InputFiles
-    FileCollection srcFiles
+    FileCollection getSrcFiles() {
+        // Note that neither additionalSrcFiles nor translatePattern need
+        // to be @Inputs because they are solely inputs to this method, which
+        // is already an input.
+        def allFiles = J2objcUtils.srcDirs(project, 'main', 'java')
+        allFiles = allFiles.plus(J2objcUtils.srcDirs(project, 'test', 'java'))
+
+        if (project.j2objcConfig.translatePattern != null) {
+            allFiles = allFiles.matching(project.j2objcConfig.translatePattern)
+        }
+        if (additionalSrcFiles != null) {
+            allFiles = allFiles.plus(additionalSrcFiles)
+        }
+        return allFiles
+    }
+
+    // All input files that could affect translation output, except those in j2objc itself.
+    @InputFiles
+    FileCollection getAllInputFiles() {
+        FileCollection allFiles = srcFiles
+        if (getTranslateSourcepaths()) {
+            def translateSourcepathPaths = getTranslateSourcepaths().split(':') as List<String>
+            translateSourcepathPaths.each {
+                allFiles = allFiles.plus(project.files(it))
+            }
+        }
+        generatedSourceDirs.each {
+            allFiles = allFiles.plus(project.files(it))
+        }
+        translateClassPaths.each {
+            allFiles = allFiles.plus(project.files('lib/' + it))
+        }
+        if (getAppendProjectDependenciesToSourcepath()) {
+            project.configurations.compile.allDependencies.each { dep ->
+                if (dep instanceof ProjectDependency) {
+                    def depProj = ((ProjectDependency) dep).getDependencyProject()
+                    allFiles = allFiles.plus(J2objcUtils.srcDirs(depProj, 'main', 'java'))
+                }
+            }
+        }
+        return allFiles
+    }
 
     // Generated ObjC files
     @OutputDirectory @Optional
     File destDir
+
 
     // j2objcConfig dependencies for UP-TO-DATE checks
     @Input
@@ -45,12 +88,6 @@ class J2objcTranslateTask extends DefaultTask {
 
     @Input
     String getTranslateFlags() { return project.j2objcConfig.translateFlags }
-
-    @Input
-    String getTranslateExcludeRegex() { return project.j2objcConfig.translateExcludeRegex }
-
-    @Input
-    String getTranslateIncludeRegex() { return project.j2objcConfig.translateIncludeRegex }
 
     @Input @Optional
     String getTranslateSourcepaths() { return project.j2objcConfig.translateSourcepaths }
@@ -72,46 +109,82 @@ class J2objcTranslateTask extends DefaultTask {
     @Input
     List<String> getTranslateJ2objcLibs() { return project.j2objcConfig.translateJ2objcLibs }
 
-
     @TaskAction
     def translate(IncrementalTaskInputs inputs) {
-        logger.debug "Source files: " + srcFiles.getFiles().size()
-        FileCollection srcFilesChanged = project.files()
-        inputs.outOfDate { change ->
-            logger.debug "New or Updated file: " + change.file
-            srcFilesChanged += project.files(change.file)
-        }
-        def removedFileNames = []
-        inputs.removed { change ->
-            logger.debug "Removed file: " + change.file.name
-            def nameWithoutExt = file.name.toString().replaceFirst("\\..*", "")
-            removedFileNames += nameWithoutExt
-        }
-        logger.debug "Removed files: " + removedFileNames.size()
+        def translateFlags = project.j2objcConfig.translateFlags
+        // Don't evaluate this expensive property multiple times.
+        def originalSrcFiles = srcFiles
 
-        logger.debug "New or Updated files: " + srcFilesChanged.getFiles().size()
-        FileCollection translatedSrcFiles = srcFiles - srcFilesChanged
-        logger.debug "Unchanged files: " + translatedSrcFiles.getFiles().size()
+        logger.debug "All source files: " + originalSrcFiles.getFiles().size()
 
-        def translatedFiles = 0
-        if (destDir.exists()) {
-            FileCollection destFiles = project.files(project.fileTree(
-                    dir: destDir, includes: ["**/*.h", "**/*.m"]))
-
-            // remove translated .h and .m files which has no corresponding .java files anymore
-            destFiles.each { File file ->
-                def nameWithoutExt = file.name.toString().replaceFirst("\\..*", "")
-                if (removedFileNames.contains(nameWithoutExt)) {
-                    file.delete()
+        FileCollection srcFilesChanged
+        if (translateFlags.contains('--build-closure') && !project.j2objcConfig.UNSAFE_incrementalBuildClosure) {
+            // We cannot correctly perform incremental compilation with --build-closure.
+            // Consider the example where src/main/Something.java is deleted, we would not
+            // be able to also delete the files that only Something.java depends on.
+            // Due to this issue, incremental builds with --build-closure are enabled ONLY
+            // if the user requests it with the UNSAFE_incrementalBuildClosure flag.
+            // TODO: One correct way to incrementally compile with --build-closure would be to use
+            // allInputFiles someway, but this will require some research.
+            if (destDir.exists()) {
+                destDir.deleteDir()
+                destDir.mkdirs()
+            }
+            srcFilesChanged = originalSrcFiles
+        } else {
+            srcFilesChanged = project.files()
+            inputs.outOfDate { change ->
+                // We must filter by srcFiles, since all possible input files are @InputFiles to this task.
+                if (originalSrcFiles.contains(change.file)) {
+                    logger.debug "New or Updated file: " + change.file
+                    srcFilesChanged += project.files(change.file)
                 }
             }
-            // compute the number of translated files
-            translatedFiles = destFiles.getFiles().size()
+            def removedFileNames = []
+            inputs.removed { change ->
+                // We must filter by srcFiles, since all possible input files are @InputFiles to this task.
+                if (originalSrcFiles.contains(change.file)) {
+                    logger.debug "Removed file: " + change.file.name
+                    def nameWithoutExt = file.name.toString().replaceFirst("\\..*", "")
+                    removedFileNames += nameWithoutExt
+                }
+            }
+            logger.debug "Removed files: " + removedFileNames.size()
+
+            logger.debug "New or Updated files: " + srcFilesChanged.getFiles().size()
+            FileCollection unchangedSrcFiles = originalSrcFiles - srcFilesChanged
+            logger.debug "Unchanged files: " + unchangedSrcFiles.getFiles().size()
+
+            def translatedFiles = 0
+            if (destDir.exists()) {
+                FileCollection destFiles = project.files(project.fileTree(
+                        dir: destDir, includes: ["**/*.h", "**/*.m"]))
+
+                // remove translated .h and .m files which has no corresponding .java files anymore
+                destFiles.each { File file ->
+                    def nameWithoutExt = file.name.toString().replaceFirst("\\..*", "")
+                    if (removedFileNames.contains(nameWithoutExt)) {
+                        file.delete()
+                    }
+                }
+                // compute the number of translated files
+                translatedFiles = destFiles.getFiles().size()
+            }
+
+            // add java classpath base to classpath for incremental translation
+            // we have to check if translation has been done before or not
+            // if it is only an incremental build we must remove the --build-closure
+            // argument to make fewer translations of dependent classes
+            // NOTE: There is one case which fails, when you have translated the code
+            // make an incremental change which refers to a not yet translated class from a
+            // source lib. In this case due to not using --build-closure the dependent source
+            // will not be translated, this can be fixed with a clean and fresh build.
+            // Due to this issue, incremental builds with --build-closure are enabled ONLY
+            // if the user requests it with the UNSAFE_incrementalBuildClosure flag.
+            if (translatedFiles > 0 && project.j2objcConfig.UNSAFE_incrementalBuildClosure) {
+                translateFlags = translateFlags.toString().replaceFirst("--build-closure", "").trim()
+            }
         }
-
-        // set the srcFiles to the files which need to be translated
-        srcFiles = srcFilesChanged
-
 
         def j2objcExec = getJ2ObjCHome() + "/j2objc"
         def windowsOnlyArgs = ""
@@ -137,15 +210,13 @@ class J2objcTranslateTask extends DefaultTask {
             project.configurations.compile.allDependencies.each { dep ->
                 if (dep instanceof ProjectDependency) {
                     def depProj = ((ProjectDependency) dep).getDependencyProject()
-                    depSourcePaths += J2objcUtils.srcDirs(depProj, 'main', 'java')
+                    J2objcUtils.srcDirs(depProj, 'main', 'java').srcDirs.each {
+                        depSourcePaths.add(it.path)
+                    }
                 }
             }
             sourcepath += ':' + depSourcePaths.join(':')
         }
-
-        srcFiles = J2objcUtils.fileFilter(srcFiles,
-                getTranslateIncludeRegex(),
-                getTranslateExcludeRegex())
 
         // TODO perform file collision check with already translated files in the destDir
         if (getFilenameCollisionCheck()) {
@@ -156,21 +227,6 @@ class J2objcTranslateTask extends DefaultTask {
                 project, getJ2ObjCHome(), getTranslateClassPaths(), getTranslateJ2objcLibs())
 
         classPathArg += ":${project.buildDir}/classes"
-
-        // add java classpath base to classpath for incremental translation
-        // we have to check if translation has been done before or not
-        // if it is only an incremental build we must remove the --build-closure
-        // argument to make fewer translations of dependent classes
-        // NOTE: There is one case which fails, when you have translated the code
-        // make an incremental change which refers to a not yet translated class from a
-        // source lib. In this case due to not using --build-closure the dependent source
-        // will not be translated, this can be fixed with a clean and fresh build.
-        // Due to this issue, incremental builds with --build-closure are enabled ONLY
-        // if the user requests it with the UNSAFE_incrementalBuildClosure flag.
-        def translateFlags = project.j2objcConfig.translateFlags
-        if (translatedFiles > 0 && project.j2objcConfig.UNSAFE_incrementalBuildClosure) {
-            translateFlags = translateFlags.toString().replaceFirst("--build-closure", "").trim()
-        }
 
         def output = new ByteArrayOutputStream()
 
@@ -188,7 +244,7 @@ class J2objcTranslateTask extends DefaultTask {
 
                 args translateFlags.split()
 
-                srcFiles.each { file ->
+                srcFilesChanged.each { file ->
                     args file.path
                 }
                 standardOutput output
@@ -196,34 +252,6 @@ class J2objcTranslateTask extends DefaultTask {
             }
 
         } catch (e) {
-            // Warn and explain typical case of Android application trying to translate
-            // what can't be translated. Suggest instead excluding incompatible files.
-            // Then finally rethrow the existing error.
-            if (!project.plugins.findPlugin('java')) {
-                if (getTranslateExcludeRegex() == "^\$" &&
-                    getTranslateIncludeRegex() == "^.*\$") {
-
-                    def message =
-                            "\n" +
-                            "J2objc by design will not translate your entire Android application.\n" +
-                            "It focuses on the business logic, the UI should use native code:\n" +
-                            "  https://github.com/google/j2objc/blob/master/README.md\n" +
-                            "\n" +
-                            "The best practice over time is to separate out the shared code to a\n" +
-                            "distinct java project with NO android dependencies.\n" +
-                            "\n" +
-                            "As a step towards that, you can configure the j2objc plugin to only\n" +
-                            "translate a subset of files that don't depend on Android. The settings\n" +
-                            "are regular expressions on the file path. For example:\n" +
-                            "\n" +
-                            "j2objcConfig {\n" +
-                            "    translateIncludeRegex \".*/src/main/java/com/example/TranslateThisDirectoryOnly/.*\n" +
-                            "    translateExcludeRegex \".*/(SkipThisClass|AlsoSkipThisClass)\\.java\"\n" +
-                            "}\n"
-
-                    logger.warn message
-                }
-            }
             def processOutput = output.toString()
             logger.debug 'Translation output:'
             logger.debug processOutput

@@ -15,11 +15,11 @@
  */
 
 package com.github.j2objccontrib.j2objcgradle.tasks
-
-import groovy.transform.PackageScope
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
+import org.gradle.api.file.SourceDirectorySet
+import org.gradle.api.tasks.SourceSet
 
 /**
  * Internal utilities supporting plugin implementation.
@@ -32,51 +32,22 @@ class J2objcUtils {
         return System.getProperty("os.name").toLowerCase().contains("windows")
     }
 
-    // Retrieves the configured source directories per specification indicated
-    // in documentation of 'custom.*SrcDirs'.
-    private final static def DEFAULT_SOURCE_DIRECTORIES =
-            [main: [java: ['src/main/java'], resources: ['src/main/resources']],
-             test: [java: ['src/test/java'], resources: ['src/test/resources']]]
-
-    static def srcDirs(Project proj, String sourceSetName, String fileType) {
+    // Retrieves the configured source directories from the Java plugin SourceSets.
+    static SourceDirectorySet srcDirs(Project proj, String sourceSetName, String fileType) {
         assert fileType == 'java' || fileType == 'resources'
         assert sourceSetName == 'main' || sourceSetName == 'test'
-        // Note that subprojects can also be passed to this method; such projects
-        // may not have j2objcConfig.
-        if (proj.hasProperty('j2objcConfig')) {
-            String custom = null
-            if (fileType == 'java') {
-                custom = sourceSetName == 'test' ?
-                         proj.j2objcConfig.customTestSrcDirs :
-                         proj.j2objcConfig.customMainSrcDirs
-            } else if (fileType == 'resources') {
-                custom = sourceSetName == 'test' ?
-                         proj.j2objcConfig.customTestResourcesSrcDirs :
-                         proj.j2objcConfig.customMainResourcesSrcDirs
-            }
-            // We intentionally check for nulls only.  It is valid to desire
-            // an empty list of (i.e. no) source directories.
-            if (custom != null) {
-                return custom.collect({ proj.file(it) })
-            }
-        }
-        if (proj.hasProperty('sourceSets')) {
-            def sourceSet = proj.sourceSets.findByName(sourceSetName)
-            if (sourceSet != null) {
-                // For standard fileTypes 'java' and 'resources,' per contract
-                // this cannot be null.
-                return sourceSet.getProperty(fileType).srcDirs
-            }
-        }
-        return DEFAULT_SOURCE_DIRECTORIES[sourceSetName][fileType].collect({ proj.file(it) })
+        SourceSet sourceSet = proj.sourceSets.findByName(sourceSetName)
+        // For standard fileTypes 'java' and 'resources,' per contract
+        // this cannot be null.
+        return sourceSet.getProperty(fileType)
     }
 
     static def sourcepathJava(Project proj) {
         def javaRoots = []
-        srcDirs(proj, 'main', 'java').each {
+        srcDirs(proj, 'main', 'java').srcDirs.each {
             javaRoots += it.path
         }
-        srcDirs(proj, 'test', 'java').each {
+        srcDirs(proj, 'test', 'java').srcDirs.each {
             javaRoots += it.path
         }
         return javaRoots.join(':')
