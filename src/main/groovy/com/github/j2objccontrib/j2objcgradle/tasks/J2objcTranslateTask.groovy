@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.github.brunobowden.j2objcgradle.tasks
+package com.github.j2objccontrib.j2objcgradle.tasks
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.artifacts.ProjectDependency
