@@ -15,11 +15,13 @@
  */
 
 package com.github.j2objccontrib.j2objcgradle
-import com.github.j2objccontrib.j2objcgradle.tasks.J2objcCopyTask
+import com.github.j2objccontrib.j2objcgradle.tasks.J2objcAssembleTask
 import com.github.j2objccontrib.j2objcgradle.tasks.J2objcCycleFinderTask
 import com.github.j2objccontrib.j2objcgradle.tasks.J2objcTestTask
 import com.github.j2objccontrib.j2objcgradle.tasks.J2objcTranslateTask
+import com.github.j2objccontrib.j2objcgradle.tasks.J2objcUtils
 import com.github.j2objccontrib.j2objcgradle.tasks.J2objcXcodeTask
+import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -93,12 +95,29 @@ class J2objcPlugin implements Plugin<Project> {
             }
 
             extensions.create("j2objcConfig", J2objcPluginExtension)
+            afterEvaluate { evaluatedProject ->
+                // Validate minimally required parameters.
+                // j2objcHome() will throw the appropriate exception internally.
+                assert J2objcUtils.j2objcHome(evaluatedProject)
+                evaluatedProject.j2objcConfig.configureDefaults(evaluatedProject)
+            }
+
+            // This is an intermediate directory only.  Clients should use only directories
+            // specified in j2objcConfig (or associated defaults in J2objcPluginExtension).
+            def j2objcSrcGenDir = file("${buildDir}/j2objcSrcGen")
 
             // Produces a modest amount of output
             logging.captureStandardOutput LogLevel.INFO
 
-            tasks.create(name: "j2objcCycleFinder", type: J2objcCycleFinderTask,
+            // If users need to generate extra files that j2objc depends on, they can make this task dependent
+            // on such generation.
+            tasks.create(name: "j2objcPreBuild", type: DefaultTask,
                     dependsOn: 'test') {
+                description "Marker task for all tasks that must be complete before j2objc building"
+            }
+
+            tasks.create(name: "j2objcCycleFinder", type: J2objcCycleFinderTask,
+                    dependsOn: 'j2objcPreBuild') {
                 description "Run the cycle_finder tool on all Java source files"
             }
 
@@ -112,11 +131,12 @@ class J2objcPlugin implements Plugin<Project> {
                         fileTree(dir: "build/source/apt",
                                 include: "**/*.java")
                 )
-                destDir = file("${buildDir}/j2objc")
+                // TODO: rename associated Task inputs to srcGenDir as appropriate.
+                destDir = j2objcSrcGenDir
             }
 
             // Configures native compilation for the production library and the test executable.
-            new J2objcNativeCompilation().apply(project)
+            new J2objcNativeCompilation().apply(project, j2objcSrcGenDir)
 
             // Note the 'debugTestJ2objcExecutable' task is dynamically created by the objective-c plugin applied
             // on the above line.  It is specified by the testJ2objc native component.
@@ -129,19 +149,19 @@ class J2objcPlugin implements Plugin<Project> {
             // now including 'j2objcTest'.
             lateDependsOn(project, 'check', 'j2objcTest')
 
-            // TODO: Copy the built binaries to the destination directory, not just the source files.
-            tasks.create(name: 'j2objcCopy', type: J2objcCopyTask,
-                    dependsOn: 'j2objcTest') {
-                description 'Depends on j2objc translation and test, copies to destDir'
-                // TODO: make "${buildDir}/j2objc" a shared config variable.
-                srcDir = file("${buildDir}/j2objc")
+            tasks.create(name: 'j2objcAssemble', type: J2objcAssembleTask,
+                    dependsOn: ['j2objcTest', 'buildAllObjcLibraries']) {
+                description 'Copies final generated source after testing to assembly directories'
+                srcDir = j2objcSrcGenDir
+                libDir = file("${buildDir}/binaries/${project.name}-j2objcStaticLibrary")
             }
-            lateDependsOn(project, 'assemble', 'j2objcCopy')
+            lateDependsOn(project, 'assemble', 'j2objcAssemble')
 
+            // TODO: Where shall we fit this task in the plugin lifecycle?
             tasks.create(name: 'j2objcXcode', type: J2objcXcodeTask,
                     dependsOn: 'j2objcTest') {
                 description 'Depends on j2objc translation, create a Pod file link it to Xcode project'
-                srcDir = file("${buildDir}/j2objc")
+                srcDir = j2objcSrcGenDir
             }
         }
     }

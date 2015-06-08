@@ -11,7 +11,7 @@ import org.gradle.nativeplatform.toolchain.Clang
  *
  */
 class J2objcNativeCompilation {
-    def apply(Project project) {
+    def apply(Project project, File srcGenDir) {
         project.with {
             // Wire up dependencies with tasks created dynamically by native plugin(s).
             tasks.whenTaskAdded { task ->
@@ -85,14 +85,14 @@ class J2objcNativeCompilation {
                         sources {
                             objc {
                                 source {
-                                    srcDirs "${buildDir}/j2objc", "${buildDir}/j2objcForceCompilation"
+                                    srcDirs "${srcGenDir}", "${buildDir}/j2objcForceCompilation"
                                     include '**/*.m'
                                     exclude '**/*Test.m'
                                 }
                                 // NOTE: Gradle has not yet implemented automatically archiving the
                                 // exportedHeaders, this serves solely as a signifier for now.
                                 exportedHeaders {
-                                    srcDirs "${buildDir}/j2objc"
+                                    srcDirs "${srcGenDir}"
                                     include '**/*.h'
                                     exclude '**/*Test.h'
                                 }
@@ -108,7 +108,7 @@ class J2objcNativeCompilation {
                         sources {
                             objc {
                                 source {
-                                    srcDirs "${buildDir}/j2objc", "${buildDir}/j2objcForceCompilation"
+                                    srcDirs "${srcGenDir}", "${buildDir}/j2objcForceCompilation"
                                     include '**/*Test.m'
                                 }
                             }
@@ -153,10 +153,10 @@ class J2objcNativeCompilation {
                 }
             }
 
-            // Marker task to build all objective-c binaries.
+            // Marker task to build all objective-c libraries.
             // From Gradle User Guide: 54.14.5. Building all possible variants
             // https://docs.gradle.org/current/userguide/nativeBinaries.html#N161B3
-            task('buildAllObjcBinaries').configure {
+            task('buildAllObjcLibraries').configure {
                 dependsOn binaries.withType(NativeLibraryBinary).matching {
                     it.buildable
                 }
