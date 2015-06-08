@@ -59,7 +59,7 @@ class J2objcPluginExtension {
     // A list of all possible flag can be found here
     // https://github.com/google/j2objc/blob/master/translator/src/main/resources/com/google/devtools/j2objc/J2ObjC
     // .properties
-    String translateFlags = "--no-package-directories"
+    String translateFlags = "--no-package-directories --static-accessor-methods"
     // -classpath library additions from ${projectDir}/lib/, e.g.: "json-20140107.jar", "somelib.jar"
     String[] translateClassPaths = []
 
