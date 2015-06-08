@@ -111,13 +111,14 @@ class J2objcCycleFinderTask extends DefaultTask {
         if (getCycleFinderFlags() == null) {
             def message =
                     "CycleFinder is more difficult to setup and use, though it's hoped to improve\n" +
-                    "this for the future. For now there are two ways to set it up:\n" +
+                    "this for the future. There are two ways to configure it in build.gradle:\n" +
                     "\n" +
                     "SIMPLE: set cycleFinderFlags to empty string:\n" +
-                    "    j2objcConfig {\n" +
-                    "        cycleFinder true\n" +
-                    "        cycleFinderFlags \"\"\n" +
-                    "    }\n" +
+                    "\n" +
+                    "j2objcConfig {\n" +
+                    "    cycleFinder true\n" +
+                    "    cycleFinderFlags \"\"\n" +
+                    "}\n" +
                     "\n" +
                     "DIFFICULT:\n" +
                     "1) Download the j2objc source:\n" +
@@ -125,15 +126,15 @@ class J2objcCycleFinderTask extends DefaultTask {
                     "2) Within your local j2objc repo run:\n" +
                     "    \$ (cd jre_emul && make java_sources_manifest)\n" +
                     "3) Configure j2objcConfig in build.gradle so CycleFinder uses j2objc source:\n" +
-                    "    j2objcConfig {\n" +
-                    "        cycleFinder true\n" +
-                    "        cycleFinderFlags (\n" +
-                    "                \"--whitelist \${projectDir}/../../<J2OBJC_REPO>/jre_emul/cycle_whitelist.txt " +
+                    "j2objcConfig {\n" +
+                    "    cycleFinder true\n" +
+                    "    cycleFinderFlags (\n" +
+                    "            \"--whitelist \${projectDir}/../../<J2OBJC_REPO>/jre_emul/cycle_whitelist.txt " +
                     "\\\n" +
-                    "                 --sourcefilelist \${projectDir}/../." +
+                    "             --sourcefilelist \${projectDir}/../." +
                     "./<J2OBJC_REPO>/jre_emul/build_result/java_sources.mf\")\n" +
-                    "        cycleFinderExpectedCycles 0\n" +
-                    "    }\n" +
+                    "    cycleFinderExpectedCycles 0\n" +
+                    "}\n" +
                     "Also see: https://groups.google.com/forum/#!msg/j2objc-discuss/2fozbf6-liM/R83v7ffX5NMJ"
             throw new InvalidUserDataException(message)
         }
@@ -180,27 +181,23 @@ class J2objcCycleFinderTask extends DefaultTask {
                 standardOutput output;
             }
 
-        } catch (e) {
+        } catch (Exception exception) {
 
-            def out = output.toString()
-
-            def matcher = (out =~ /(\d+) CYCLES FOUND/)
-            if (!matcher.find()) {
-                logger.error out
-                throw new InvalidUserDataException("Can't find XX CYCLES FOUND")
-            } else {
-                def cycleCountStr = matcher[0][1]
-                if (!cycleCountStr.isInteger()) {
-                    logger.error out
-                    throw new InvalidUserDataException("XX CYCLES FOUND isn't integer: " + matcher[0][0])
-                }
-                def cyclesFound = cycleCountStr.toInteger()
-                if (cyclesFound != getCycleFinderExpectedCycles()) {
-                    logger.error out
-                    logger.error("Cycles found (${cyclesFound}) != " +
-                                 "cycleFinderExpectedCycles (${getCycleFinderExpectedCycles()})")
-                    throw e
-                }
+            def outputStr = output.toString()
+            int cyclesFound = J2objcUtils.matchNumberRegex(outputStr, /(\d+) CYCLES FOUND/)
+            if (cyclesFound != getCycleFinderExpectedCycles()) {
+                logger.error outputStr
+                def message =
+                        "Unexpected number of cycles founder:\n" +
+                        "Cycles found:     ${cyclesFound}\n" +
+                        "Expected cycles:  ${getCycleFinderExpectedCycles()}\n" +
+                        "\n" +
+                        "You should investigate the change and if ok, modify build.gradle:\n" +
+                        "\n" +
+                        "j2objcConfig {\n" +
+                        "    cycleFinderExpectedCycles ${cyclesFound}\n" +
+                        "}\n"
+                throw new Exception(message)
             }
             // Suppress exception when cycles found == cycleFinderExpectedCycles
         }

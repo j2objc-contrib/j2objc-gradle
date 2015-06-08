@@ -25,6 +25,8 @@ import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
+import java.util.regex.Pattern
+
 /**
  *
  */
@@ -61,7 +63,7 @@ class J2objcTestTask extends DefaultTask {
     String getTranslateFlags() { return project.j2objcConfig.translateFlags }
 
     @Input
-    boolean getTestExecutedCheck() { return project.j2objcConfig.testExecutedCheck }
+    int getTestMinExpectedTests() { return project.j2objcConfig.testMinExpectedTests }
 
     @Input
     boolean getTestSkip() { return project.j2objcConfig.testSkip }
@@ -105,37 +107,96 @@ class J2objcTestTask extends DefaultTask {
         def binary = testBinaryFile.path
         logger.debug "Test Binary: $binary"
 
-        def outputStream = new ByteArrayOutputStream()
-        project.exec {
-            executable binary
-            args "org.junit.runner.JUnitCore"
+        def output = new ByteArrayOutputStream()
+        try {
+            project.exec {
+                executable binary
+                args "org.junit.runner.JUnitCore"
 
-            args getTestFlags().split()
+                args getTestFlags().split()
 
-            testNames.each { testName ->
-                args testName
+                testNames.each { testName ->
+                    args testName
+                }
+
+                errorOutput output
+                standardOutput output
             }
-
-            errorOutput outputStream
-            standardOutput outputStream
+        } catch (Exception exception) {
+            logger.error "STDOUT and STDERR from failed j2objcTest task:"
+            logger.error output.toString()
+            def message =
+                    "The j2objcTest task failed. Given that the java plugin 'test' task\n" +
+                    "completed successfully, this shows an error specific to the j2objc build.\n" +
+                    "It may be that the code will still perform correctly. If you can identify\n" +
+                    "the failing test, then it can be excluded by modifying build.gradle:\n" +
+                    "\n" +
+                    "j2objcConfig {\n" +
+                    "    testPattern {\n" +
+                    "        exclude '**/FailingTest.java'\n" +
+                    "        exclude 'src/main/java/Package/FailingDirectory/**'\n" +
+                    "    }\n" +
+                    "}\n" +
+                    "\n" +
+                    "To identify the failing test, run with the --debug flag and look for:\n" +
+                    "    testJ2objc org.junit.runner.JUnitCore\n" +
+                    "Copy the command from \"Command:\" onwards, then try varying the command\n" +
+                    "to drop tests and figure out which ones are causing the failures.\n"
+                    "Then disable them as described above.\n"
+            if (exception.getMessage().find("finished with non-zero exit value 139")) {
+                message +=
+                        "\n" +
+                        "\"non-zero exit value 139\" indicates a process crash, most likely\n" +
+                        "caused by a segmentation fault (SIGSEGV) in user space.\n" +
+                        "\n" +
+                        "Look at the known crash issues to see if any may be causing this:\n" +
+                        "    https://github.com/google/j2objc/issues?q=is%3Aissue+crash+is%3Aopen+\n"
+            }
+            logger.error message
+            throw exception
         }
 
-        def output = outputStream.toString()
-        reportFile.write(output)
+        // Test Output Report
+        def outputStr = output.toString()
+        reportFile.write(outputStr)
         logger.debug "Test Output: ${reportFile.path}"
 
-        // 0 tests => warn by default
-        if (getTestExecutedCheck()) {
-            if (output.contains("OK (0 tests)")) {
-                def message =
-                        "Zero unit tests were run. Tests are strongly encouraged with J2objc:\n" +
+        int testCount = J2objcUtils.matchNumberRegex(outputStr, /OK \((\d+) tests\)/)
+        def message =
+                "\n" +
+                "j2objcConfig {\n" +
+                "    testMinExpectedTests ${testCount}\n" +
+                "}\n"
+        if (getTestMinExpectedTests() == 0) {
+            logger.warning "Min Test check disabled due to: 'testMinExpectedTests 0'"
+        } else if (testCount < getTestMinExpectedTests()) {
+            if (testCount == 0) {
+                message =
+                        "No unit tests were run. Unit tests are strongly encouraged with J2ObjC.\n" +
+                        "J2ObjC build of project '${project.name}'\n" +
                         "\n" +
-                        "To disable this check (which is against best practice):\n" +
-                        "j2objcConfig {\n" +
-                        "    testExecutedCheck false\n" +
-                        "}\n"
-                throw new InvalidUserDataException(message)
+                        "To disable this check (against best practice), modify build.gradle:\n" +
+                        message
+            } else {
+                message =
+                        "Number of unit tests run is less than expected:\n" +
+                        "J2ObjC build of project '${project.name}'\n" +
+                        "Actual Tests Run:    ${testCount}\n" +
+                        "Expected Tests Run:  ${getTestMinExpectedTests()}\n" +
+                        "\n" +
+                        "If there are legitimately fewer tests, then modify build.gradle:\n" +
+                        message
             }
+            throw new Exception(message)
+        } else if (testCount != getTestMinExpectedTests()) {
+            assert getTestMinExpectedTests() > 0
+            assert getTestMinExpectedTests() < testCount
+            message =
+                    "testMinExpectedTests can be increased to guard against tests\n" +
+                    "being accidentally missed in the future by modifying build.gradle\n" +
+                    "J2ObjC build of project '${project.name}'\n" +
+                    message
+            logger.debug message
         }
     }
 }

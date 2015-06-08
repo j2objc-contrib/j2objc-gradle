@@ -83,12 +83,12 @@ class J2objcPlugin implements Plugin<Project> {
                         "Within that project, first apply the 'java' then 'j2objc' plugins by adding\n" +
                         "the following lines to the build.gradle file:\n" +
                         "\n" +
-                        "    apply plugin: 'java'\n" +
-                        "    apply plugin: 'j2objc'\n" +
+                        "apply plugin: 'java'\n" +
+                        "apply plugin: 'j2objc'\n" +
                         "\n" +
-                        "    j2objcConfig {\n" +
-                        "        // j2objc settings here\n" +
-                        "    }\n" +
+                        "j2objcConfig {\n" +
+                        "    // j2objc settings here\n" +
+                        "}\n" +
                         "\n" +
                         "More Info: https://github.com/j2objc-contrib/j2objc-gradle/#usage"
                 throw new InvalidUserDataException(message)
@@ -131,8 +131,8 @@ class J2objcPlugin implements Plugin<Project> {
                         fileTree(dir: "build/source/apt",
                                 include: "**/*.java")
                 )
-                // TODO: rename associated Task inputs to srcGenDir as appropriate.
-                destDir = j2objcSrcGenDir
+                // Output directory of 'j2objcTranslate', input for all other tasks
+                srcGenDir = j2objcSrcGenDir
             }
 
             // Configures native compilation for the production library and the test executable.
@@ -152,7 +152,7 @@ class J2objcPlugin implements Plugin<Project> {
             tasks.create(name: 'j2objcAssemble', type: J2objcAssembleTask,
                     dependsOn: ['j2objcTest', 'buildAllObjcLibraries']) {
                 description 'Copies final generated source after testing to assembly directories'
-                srcDir = j2objcSrcGenDir
+                srcGenDir = j2objcSrcGenDir
                 libDir = file("${buildDir}/binaries/${project.name}-j2objcStaticLibrary")
             }
             lateDependsOn(project, 'assemble', 'j2objcAssemble')
@@ -161,7 +161,7 @@ class J2objcPlugin implements Plugin<Project> {
             tasks.create(name: 'j2objcXcode', type: J2objcXcodeTask,
                     dependsOn: 'j2objcTest') {
                 description 'Depends on j2objc translation, create a Pod file link it to Xcode project'
-                srcDir = j2objcSrcGenDir
+                srcGenDir = j2objcSrcGenDir
             }
         }
     }

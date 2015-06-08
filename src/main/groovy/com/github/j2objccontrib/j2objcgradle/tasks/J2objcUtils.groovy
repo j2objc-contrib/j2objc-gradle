@@ -135,10 +135,11 @@ class J2objcUtils {
                 def prevFile = nameMap.get(file.name)
                 def message =
                         "File name collision detected:\n" +
-                        "  " + prevFile.path + "\n" +
-                        "  " + file.path + "\n" +
+                        "  ${prevFile.path}\n" +
+                        "  ${file.path}\n" +
                         "\n" +
-                        "To disable this check (which may overwrite output files):\n" +
+                        "To disable this check (which may overwrite files), modify build.gradle:\n" +
+                        "\n" +
                         "j2objcConfig {\n" +
                         "    filenameCollisionCheck false\n" +
                         "}\n"
@@ -194,5 +195,27 @@ class J2objcUtils {
 
     static def filterJ2objcOutputForErrorLines(String processOutput) {
         return processOutput.tokenize('\n').grep(~/^(.*: )?error:.*/).join('\n')
+    }
+
+    // Matches regex within 'str', extracts first match and then returns as int
+    static int matchNumberRegex(String str, String regex) {
+        def matcher = (str =~ regex)
+        if (!matcher.find()) {
+            // Can't use logger.error for output of str, so put it in the exception
+            throw new IllegalArgumentException(
+                    "${str}\n" +
+                    "\n" +
+                    "Regex couldn't match number in output: ${regex}")
+        } else {
+            def value = matcher[0][1]
+            if (!value.isInteger()) {
+                // Can't use logger.error for output of str, so put it in the exception
+                throw new IllegalArgumentException(
+                        "${str}\n" +
+                        "\n" +
+                        "Regex didn't find number in output: ${regex}, value: ${value}")
+            }
+            return value.toInteger()
+        }
     }
 }

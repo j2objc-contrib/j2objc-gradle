@@ -28,7 +28,7 @@ class J2objcAssembleTask extends DefaultTask {
 
     // Generated ObjC source files
     @InputDirectory
-    File srcDir
+    File srcGenDir
 
     // Generated ObjC binaries
     @InputDirectory
@@ -87,7 +87,7 @@ class J2objcAssembleTask extends DefaultTask {
         clearDestSrcDirWithChecks(destSrcDir, 'destSrcDir')
         project.copy {
             includeEmptyDirs = false
-            from srcDir
+            from srcGenDir
             into destSrcDir
             // TODO: this isn't precise, main source can be suffixed with Test as well.
             // Would be best to somehow keep the metadata about whether a file was from the
@@ -104,7 +104,7 @@ class J2objcAssembleTask extends DefaultTask {
         }
         project.copy {
             includeEmptyDirs = false
-            from srcDir
+            from srcGenDir
             into destSrcDirTest
             // Only copy the test code
             include "**/*Test.h"
