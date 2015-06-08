@@ -116,7 +116,7 @@ class J2objcNativeCompilation {
                         binaries.all {
                             lib library: "${project.name}-j2objc", linkage: 'static'
 
-                            // These libraries are for testing only.
+                            // J2ObjC provided libraries for testing only
                             linker.args '-ljunit'
                             linker.args '-lmockito'
                         }
@@ -142,10 +142,18 @@ class J2objcNativeCompilation {
                     objcCompiler.args '-std=c11'
 
                     linker.args '-ObjC'
-                    linker.args '-lguava', '-ljsr305'
-                    linker.args '-ljre_emul', '-licucore', '-lz', '-lj2objc_main', '-lc++'
-                    linker.args '-framework', 'foundation', '-framework', 'Security'
+
+                    // J2ObjC provided libraries and search path:
+                    // TODO: should we link to all? Or just the 'standard' J2ObjC libraries?
+                    linker.args '-lguava', '-lj2objc_main', '-ljavax_inject', '-ljre_emul', '-ljsr305'
                     linker.args "-L$j2objcPath/lib"
+
+                    // J2ObjC iOS library dependencies:
+                    linker.args '-lc++'                    // C++ runtime for protobuf runtime
+                    linker.args '-licucore'                // java.text
+                    linker.args '-lz'                      // java.util.zip
+                    linker.args '-framework', 'foundation' // core ObjC classes: NSObject, NSString
+                    linker.args '-framework', 'Security'   // secure hash generation
 
                     if (buildType == buildTypes.debug) {
                         objcCompiler.args "-g"

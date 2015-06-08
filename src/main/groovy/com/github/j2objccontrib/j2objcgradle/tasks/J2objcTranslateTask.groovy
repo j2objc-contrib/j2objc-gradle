@@ -79,7 +79,7 @@ class J2objcTranslateTask extends DefaultTask {
 
     // Generated ObjC files
     @OutputDirectory
-    File destDir
+    File srcGenDir
 
 
     // j2objcConfig dependencies for UP-TO-DATE checks
@@ -126,9 +126,9 @@ class J2objcTranslateTask extends DefaultTask {
             // if the user requests it with the UNSAFE_incrementalBuildClosure flag.
             // TODO: One correct way to incrementally compile with --build-closure would be to use
             // allInputFiles someway, but this will require some research.
-            if (destDir.exists()) {
-                destDir.deleteDir()
-                destDir.mkdirs()
+            if (srcGenDir.exists()) {
+                srcGenDir.deleteDir()
+                srcGenDir.mkdirs()
             }
             srcFilesChanged = originalSrcFiles
         } else {
@@ -156,9 +156,9 @@ class J2objcTranslateTask extends DefaultTask {
             logger.debug "Unchanged files: " + unchangedSrcFiles.getFiles().size()
 
             def translatedFiles = 0
-            if (destDir.exists()) {
+            if (srcGenDir.exists()) {
                 FileCollection destFiles = project.files(project.fileTree(
-                        dir: destDir, includes: ["**/*.h", "**/*.m"]))
+                        dir: srcGenDir, includes: ["**/*.h", "**/*.m"]))
 
                 // remove translated .h and .m files which has no corresponding .java files anymore
                 destFiles.each { File file ->
@@ -218,7 +218,7 @@ class J2objcTranslateTask extends DefaultTask {
             sourcepath += ':' + depSourcePaths.join(':')
         }
 
-        // TODO perform file collision check with already translated files in the destDir
+        // TODO perform file collision check with already translated files in the srcGenDir
         if (getFilenameCollisionCheck()) {
             J2objcUtils.filenameCollisionCheck(srcFiles)
         }
@@ -229,13 +229,12 @@ class J2objcTranslateTask extends DefaultTask {
         classPathArg += ":${project.buildDir}/classes"
 
         def output = new ByteArrayOutputStream()
-
         try {
             project.exec {
                 executable j2objcExec
 
                 args windowsOnlyArgs.split()
-                args "-d", destDir
+                args "-d", srcGenDir
                 args "-sourcepath", sourcepath
 
                 if (classPathArg.size() > 0) {
@@ -251,19 +250,20 @@ class J2objcTranslateTask extends DefaultTask {
                 errorOutput output
             }
 
-        } catch (e) {
-            def processOutput = output.toString()
+        } catch (Exception exception) {
+            def outputStr = output.toString()
             logger.debug 'Translation output:'
-            logger.debug processOutput
+            logger.debug outputStr
             // Put to stderr only the lines at fault.
             // We do not separate standardOutput and errorOutput in the exec
             // task, because the interleaved output is helpful for context.
             logger.error 'Error during translation:'
-            logger.error J2objcUtils.filterJ2objcOutputForErrorLines(processOutput)
+            logger.error J2objcUtils.filterJ2objcOutputForErrorLines(outputStr)
             // Gradle will helpfully tell the user to use --debug for more
             // output when the build fails.
-            throw e
+            throw exception
         }
+
         logger.debug 'Translation output:'
         logger.debug output.toString()
     }

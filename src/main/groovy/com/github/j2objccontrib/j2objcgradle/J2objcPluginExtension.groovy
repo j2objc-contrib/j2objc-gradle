@@ -43,20 +43,22 @@ class J2objcPluginExtension {
     // solely from files within your main and/or test sourceSets.
     String[] generatedSourceDirs = []
 
+
     // CYCLEFINDER
     // TODO(bruno): consider enabling cycleFinder by default
     boolean cycleFinderSkip = true
-    // Flags copied verbatim to cycle_finder command
-    // Would prefer default of null but that can't be used for @Input
-    // Warning will ask user to configure this within j2objcConfig
+    // Flags copied verbatim to cycle_finder command.
+    // Warning will ask user to configure this within j2objcConfig.
     String cycleFinderFlags = null
-    // Expected number of cycles, defaults to all those found in JRE
+    // Expected number of cycles, defaults to all those found in JRE.
+    // This is an exact number rather than minimum as any change is significant.
     // TODO(bruno): convert to a default whitelist and change expected cyles to 0
     int cycleFinderExpectedCycles = 40
 
+
     // TRANSLATE
-    // Flags copied verbatim to j2objc command
-    // A list of all possible flag can be found here
+    // Flags copied verbatim to j2objc command.
+    // A list of all possible flag can be found here:
     // https://github.com/google/j2objc/blob/master/translator/src/main/resources/com/google/devtools/j2objc/J2ObjC
     // .properties
     String translateFlags = "--no-package-directories"
@@ -110,11 +112,15 @@ class J2objcPluginExtension {
     // automatically.  You will most likely want to use --build-closure in the translateFlags as well.
     boolean appendProjectDependenciesToSourcepath = false
 
+
     // TEST
     // Skip test task if true
     boolean testSkip = false
     // Flags copied verbatim to testrunner command
     String testFlags = ""
+    // Error if it runs less than the expected number of tests, set to 0 to disable.
+    // It is set as a minimum so adding a unit test doesn't break the j2objc build.
+    int testMinExpectedTests = 1
 
     // Filter on files to test.  Note this has no effect on which tests are
     // translated, just which tests are executed by the j2objcTest task.
@@ -134,8 +140,6 @@ class J2objcPluginExtension {
         return ConfigureUtil.configure(cl, testPattern)
     }
 
-    // Warn if no tests are executed
-    boolean testExecutedCheck = true
 
     // LINK
     // directory of the target Xcode project
