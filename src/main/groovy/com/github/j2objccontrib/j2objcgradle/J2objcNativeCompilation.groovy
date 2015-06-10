@@ -8,9 +8,22 @@ import org.gradle.nativeplatform.NativeLibrarySpec
 import org.gradle.nativeplatform.toolchain.Clang
 
 /**
- *
+ * Build the j2objc binaries, including the static libraries and test binary
  */
+
 class J2objcNativeCompilation {
+    // Tasks created to build the static and shared libraries
+    // PROJECT = "${project.name}"
+    //
+    //   create{Ios|X86_64}{Debug|Release}PROJECT-j2objcStaticLibrary
+    //   compile{Ios|X86_64}{Debug|Release}PROJECT-j2objc{Shared|Static}LibraryBase-j2objcObjc
+    //   link{Ios|X86_64}{Debug|Release}PROJECT-j2objcSharedLibrary
+    //   {Ios|X86_64}{Debug|Release}PROJECT-j2objc{Shared|Static}Library
+    //
+    // Tasks created to build the test binary (binary is executed in the 'j2objcTest' task)
+    //   compileDebugTestJ2objcExecutableTestJ2objcObjc
+    //   linkDebugTestJ2objcExecutable
+    //   debugTestJ2objcExecutable
     def apply(Project project, File srcGenDir) {
         project.with {
             // Wire up dependencies with tasks created dynamically by native plugin(s).
@@ -32,9 +45,9 @@ class J2objcNativeCompilation {
             // We create these files so that before the first j2objcTranslate execution is performed, at least
             // one file exists for each of the objective-c sourceSets, at project evaluation time.
             // Otherwise the objective-c plugin skips creation of the compile tasks altogether.
-            file("${buildDir}/j2objcForceCompilation").mkdirs()
-            file("${buildDir}/j2objcForceCompilation/Empty.m").createNewFile()
-            file("${buildDir}/j2objcForceCompilation/EmptyTest.m").createNewFile()
+            file("${buildDir}/j2objcHackToForceCompilation").mkdirs()
+            file("${buildDir}/j2objcHackToForceCompilation/Empty.m").createNewFile()
+            file("${buildDir}/j2objcHackToForceCompilation/EmptyTest.m").createNewFile()
 
             model {
                 buildTypes {
@@ -85,6 +98,18 @@ class J2objcNativeCompilation {
                                 args << 'ExceptionHandling'
                             }
                         }
+                        target('i386') {
+                            objcCompiler.withArguments { args ->
+                                args << '-arch'
+                                args << 'i386'
+                            }
+                            linker.withArguments { args ->
+                                args << '-arch'
+                                args << 'i386'
+                                args << '-framework'
+                                args << 'ExceptionHandling'
+                            }
+                        }
                     }
                 }
                 platforms {
@@ -101,11 +126,12 @@ class J2objcNativeCompilation {
 
                 components {
                     // Builds library, e.g. "libPROJECT-j2objc.a"
+                    // Calls dynamic property "PROJECT-j2objc" with NativeLibrarySpec.class object
                     "${project.name}-j2objc"(NativeLibrarySpec) {
                         sources {
                             objc {
                                 source {
-                                    srcDirs "${srcGenDir}", "${buildDir}/j2objcForceCompilation"
+                                    srcDirs "${srcGenDir}", "${buildDir}/j2objcHackToForceCompilation"
                                     include '**/*.m'
                                     exclude '**/*Test.m'
                                 }
@@ -129,7 +155,7 @@ class J2objcNativeCompilation {
                         sources {
                             objc {
                                 source {
-                                    srcDirs "${srcGenDir}", "${buildDir}/j2objcForceCompilation"
+                                    srcDirs "${srcGenDir}", "${buildDir}/j2objcHackToForceCompilation"
                                     include '**/*Test.m'
                                 }
                             }
@@ -185,6 +211,7 @@ class J2objcNativeCompilation {
             // Marker task to build all objective-c libraries.
             // From Gradle User Guide: 54.14.5. Building all possible variants
             // https://docs.gradle.org/current/userguide/nativeBinaries.html#N161B3
+            // TODO: when does a user need the dynamic libraries?
             task('buildAllObjcLibraries').configure {
                 dependsOn binaries.withType(NativeLibraryBinary).matching {
                     it.buildable
