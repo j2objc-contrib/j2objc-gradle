@@ -138,15 +138,15 @@ class J2objcPlugin implements Plugin<Project> {
             // Configures native compilation for the production library and the test executable.
             new J2objcNativeCompilation().apply(project, j2objcSrcGenDir)
 
-            // Note the 'debugTestJ2objcExecutable' task is dynamically created by the objective-c plugin applied
-            // on the above line.  It is specified by the testJ2objc native component.
+            // Note the 'debugTestJ2objcExecutable' task is dynamically created by the objective-c
+            // plugin from the previous line.  It is specified by the testJ2objc native component.
             tasks.create(name: "j2objcTest", type: J2objcTestTask,
                     dependsOn: 'debugTestJ2objcExecutable') {
                 description 'Runs all tests in the generated Objective-C code'
                 testBinaryFile = file("${buildDir}/binaries/testJ2objcExecutable/debug/testJ2objc")
             }
-            // 'check' task is added by 'java' plugin, it depends on 'test' and all the other verification tasks,
-            // now including 'j2objcTest'.
+            // 'check' task is added by 'java' plugin, it depends on 'test' and all
+            // the other verification tasks, now including 'j2objcTest'.
             lateDependsOn(project, 'check', 'j2objcTest')
 
             tasks.create(name: 'j2objcAssemble', type: J2objcAssembleTask,
@@ -157,9 +157,9 @@ class J2objcPlugin implements Plugin<Project> {
             }
             lateDependsOn(project, 'assemble', 'j2objcAssemble')
 
-            // TODO: Where shall we fit this task in the plugin lifecycle?
             tasks.create(name: 'j2objcXcode', type: J2objcXcodeTask,
-                    dependsOn: 'j2objcTest') {
+                    // DO NOT COMMIT - limit to subset of libs needed by Xcode
+                    dependsOn: 'j2objcTest', 'buildAllObjcLibraries') {
                 description 'Depends on j2objc translation, create a Pod file link it to Xcode project'
                 srcGenDir = j2objcSrcGenDir
             }
