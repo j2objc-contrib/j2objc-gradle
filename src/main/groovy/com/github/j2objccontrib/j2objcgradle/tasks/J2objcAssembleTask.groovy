@@ -33,6 +33,8 @@ class J2objcAssembleTask extends DefaultTask {
     // Generated ObjC binaries
     @InputDirectory
     File libDir
+    @InputDirectory
+    File packedLibDir
 
     @OutputDirectory
     File getDestSrcDir() {
@@ -116,6 +118,7 @@ class J2objcAssembleTask extends DefaultTask {
         project.copy {
             includeEmptyDirs = true
             from libDir
+            from packedLibDir
             into destLibDir
             include "**/*.a"
         }

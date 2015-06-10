@@ -17,6 +17,7 @@
 package com.github.j2objccontrib.j2objcgradle
 import com.github.j2objccontrib.j2objcgradle.tasks.J2objcAssembleTask
 import com.github.j2objccontrib.j2objcgradle.tasks.J2objcCycleFinderTask
+import com.github.j2objccontrib.j2objcgradle.tasks.J2objcPackLibrariesTask
 import com.github.j2objccontrib.j2objcgradle.tasks.J2objcTestTask
 import com.github.j2objccontrib.j2objcgradle.tasks.J2objcTranslateTask
 import com.github.j2objccontrib.j2objcgradle.tasks.J2objcUtils
@@ -149,11 +150,25 @@ class J2objcPlugin implements Plugin<Project> {
             // now including 'j2objcTest'.
             lateDependsOn(project, 'check', 'j2objcTest')
 
+            tasks.create(name: 'j2objcPackLibrariesDebug', type: J2objcPackLibrariesTask,
+                    dependsOn: 'buildAllObjcLibraries') {
+                description 'Packs multiple architectures into a single debug static library'
+                buildType = 'Debug'
+            }
+
+            tasks.create(name: 'j2objcPackLibrariesRelease', type: J2objcPackLibrariesTask,
+                    dependsOn: 'buildAllObjcLibraries') {
+                description 'Packs multiple architectures into a single release static library'
+                buildType = 'Release'
+            }
+
             tasks.create(name: 'j2objcAssemble', type: J2objcAssembleTask,
-                    dependsOn: ['j2objcTest', 'buildAllObjcLibraries']) {
+                    dependsOn: ['j2objcTest', 'buildAllObjcLibraries',
+                                'j2objcPackLibrariesDebug', 'j2objcPackLibrariesRelease']) {
                 description 'Copies final generated source after testing to assembly directories'
                 srcGenDir = j2objcSrcGenDir
                 libDir = file("${buildDir}/binaries/${project.name}-j2objcStaticLibrary")
+                packedLibDir = file("${buildDir}/packedBinaries/${project.name}-j2objcStaticLibrary")
             }
             lateDependsOn(project, 'assemble', 'j2objcAssemble')
 

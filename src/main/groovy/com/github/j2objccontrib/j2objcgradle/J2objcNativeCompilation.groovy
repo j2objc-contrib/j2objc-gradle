@@ -45,10 +45,27 @@ class J2objcNativeCompilation {
                     // Modify clang command line arguments since we need them to vary by target.
                     // https://docs.gradle.org/current/userguide/nativeBinaries.html#withArguments
                     clang(Clang) {
-                        target('ios') {
+                        target('ios_x86_64') {
                             def iosClangArgs = [
                                     '-arch',
                                     'x86_64',
+                                    '-isysroot',
+                                    '/Applications/Xcode' +
+                                        '.app/Contents/Developer/Platforms/iPhoneSimulator' +
+                                        '.platform/Developer/SDKs/iPhoneSimulator.sdk',
+                                    '-mios-simulator-version-min=8.3',
+                            ]
+                            objcCompiler.withArguments { args ->
+                                iosClangArgs.each { args << it }
+                            }
+                            linker.withArguments { args ->
+                                iosClangArgs.each { args << it }
+                            }
+                        }
+                        target('ios_i386') {
+                            def iosClangArgs = [
+                                    '-arch',
+                                    'i386',
                                     '-isysroot',
                                     '/Applications/Xcode' +
                                         '.app/Contents/Developer/Platforms/iPhoneSimulator' +
@@ -74,8 +91,11 @@ class J2objcNativeCompilation {
                     x86_64 {
                         architecture 'x86_64'
                     }
-                    ios {
-                        architecture 'ios'
+                    ios_x86_64 {
+                        architecture 'ios_x86_64'
+                    }
+                    ios_i386 {
+                        architecture 'ios_i386'
                     }
                 }
 
@@ -99,7 +119,8 @@ class J2objcNativeCompilation {
                             }
                         }
                         targetPlatform 'x86_64'
-                        targetPlatform 'ios'
+                        targetPlatform 'ios_i386'
+                        targetPlatform 'ios_x86_64'
                     }
 
                     // Create an executable binary from a library containing just the test source code linked to
