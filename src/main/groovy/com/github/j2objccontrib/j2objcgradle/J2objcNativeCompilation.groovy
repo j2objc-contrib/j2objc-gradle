@@ -113,6 +113,7 @@ class J2objcNativeCompilation {
                     }
                 }
                 platforms {
+<<<<<<< HEAD
                     x86_64 {
                         architecture 'x86_64'
                     }
@@ -121,6 +122,16 @@ class J2objcNativeCompilation {
                     }
                     ios_i386 {
                         architecture 'ios_i386'
+=======
+                    ios {
+                        architecture 'ios'
+>>>>>>> origin/fixup
+                    }
+                    i386 {
+                        architecture 'i386'
+                    }
+                    x86_64 {
+                        architecture 'x86_64'
                     }
                 }
 
@@ -144,9 +155,15 @@ class J2objcNativeCompilation {
                                 }
                             }
                         }
+<<<<<<< HEAD
                         targetPlatform 'x86_64'
                         targetPlatform 'ios_i386'
                         targetPlatform 'ios_x86_64'
+=======
+                        targetPlatform 'ios'
+                        targetPlatform 'i386'
+                        targetPlatform 'x86_64'
+>>>>>>> origin/fixup
                     }
 
                     // Create an executable binary from a library containing just the test source code linked to
