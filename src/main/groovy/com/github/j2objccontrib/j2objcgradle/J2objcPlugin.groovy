@@ -100,12 +100,19 @@ class J2objcPlugin implements Plugin<Project> {
             // on such generation.
             tasks.create(name: 'j2objcPreBuild', type: DefaultTask,
                     dependsOn: 'test') {
+                group 'build'
                 description "Marker task for all tasks that must be complete before j2objc building"
             }
 
+            // j2objcCycleFinder is disabled by default as it's complex to use and understand.
+            // TODO: consider enabling by default if it's possible to make it easier to use.
+            // To enable the j2objcCycleFinder task, add the following to build.gradle:
+            // j2objcCycleFinder { enabled = true }
             tasks.create(name: 'j2objcCycleFinder', type: J2objcCycleFinderTask,
                     dependsOn: 'j2objcPreBuild') {
+                group 'build'
                 description "Run the cycle_finder tool on all Java source files"
+                enabled false
             }
 
             // TODO @Bruno "build/source/apt" must be project.j2objcConfig.generatedSourceDirs no idea how to set it
@@ -113,6 +120,7 @@ class J2objcPlugin implements Plugin<Project> {
             // Dependency may be added in project.plugins.withType for Java or Android plugin
             tasks.create(name: 'j2objcTranslate', type: J2objcTranslateTask,
                     dependsOn: 'j2objcCycleFinder') {
+                group 'build'
                 description "Translates all the java source files in to Objective-C using j2objc"
                 additionalSrcFiles = files(
                         fileTree(dir: "build/source/apt",
@@ -129,6 +137,7 @@ class J2objcPlugin implements Plugin<Project> {
             // on the above line.  It is specified by the testJ2objc native component.
             tasks.create(name: 'j2objcTest', type: J2objcTestTask,
                     dependsOn: ['test', 'debugTestJ2objcExecutable']) {
+                group 'verification'
                 // This transitively depends on the 'test' task from the java plugin
                 description 'Runs all tests in the generated Objective-C code'
                 testBinaryFile = file("${buildDir}/binaries/testJ2objcExecutable/debug/testJ2objc")
@@ -139,12 +148,14 @@ class J2objcPlugin implements Plugin<Project> {
 
             tasks.create(name: 'j2objcPackLibrariesDebug', type: J2objcPackLibrariesTask,
                     dependsOn: 'buildAllObjcLibraries') {
+                group 'build'
                 description 'Packs multiple architectures into a single debug static library'
                 buildType = 'Debug'
             }
 
             tasks.create(name: 'j2objcPackLibrariesRelease', type: J2objcPackLibrariesTask,
                     dependsOn: 'buildAllObjcLibraries') {
+                group 'build'
                 description 'Packs multiple architectures into a single release static library'
                 buildType = 'Release'
             }
@@ -152,6 +163,7 @@ class J2objcPlugin implements Plugin<Project> {
             tasks.create(name: 'j2objcAssemble', type: J2objcAssembleTask,
                     dependsOn: ['buildAllObjcLibraries',
                                 'j2objcPackLibrariesDebug', 'j2objcPackLibrariesRelease']) {
+                group 'build'
                 description 'Copies final generated source after testing to assembly directories'
                 srcGenDir = j2objcSrcGenDir
                 libDir = file("${buildDir}/binaries/${project.name}-j2objcStaticLibrary")
@@ -162,6 +174,7 @@ class J2objcPlugin implements Plugin<Project> {
             // TODO: Where shall we fit this task in the plugin lifecycle?
             tasks.create(name: 'j2objcXcode', type: J2objcXcodeTask,
                     dependsOn: 'j2objcAssemble') {
+                // This is not in the build group because you do not need to do it on every build.
                 description 'Depends on j2objc translation, create a Pod file link it to Xcode project'
                 srcGenDir = j2objcSrcGenDir
             }
