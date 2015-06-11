@@ -75,24 +75,13 @@ class J2objcPlugin implements Plugin<Project> {
             if (!plugins.hasPlugin('java')) {
                 def message =
                         "j2objc plugin didn't find the 'java' plugin in the '${project.name}' project.\n"+
-                        "This is a requirement for using j2objc. If you are migrating an existing\n" +
-                        "Android app, it is suggested that you create a separate project that is\n" +
-                        "named 'shared'. This should not have any android dependencies. Then gradually\n"
-                        "migrate shared code there. Within that project, first apply the 'java' then\n"
-                        "'j2objc' plugins by adding the following lines to the build.gradle file:\n" +
+                        "This is a requirement for using j2objc. Please see usage information at:\n" +
                         "\n" +
-                        "apply plugin: 'java'\n" +
-                        "apply plugin: 'j2objc'\n" +
-                        "\n" +
-                        "j2objcConfig {\n" +
-                        "    // j2objc settings here\n" +
-                        "}\n" +
-                        "\n" +
-                        "More Info: https://github.com/j2objc-contrib/j2objc-gradle/#usage"
+                        "https://github.com/j2objc-contrib/j2objc-gradle/#usage"
                 throw new InvalidUserDataException(message)
             }
 
-            extensions.create("j2objcConfig", J2objcPluginExtension)
+            extensions.create('j2objcConfig', J2objcPluginExtension)
             afterEvaluate { evaluatedProject ->
                 // Validate minimally required parameters.
                 // j2objcHome() will throw the appropriate exception internally.
@@ -109,12 +98,12 @@ class J2objcPlugin implements Plugin<Project> {
 
             // If users need to generate extra files that j2objc depends on, they can make this task dependent
             // on such generation.
-            tasks.create(name: "j2objcPreBuild", type: DefaultTask,
+            tasks.create(name: 'j2objcPreBuild', type: DefaultTask,
                     dependsOn: 'test') {
                 description "Marker task for all tasks that must be complete before j2objc building"
             }
 
-            tasks.create(name: "j2objcCycleFinder", type: J2objcCycleFinderTask,
+            tasks.create(name: 'j2objcCycleFinder', type: J2objcCycleFinderTask,
                     dependsOn: 'j2objcPreBuild') {
                 description "Run the cycle_finder tool on all Java source files"
             }
@@ -122,7 +111,7 @@ class J2objcPlugin implements Plugin<Project> {
             // TODO @Bruno "build/source/apt" must be project.j2objcConfig.generatedSourceDirs no idea how to set it
             // there
             // Dependency may be added in project.plugins.withType for Java or Android plugin
-            tasks.create(name: "j2objcTranslate", type: J2objcTranslateTask,
+            tasks.create(name: 'j2objcTranslate', type: J2objcTranslateTask,
                     dependsOn: 'j2objcCycleFinder') {
                 description "Translates all the java source files in to Objective-C using j2objc"
                 additionalSrcFiles = files(
@@ -138,13 +127,14 @@ class J2objcPlugin implements Plugin<Project> {
 
             // Note the 'debugTestJ2objcExecutable' task is dynamically created by the objective-c plugin applied
             // on the above line.  It is specified by the testJ2objc native component.
-            tasks.create(name: "j2objcTest", type: J2objcTestTask,
+            tasks.create(name: 'j2objcTest', type: J2objcTestTask,
                     dependsOn: ['test', 'debugTestJ2objcExecutable']) {
+                // This transitively depends on the 'test' task from the java plugin
                 description 'Runs all tests in the generated Objective-C code'
                 testBinaryFile = file("${buildDir}/binaries/testJ2objcExecutable/debug/testJ2objc")
             }
-            // 'check' task is added by 'java' plugin, it depends on 'test' and all the other verification tasks,
-            // now including 'j2objcTest'.
+            // 'check' task is added by 'java' plugin, it depends on 'test' and
+            // all the other verification tasks, now including 'j2objcTest'.
             lateDependsOn(project, 'check', 'j2objcTest')
 
             tasks.create(name: 'j2objcPackLibrariesDebug', type: J2objcPackLibrariesTask,

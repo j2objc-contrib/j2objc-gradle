@@ -59,8 +59,7 @@ class J2objcPluginExtension {
     // TRANSLATE
     // Flags copied verbatim to j2objc command.
     // A list of all possible flag can be found here:
-    // https://github.com/google/j2objc/blob/master/translator/src/main/resources/com/google/devtools/j2objc/J2ObjC
-    // .properties
+    // https://github.com/google/j2objc/blob/master/translator/src/main/resources/com/google/devtools/j2objc/J2ObjC.properties
     String translateFlags = ""
     // -classpath library additions from ${projectDir}/lib/, e.g.: "json-20140107.jar", "somelib.jar"
     String[] translateClassPaths = []

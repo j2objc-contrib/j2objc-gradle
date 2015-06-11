@@ -7,17 +7,30 @@ You may wish to wait for the beta release as we will not support the alpha relea
 
 You should start with a clean java only project without any android dependencies, preferably named `'shared'`. This must be buildable using Gradle's standard `'java'` plugin. It may start as an empty project and allows you to gradually shift over code from an existing Android application.
 
-Within the `'shared'` project's `build.gradle`, apply the j2objc plugin before the java plugin:
+Within the `'shared'` project's `build.gradle`, apply the j2objc plugin before the java plugin.
 
-    // 'shared' build.gradle
-    plugins {
-        id "com.github.j2objccontrib.j2objcgradle" version "0.2.1-alpha"
+Note: the plugins {...} syntax does not work for the j2objc plugin, so you must use the old buildscript style
+For more info see: https://github.com/j2objc-contrib/j2objc-gradle/issues/130
+
+    // File: shared/build.gradle
+    buildscript {
+        repositories {
+            maven {
+                url "https://plugins.gradle.org/m2/"
+            }
+        }
+        dependencies {
+            // Current Version: https://plugins.gradle.org/plugin/com.github.j2objccontrib.j2objcgradle
+            classpath "gradle.plugin.com.github.j2objccontrib.j2objcgradle:j2objc-gradle:X.Y.Z-alpha"
+        }
     }
+
     apply plugin: 'java'
+    apply plugin: 'com.github.j2objccontrib.j2objcgradle'
 
 Within the Android application's project `build.gradle`, make it dependent on the `shared` project:
 
-    // 'android-app' build.gradle
+    // File: android/build.gradle
     dependencies {
         compile project(':shared')
     }
@@ -28,13 +41,15 @@ The preferred folder structure is:
     │   .gitignore
     │   build.gradle
     ├───android
-    |   │   build.gradle          // dependency on ':shared'
-    |   └   src                   // src/main/java/...
+    │   │   build.gradle          // dependency on ':shared'
+    │   └   src                   // src/main/java/...
     ├───shared
-    |   │   build.gradle          // apply 'j2objc' then 'java' plugins
-    |   │   build/j2objcOutputs   // j2objc generated headers and libraries 
-    |   └   src                   // src/main/java/...
-    └───Xcode
+    │   │   build.gradle          // apply 'j2objc' then 'java' plugins
+    │   ├   build                 // build directory
+    │   │   │ ...                 // build output
+    │   │   └ j2objcOutputs       // j2objc generated headers and libraries
+    │   └   src                   // src/main/java/...
+    └───xcode
         │   Project
         └   ProjectTests
 
@@ -51,11 +66,13 @@ java project's build.gradle:
 ```
 buildscript {
     dependencies {
-        classpath files('/PATH_TO_J2OBJC_PLUGIN/j2objc-gradle/build/libs/j2objc-gradle-0.1.0-alpha.jar')
+        // Update using "version = X.Y.Z-alpha" defined in build.gradle
+        classpath files('/PATH_TO_J2OBJC_PLUGIN/j2objc-gradle/build/libs/j2objc-gradle-X.Y.Z-alpha.jar')
     }
 }
 
-apply plugin: 'j2objc'
+apply plugin: 'java'
+apply plugin: 'com.github.j2objccontrib.j2objcgradle'
 
 // (regular j2objcConfig here...)
 ```
