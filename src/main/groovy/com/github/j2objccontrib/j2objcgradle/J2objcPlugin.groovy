@@ -55,19 +55,16 @@ import org.gradle.api.logging.LogLevel
  *
  *     $ gradlew <SHARED_PROJECT>:j2objcCopy
  *
- * Commands:
- * Each one depends on the previous command
- *     j2objcCycleFinder - Find cycles that can cause memory leaks, see https://github
- *     .com/google/j2objc/wiki/Cycle-Finder-Tool
- *     j2objcTranslate   - Translates to Objective-C, depends on java or Android project if found
- *     j2objcCompile     - Compile Objective-C files and build Objective-C binary (named 'runner')
- *     j2objcTest        - Run all java tests against the Objective-C binary
- *     j2objcCopy        - Copy generated Objective-C files to Xcode project
+ * Main Tasks:
+ *     j2objcCycleFinder - Find cycles that can cause memory leaks
+ *                         See https://github.com/google/j2objc/wiki/Cycle-Finder-Tool
+ *     j2objcTranslate   - Translates to Objective-C
+ *     j2objcTest        - Run all java tests against the Objective-C test binary
+ *     j2objcAssemble    - Builds the debug and release libaries, packing them in to a fat library
+ *     j2objcXcode       - Configure Xcode to link to static library and header files
  *
- * Note that you can use the Gradle shorthand of "$ gradlew jCop" to do the j2objcCopy task.
- * The other shorthand expressions are "jTr", "jCom" and "jTe"
- *
- * Thanks to Peter Niederwieser and 'bigguy' from Gradleware
+ * Note that you can use the Gradle shorthand of "$ gradlew jAs" to do the j2objcAssemble task.
+ * The other shorthand expressions are "jTr", "jTe" and "jX"
  */
 
 class J2objcPlugin implements Plugin<Project> {
@@ -79,10 +76,10 @@ class J2objcPlugin implements Plugin<Project> {
                 def message =
                         "j2objc plugin didn't find the 'java' plugin in the '${project.name}' project.\n"+
                         "This is a requirement for using j2objc. If you are migrating an existing\n" +
-                        "Android app, it is suggested that you create a separate 'shared' project\n" +
-                        "without android dependencies and gradually migrate shared code there.\n" +
-                        "Within that project, first apply the 'java' then 'j2objc' plugins by adding\n" +
-                        "the following lines to the build.gradle file:\n" +
+                        "Android app, it is suggested that you create a separate project that is\n" +
+                        "named 'shared'. This should not have any android dependencies. Then gradually\n"
+                        "migrate shared code there. Within that project, first apply the 'java' then\n"
+                        "'j2objc' plugins by adding the following lines to the build.gradle file:\n" +
                         "\n" +
                         "apply plugin: 'java'\n" +
                         "apply plugin: 'j2objc'\n" +
@@ -142,7 +139,7 @@ class J2objcPlugin implements Plugin<Project> {
             // Note the 'debugTestJ2objcExecutable' task is dynamically created by the objective-c plugin applied
             // on the above line.  It is specified by the testJ2objc native component.
             tasks.create(name: "j2objcTest", type: J2objcTestTask,
-                    dependsOn: 'debugTestJ2objcExecutable') {
+                    dependsOn: ['test', 'debugTestJ2objcExecutable']) {
                 description 'Runs all tests in the generated Objective-C code'
                 testBinaryFile = file("${buildDir}/binaries/testJ2objcExecutable/debug/testJ2objc")
             }
@@ -163,7 +160,7 @@ class J2objcPlugin implements Plugin<Project> {
             }
 
             tasks.create(name: 'j2objcAssemble', type: J2objcAssembleTask,
-                    dependsOn: ['j2objcTest', 'buildAllObjcLibraries',
+                    dependsOn: ['buildAllObjcLibraries',
                                 'j2objcPackLibrariesDebug', 'j2objcPackLibrariesRelease']) {
                 description 'Copies final generated source after testing to assembly directories'
                 srcGenDir = j2objcSrcGenDir
@@ -174,7 +171,7 @@ class J2objcPlugin implements Plugin<Project> {
 
             // TODO: Where shall we fit this task in the plugin lifecycle?
             tasks.create(name: 'j2objcXcode', type: J2objcXcodeTask,
-                    dependsOn: 'j2objcTest') {
+                    dependsOn: 'j2objcAssemble') {
                 description 'Depends on j2objc translation, create a Pod file link it to Xcode project'
                 srcGenDir = j2objcSrcGenDir
             }

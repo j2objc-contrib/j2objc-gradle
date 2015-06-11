@@ -32,9 +32,24 @@ class J2objcNativeCompilation {
             // We create these files so that before the first j2objcTranslate execution is performed, at least
             // one file exists for each of the objective-c sourceSets, at project evaluation time.
             // Otherwise the objective-c plugin skips creation of the compile tasks altogether.
-            file("${buildDir}/j2objcForceCompilation").mkdirs()
-            file("${buildDir}/j2objcForceCompilation/Empty.m").createNewFile()
-            file("${buildDir}/j2objcForceCompilation/EmptyTest.m").createNewFile()
+            file("${buildDir}/j2objcHackToForceCompilation").mkdirs()
+            file("${buildDir}/j2objcHackToForceCompilation/Empty.m").createNewFile()
+            file("${buildDir}/j2objcHackToForceCompilation/EmptyTest.m").createNewFile()
+
+            def simulatorClangArgs = [
+                    '-isysroot',
+                    '/Applications/Xcode' +
+                            '.app/Contents/Developer/Platforms/iPhoneSimulator' +
+                            '.platform/Developer/SDKs/iPhoneSimulator.sdk',
+                    '-mios-simulator-version-min=8.3',
+            ]
+            def iphoneClangArgs = [
+                    '-isysroot',
+                    '/Applications/Xcode' +
+                            '.app/Contents/Developer/Platforms/iPhoneOS' +
+                            '.platform/Developer/SDKs/iPhoneOS.sdk',
+                    '-miphoneos-version-min=8.3',
+            ]
 
             model {
                 buildTypes {
@@ -45,16 +60,35 @@ class J2objcNativeCompilation {
                     // Modify clang command line arguments since we need them to vary by target.
                     // https://docs.gradle.org/current/userguide/nativeBinaries.html#withArguments
                     clang(Clang) {
-                        target('ios_x86_64') {
+                        target('ios_arm64') {
                             def iosClangArgs = [
                                     '-arch',
-                                    'x86_64',
-                                    '-isysroot',
-                                    '/Applications/Xcode' +
-                                        '.app/Contents/Developer/Platforms/iPhoneSimulator' +
-                                        '.platform/Developer/SDKs/iPhoneSimulator.sdk',
-                                    '-mios-simulator-version-min=8.3',
-                            ]
+                                    'arm64']
+                            iosClangArgs += iphoneClangArgs
+                            objcCompiler.withArguments { args ->
+                                iosClangArgs.each { args << it }
+                            }
+                            linker.withArguments { args ->
+                                iosClangArgs.each { args << it }
+                            }
+                        }
+                        target('ios_armv7') {
+                            def iosClangArgs = [
+                                    '-arch',
+                                    'armv7']
+                            iosClangArgs += iphoneClangArgs
+                            objcCompiler.withArguments { args ->
+                                iosClangArgs.each { args << it }
+                            }
+                            linker.withArguments { args ->
+                                iosClangArgs.each { args << it }
+                            }
+                        }
+                        target('ios_armv7s') {
+                            def iosClangArgs = [
+                                    '-arch',
+                                    'armv7s']
+                            iosClangArgs += iphoneClangArgs
                             objcCompiler.withArguments { args ->
                                 iosClangArgs.each { args << it }
                             }
@@ -65,13 +99,20 @@ class J2objcNativeCompilation {
                         target('ios_i386') {
                             def iosClangArgs = [
                                     '-arch',
-                                    'i386',
-                                    '-isysroot',
-                                    '/Applications/Xcode' +
-                                        '.app/Contents/Developer/Platforms/iPhoneSimulator' +
-                                        '.platform/Developer/SDKs/iPhoneSimulator.sdk',
-                                    '-mios-simulator-version-min=8.3',
-                            ]
+                                    'i386']
+                            iosClangArgs += simulatorClangArgs
+                            objcCompiler.withArguments { args ->
+                                iosClangArgs.each { args << it }
+                            }
+                            linker.withArguments { args ->
+                                iosClangArgs.each { args << it }
+                            }
+                        }
+                        target('ios_x86_64') {
+                            def iosClangArgs = [
+                                    '-arch',
+                                    'x86_64']
+                            iosClangArgs += simulatorClangArgs
                             objcCompiler.withArguments { args ->
                                 iosClangArgs.each { args << it }
                             }
@@ -88,14 +129,23 @@ class J2objcNativeCompilation {
                     }
                 }
                 platforms {
-                    x86_64 {
-                        architecture 'x86_64'
+                    ios_arm64 {
+                        architecture 'ios_arm64'
+                    }
+                    ios_armv7 {
+                        architecture 'ios_armv7'
+                    }
+                    ios_armv7s {
+                        architecture 'ios_armv7s'
+                    }
+                    ios_i386 {
+                        architecture 'ios_i386'
                     }
                     ios_x86_64 {
                         architecture 'ios_x86_64'
                     }
-                    ios_i386 {
-                        architecture 'ios_i386'
+                    x86_64 {
+                        architecture 'x86_64'
                     }
                 }
 
@@ -105,7 +155,7 @@ class J2objcNativeCompilation {
                         sources {
                             objc {
                                 source {
-                                    srcDirs "${srcGenDir}", "${buildDir}/j2objcForceCompilation"
+                                    srcDirs "${srcGenDir}", "${buildDir}/j2objcHackToForceCompilation"
                                     include '**/*.m'
                                     exclude '**/*Test.m'
                                 }
@@ -118,9 +168,12 @@ class J2objcNativeCompilation {
                                 }
                             }
                         }
-                        targetPlatform 'x86_64'
+                        targetPlatform 'ios_arm64'
+                        targetPlatform 'ios_armv7'
+                        targetPlatform 'ios_armv7s'
                         targetPlatform 'ios_i386'
                         targetPlatform 'ios_x86_64'
+                        targetPlatform 'x86_64'
                     }
 
                     // Create an executable binary from a library containing just the test source code linked to
@@ -129,7 +182,7 @@ class J2objcNativeCompilation {
                         sources {
                             objc {
                                 source {
-                                    srcDirs "${srcGenDir}", "${buildDir}/j2objcForceCompilation"
+                                    srcDirs "${srcGenDir}", "${buildDir}/j2objcHackToForceCompilation"
                                     include '**/*Test.m'
                                 }
                             }
