@@ -20,50 +20,79 @@ import groovy.transform.PackageScope
 import org.gradle.api.Project
 import org.gradle.api.tasks.util.PatternSet
 import org.gradle.util.ConfigureUtil
+
 /**
  * Further configuration uses the following fields, setting them in j2objcConfig within build.gradle
  */
 class J2objcPluginExtension {
 
-    // Where to assemble generated main source files.
-    // Defaults to $buildDir/j2objcOutputs/src/main/objc
+    /**
+     * Where to assemble generated main source files.
+     * <p/>
+     * Defaults to $buildDir/j2objcOutputs/src/main/objc
+     */
     String destSrcDir = null
 
-    // Where to assemble generated test source files.
-    // Can be the same directory as destDir.
-    // Defaults to $buildDir/j2objcOutputs/src/test/objc
+    /**
+     * Where to assemble generated test source files.
+     * <p/>
+     * Can be the same directory as destDir
+     * Defaults to $buildDir/j2objcOutputs/src/test/objc
+     */
     String destSrcDirTest = null
 
-    // Where to assemble generated main libraries.
-    // Defaults to $buildDir/j2objcOutputs/lib
+    /**
+     * Where to assemble generated main libraries.
+     * <p/>
+     * Defaults to $buildDir/j2objcOutputs/lib
+     */
     String destLibDir = null
 
-    // Only generated source files, e.g. from dagger annotations. The script will
-    // ignore changes in this directory so they must be limited to files generated
-    // solely from files within your main and/or test sourceSets.
+    /**
+     * Only generated source files, e.g. from dagger annotations.
+     * <p/>
+     * The script will ignore changes in this directory so they must
+     * be limited to files generated solely from files within your
+     * main and/or test sourceSets.
+     */
     String[] generatedSourceDirs = []
 
-
     // CYCLEFINDER
+    /**
+     * Whether to skip the j2objcCycleFinder task.
+     *
+     * @deprecated Prefer excluding the task in your own build.gradle using
+     * {@code j2objcCycleFinder &#123; enabled = false &#125; }
+     */
     // TODO(bruno): consider enabling cycleFinder by default
     boolean cycleFinderSkip = true
-    // Flags copied verbatim to cycle_finder command.
+    /**
+     * Flags copied verbatim to cycle_finder command.
+     */
     // Warning will ask user to configure this within j2objcConfig.
     String cycleFinderFlags = null
-    // Expected number of cycles, defaults to all those found in JRE.
-    // This is an exact number rather than minimum as any change is significant.
+    /**
+     * Expected number of cycles, defaults to all those found in JRE.
+     * <p/>
+     * This is an exact number rather than minimum as any change is significant.
+     */
     // TODO(bruno): convert to a default whitelist and change expected cyles to 0
     int cycleFinderExpectedCycles = 40
 
-
     // TRANSLATE
-    // Flags copied verbatim to j2objc command.
-    // A list of all possible flag can be found here:
-    // https://github.com/google/j2objc/blob/master/translator/src/main/resources/com/google/devtools/j2objc/J2ObjC.properties
+    /**
+     * Flags copied verbatim to j2objc command.
+     * <p/>
+     * A list of all possible flag can be found here:
+     * https://github.com/google/j2objc/blob/master/translator/src/main/resources/com/google/devtools/j2objc/J2ObjC.properties
+     */
     String translateFlags = ""
-    // -classpath library additions from ${projectDir}/lib/, e.g.: "json-20140107.jar", "somelib.jar"
+    /**
+     * -classpath library additions from ${projectDir}/lib/, e.g.: "json-20140107.jar", "somelib.jar"
+     */
     String[] translateClassPaths = []
 
+    // Do not use groovydoc, this option should remain undocumented.
     // WARNING: Do not use this unless you know what you are doing.
     // If true, incremental builds will be supported even if --build-closure is included in
     // translateFlags. This may break the build in unexpected ways if you change the dependencies
@@ -71,12 +100,10 @@ class J2objcPluginExtension {
     // the build breaks, you need to do a clean build.
     boolean UNSAFE_incrementalBuildClosure = false
 
-    // Additional libraries that are part of the j2objc release
-    // TODO: warn if different versions than testCompile from Java plugin
+    /**
+     * Additional libraries that are part of the j2objc distribution.
+     */
     // TODO: just import everything in the j2objc/lib/ directory?
-    // Xcode doesn't support directories for packages, so all files must be output
-    // to a single directory. This check makes sure that the name don't collide.
-    boolean filenameCollisionCheck = true
     // J2objc default libraries, from $J2OBJC_HOME/lib/...
     String[] translateJ2objcLibs = [
             // Memory annotations, e.g. @Weak, @AutoreleasePool
@@ -87,16 +114,42 @@ class J2objcPluginExtension {
             "javax.inject-1.jar", "jsr305-3.0.0.jar",
             "mockito-core-1.9.5.jar"]
 
-    // Filter on files to translate.
-    // This filter is applied on top of all files within the 'main' and 'test'
-    // java sourceSets, example:
-    // translatePattern {
-    //     include '**/*.java'
-    //     exclude '**/SomeNativeCode.java'
-    // }
-    // If no pattern is specified, all files within the sourceSets are translated.
+
+    // TODO: warn if different versions than testCompile from Java plugin
+    /**
+     * Makes sure that the translated filenames don't collide.
+     * <p/>
+     * Recommended if you choose to use --no-package-directories.
+     */
+    boolean filenameCollisionCheck = true
+
+    /**
+     * Sets the filter on files to translate.
+     * <p/>
+     * If no pattern is specified, all files within the sourceSets are translated.
+     * <p/>
+     * This filter is applied on top of all files within the 'main' and 'test'
+     * java sourceSets.  Use {@link #translatePattern(groovy.lang.Closure)} to
+     * configure.
+     */
     PatternSet translatePattern = null
-    // DSL method to conveniently configure the translatePattern.
+    /**
+     * Configures the {@link #translatePattern}.
+     * <p/>
+     * Calling this method repeatedly further modifies the existing translatePattern,
+     * and will create an empty translatePattern if none exists.
+     * <p/>
+     * For example:
+     * <pre>
+     * translatePattern {
+     *     exclude 'CannotTranslateFile.java'
+     *     exclude '**&#47;CannotTranslateDir&#47;*.java'
+     *     include '**&#47;CannotTranslateDir&#47;AnExceptionToInclude.java'
+     * }
+     * </pre>
+     * @see
+     * <a href="https://docs.gradle.org/current/userguide/working_with_files.html#sec:file_trees">Gradle User Guide</a>
+     */
     def translatePattern(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = PatternSet) Closure cl) {
         if (translatePattern == null) {
             translatePattern = new PatternSet()
@@ -104,32 +157,60 @@ class J2objcPluginExtension {
         return ConfigureUtil.configure(cl, translatePattern)
     }
 
-    // Translation task additional paths
+    /**
+     * Additional sourcepaths to translate.
+     */
     String translateSourcepaths = null
 
-    // Set to true if java project dependencies of the current project should be appended to the sourcepath
-    // automatically.  You will most likely want to use --build-closure in the translateFlags as well.
+    /**
+     * Set to true if java project dependencies of the current project should be appended to the sourcepath
+     * automatically.
+     * <p/>
+     * You will most likely want to use --build-closure in the translateFlags as well.
+     */
+    // TODO: Handle this automatically in the future.
     boolean appendProjectDependenciesToSourcepath = false
 
-
     // TEST
-    // Flags copied verbatim to testrunner command
+    /**
+     * Flags copied verbatim to testrunner command.
+     */
     String testFlags = ""
-    // Error if it runs less than the expected number of tests, set to 0 to disable.
-    // It is set as a minimum so adding a unit test doesn't break the j2objc build.
+    /**
+     * j2objcTest will fail if it runs less than the expected number of tests; set to 0 to disable.
+     * <p/>
+     * It is a minimum so adding a unit test doesn't break the j2objc build.
+     */
     int testMinExpectedTests = 1
 
-    // Filter on files to test.  Note this has no effect on which tests are
-    // translated, just which tests are executed by the j2objcTest task.
-    // This filter is applied on top of all files within the 'test'
-    // java sourceSet, example:
-    // testPattern {
-    //     include '**/*.java'
-    //     exclude '**/SomeNativeCodeTest.java'
-    // }
-    // If no pattern is specified, all files within the sourceSet are tested.
+    /**
+     * Filter on files to test.  Note this has no effect on which tests are
+     * translated, just which tests are executed by the j2objcTest task.
+     * <p/>
+     * If no pattern is specified, all files within the 'test' sourceSet are translated.
+     * <p/>
+     * This filter is applied on top of all files within the 'main' and 'test'
+     * java sourceSets.  Use {@link #testPattern(groovy.lang.Closure)} to
+     * configure.
+     */
     PatternSet testPattern = null
-    // DSL method to conveniently configure the testPattern.
+    /**
+     * Configures the {@link #testPattern}
+     * <p/>
+     * Calling this method repeatedly further modifies the existing testPattern,
+     * and will create an empty testPattern if none exists.
+     * <p/>
+     * For example:
+     * <pre>
+     * translatePattern {
+     *     exclude 'CannotTranslateFileTest.java'
+     *     exclude '**&#47;CannotTranslateDir&#47;*.java'
+     *     include '**&#47;CannotTranslateDir&#47;AnExceptionToIncludeTest.java'
+     * }
+     * </pre>
+     * @see
+     * <a href="https://docs.gradle.org/current/userguide/working_with_files.html#sec:file_trees">Gradle User Guide</a>
+     */
     def testPattern(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = PatternSet) Closure cl) {
         if (testPattern == null) {
             testPattern = new PatternSet()
@@ -137,12 +218,15 @@ class J2objcPluginExtension {
         return ConfigureUtil.configure(cl, testPattern)
     }
 
-
     // LINK
-    // directory of the target Xcode project
+    /**
+     * Directory of the target Xcode project.
+     */
     // TODO(bruno): figure out what this should be "${projectDir}/Xcode"
     String xcodeProjectDir = null
-    // Xcode target the generated files should be linked to
+    /**
+     * Xcode target the generated files should be linked to.
+     */
     String xcodeTarget = null
 
     // Configures defaults whose values are dependent on the project.
