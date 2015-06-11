@@ -29,9 +29,13 @@ class J2objcPackLibrariesTask extends DefaultTask {
     // Generated ObjC binaries
     @InputFiles
     def getInputLibraries() {
+        def staticLibraryPath = "${project.buildDir}/binaries/${project.name}-j2objcStaticLibrary"
         return project.files([
-                "$inputStaticLibraryPath/ios_i386$buildType/lib${project.name}-j2objc.a",
-                "$inputStaticLibraryPath/ios_x86_64$buildType/lib${project.name}-j2objc.a",
+                "$staticLibraryPath/ios_arm64$buildType/lib${project.name}-j2objc.a",
+                "$staticLibraryPath/ios_armv7$buildType/lib${project.name}-j2objc.a",
+                "$staticLibraryPath/ios_armv7s$buildType/lib${project.name}-j2objc.a",
+                "$staticLibraryPath/ios_i386$buildType/lib${project.name}-j2objc.a",
+                "$staticLibraryPath/ios_x86_64$buildType/lib${project.name}-j2objc.a",
         ])
     }
 
@@ -40,13 +44,9 @@ class J2objcPackLibrariesTask extends DefaultTask {
         return project.file("${project.buildDir}/packedBinaries/${project.name}-j2objcStaticLibrary/ios$buildType")
     }
 
+    // Debug or Release for each library
     @Input
     String buildType
-
-    // Not an @Input, because it is used only in getInputLibraries.
-    def getInputStaticLibraryPath() {
-        return "${project.buildDir}/binaries/${project.name}-j2objcStaticLibrary"
-    }
 
     @TaskAction
     def lipoLibraries() {

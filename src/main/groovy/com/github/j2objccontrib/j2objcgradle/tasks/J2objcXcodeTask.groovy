@@ -94,11 +94,9 @@ class J2objcXcodeTask extends DefaultTask {
         // File("${project.buildDir}/j2objc") => "j2objc/"
 
         // podspec creation
-        // TODO s.libraries: this will not function for anyone who has their own list of linked libraries in the
-        // compileFlags
-        // Line separator assumed to be "\n" as this task can only be run on a Mac
+        // TODO: allow custom list of libraries
         // TODO: Need to specify the release and debug library search paths separately.
-        // Need to hook this up to the outputs of J2objcAssembleTask some how.
+        // Line separator assumed to be "\n" as this task can only be run on a Mac
         String podspecFileContents =
                 "Pod::Spec.new do |s|\n" +
                 "s.name = '${getPodName()}'\n" +
@@ -109,9 +107,9 @@ class J2objcXcodeTask extends DefaultTask {
                 "s.resources = '${j2objcResourceDirName}/**/*'\n" +
                 "s.requires_arc = true\n" +
                 "s.preserve_path = '${project.buildDir}/j2objc/*.a'\n" +
-                "s.libraries = 'ObjC', 'guava', 'javax_inject', 'jre_emul', 'jsr305', 'z', 'icucore', 'j2objc-generated-library'\n" +
+                "s.libraries = 'ObjC', 'guava', 'javax_inject', 'jre_emul', 'jsr305', 'z', 'icucore', '${project.name}-j2objc'\n" +
                 "s.xcconfig = { 'HEADER_SEARCH_PATHS' => '${getJ2ObjCHome()}/include', " +
-                "'LIBRARY_SEARCH_PATHS' => '${getJ2ObjCHome()}/lib ${project.buildDir}/j2objc' }\n" +
+                "'LIBRARY_SEARCH_PATHS' => '${getJ2ObjCHome()}/lib ${project.buildDir}/j2objcOutputs/lib/iosDebug' }\n" +
                 "end\n"
         logger.debug "podspecFileContents creation...\n\n" + podspecFileContents
         File podspecFile = getPodspecFile()

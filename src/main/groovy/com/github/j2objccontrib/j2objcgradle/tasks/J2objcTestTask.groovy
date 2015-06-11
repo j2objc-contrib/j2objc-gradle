@@ -18,6 +18,7 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
+import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
@@ -65,47 +66,16 @@ class J2objcTestTask extends DefaultTask {
     @Input
     int getTestMinExpectedTests() { return project.j2objcConfig.testMinExpectedTests }
 
-    @Input
-    boolean getTestSkip() { return project.j2objcConfig.testSkip }
-
 
     @TaskAction
     def test() {
 
-        if (getTestSkip()) {
-            logger.debug "Skipping j2objcTest"
-            return
-        }
-
-        // Generate list of tests from the source java files
-        // src/test/java/com/example/dir/ClassTest.java => "com.example.dir.ClassTest"
-
-        // Generate Test Names
-        def prefixesProperties = J2objcUtils.prefixProperties(project, getTranslateFlags())
-        def testNames = srcFiles.collect { file ->
-            def testName = project.relativePath(file)
-                    .replace('src/test/java/', '')
-                    .replace('/', '.')
-                    .replace('.java', '')
-            // src/test/java/com/example/dir/SomeTest.java => com.example.dir.SomeTest
-
-            // Translate test name according to prefixes.properties
-            // E.g. com.example.dir.SomeTest => PREFIX.SomeTest
-            def namespaceRegex = /^(([^.]+\.)+)[^.]+$/  // No match for test outside a package
-            def matcher = (testName =~ namespaceRegex)
-            if (matcher.find()) {
-                def namespace = matcher[0][1]            // com.example.dir.
-                def namespaceChopped = namespace[0..-2]  // com.example.dir
-                if (prefixesProperties.containsKey(namespaceChopped)) {
-                    def value = prefixesProperties.getProperty(namespaceChopped)
-                    testName = testName.replace(namespace, value)
-                }
-            }
-            return testName
-        }
-
         def binary = testBinaryFile.path
         logger.debug "Test Binary: $binary"
+
+        // list of test names: ['com.example.dir.ClassOneTest', 'com.example.dir.ClassTwoTest']
+        // depends on "--prefixes dir/prefixes.properties" in translateFlags
+        def testNames = testNames(project, getSrcFiles(), getTranslateFlags())
 
         def output = new ByteArrayOutputStream()
         try {
@@ -149,7 +119,7 @@ class J2objcTestTask extends DefaultTask {
                         "\"non-zero exit value 139\" indicates a process crash, most likely\n" +
                         "caused by a segmentation fault (SIGSEGV) in user space.\n" +
                         "\n" +
-                        "Look at the known crash issues to see if any may be causing this:\n" +
+                        "Look at the known crash issues to see what may be causing this:\n" +
                         "    https://github.com/google/j2objc/issues?q=is%3Aissue+crash+is%3Aopen+\n"
             }
             logger.error message
@@ -198,5 +168,38 @@ class J2objcTestTask extends DefaultTask {
                     message
             logger.debug message
         }
+    }
+
+
+    // Generate Test Names
+    // Generate list of tests from the source java files
+    // e.g. src/test/java/com/example/dir/ClassTest.java => "com.example.dir.ClassTest"
+    // depends on --prefixes dir/prefixes.properties in translateFlags
+    def static testNames(Project proj, FileCollection srcFiles, String translateFlags) {
+        def prefixesProperties = J2objcUtils.prefixProperties(proj, translateFlags)
+
+        def testNames = srcFiles.collect { file ->
+            // src/test/java/com/example/dir/SomeTest.java => com.example.dir.SomeTest
+            def testName = proj.relativePath(file)
+                    .replace('src/test/java/', '')
+                    .replace('/', '.')
+                    .replace('.java', '')
+
+            // Translate test name according to prefixes.properties
+            // E.g. com.example.dir.SomeTest => PREFIX.SomeTest
+            def namespaceRegex = /^(([^.]+\.)+)[^.]+$/  // No match for test outside a namespace
+            def matcher = (testName =~ namespaceRegex)
+            if (matcher.find()) {
+                def namespace = matcher[0][1]            // com.example.dir.
+                def namespaceChopped = namespace[0..-2]  // com.example.dir
+                if (prefixesProperties.containsKey(namespaceChopped)) {
+                    def value = prefixesProperties.getProperty(namespaceChopped)
+                    testName = testName.replace(namespace, value)
+                }
+            }
+            // com.example.dir.SomeTest
+            return testName
+        }
+        return testNames
     }
 }
