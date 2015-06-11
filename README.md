@@ -3,14 +3,13 @@ Gradle plugin for [J2ObjC](https://github.com/google/j2objc) (Java to Objective-
 
 ### Usage
 At HEAD, this plugin is in a state of significant flux as we refactor it into a first-class Gradle plugin for our beta.
-You may wish to wait for the beta release as we will not support the alpha release in any form going forward.
+You may wish to wait for the beta release as we may make backwards incompatible changes before that point.
 
 You should start with a clean java only project without any android dependencies, preferably named `'shared'`. This must be buildable using Gradle's standard `'java'` plugin. It may start as an empty project and allows you to gradually shift over code from an existing Android application.
 
 Within the `'shared'` project's `build.gradle`, apply the j2objc plugin before the java plugin.
 
-Note: the plugins {...} syntax does not work for the j2objc plugin, so you must use the old buildscript style
-For more info see: https://github.com/j2objc-contrib/j2objc-gradle/issues/130
+Note: the `plugins {...}` syntax does not work for the j2objc plugin, so you must use the old buildscript style. For more info see: https://github.com/j2objc-contrib/j2objc-gradle/issues/130
 
     // File: shared/build.gradle
     buildscript {
@@ -41,17 +40,17 @@ The preferred folder structure is:
     │   .gitignore
     │   build.gradle
     ├───android
-    │   │   build.gradle          // dependency on ':shared'
-    │   └   src                   // src/main/java/...
+    │   ├───build.gradle          // dependency on ':shared'
+    │   └───src                   // src/main/java/...
     ├───shared
     │   │   build.gradle          // apply 'j2objc' then 'java' plugins
-    │   ├   build                 // build directory
+    │   ├───build                 // build directory
     │   │   │ ...                 // build output
     │   │   └ j2objcOutputs       // j2objc generated headers and libraries
-    │   └   src                   // src/main/java/...
+    │   └───src                   // src/main/java/...
     └───xcode
-        │   Project
-        └   ProjectTests
+        ├───Project
+        └───ProjectTests
 
 ### Interim development
 For plugin contributors, you should build the plugin from this repository's root:
