@@ -15,6 +15,8 @@
  */
 
 package com.github.j2objccontrib.j2objcgradle.tasks
+
+import groovy.util.logging.Slf4j
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
@@ -24,6 +26,9 @@ import org.gradle.api.tasks.SourceSet
 /**
  * Internal utilities supporting plugin implementation.
  */
+// Without access to the project, logging is performed using the
+// static 'log' variable added during decoration with this annotation.
+@Slf4j
 class J2objcUtils {
     // TODO: ideally bundle j2objc binaries with plugin jar and load at runtime with
     // TODO: ClassLoader.getResourceAsStream(), extract, chmod and then execute
@@ -122,7 +127,7 @@ class J2objcUtils {
             props.putAll(newProps)
         }
 //        for (key in props.keys()) {
-//            logger.debug key + ": " + props.getProperty(key)
+//            log.debug key + ": " + props.getProperty(key)
 //        }
 
         return props
@@ -153,7 +158,7 @@ class J2objcUtils {
     static def addJavaFiles(Project proj, FileCollection files, List<String> generatedSourceDirs) {
         if (generatedSourceDirs.size() > 0) {
             generatedSourceDirs.each { sourceDir ->
-                logger.debug "include generatedSourceDir: " + sourceDir
+                log.debug "include generatedSourceDir: " + sourceDir
                 def buildSrcFiles = proj.files(proj.fileTree(dir: sourceDir, includes: ["**/*.java"]))
                 files += buildSrcFiles
             }
@@ -165,7 +170,7 @@ class J2objcUtils {
         if (relativePaths.size() > 0) {
             def tmpPaths = ""
             relativePaths.each { relativePath ->
-                logger.debug "Added to Path: " + relativePath
+                log.debug "Added to Path: " + relativePath
                 tmpPaths += ":${proj.file(relativePath).path}"
             }
             return tmpPaths
@@ -201,7 +206,6 @@ class J2objcUtils {
     static int matchNumberRegex(String str, String regex) {
         def matcher = (str =~ regex)
         if (!matcher.find()) {
-            // Can't use logger.error for output of str, so put it in the exception
             throw new IllegalArgumentException(
                     "${str}\n" +
                     "\n" +
@@ -209,7 +213,6 @@ class J2objcUtils {
         } else {
             def value = matcher[0][1]
             if (!value.isInteger()) {
-                // Can't use logger.error for output of str, so put it in the exception
                 throw new IllegalArgumentException(
                         "${str}\n" +
                         "\n" +
