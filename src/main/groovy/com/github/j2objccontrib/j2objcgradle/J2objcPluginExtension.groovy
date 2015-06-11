@@ -114,6 +114,7 @@ class J2objcPluginExtension {
 
 
     // TEST
+    boolean testSkip = false
     // Flags copied verbatim to testrunner command
     String testFlags = ""
     // Error if it runs less than the expected number of tests, set to 0 to disable.
