@@ -98,7 +98,8 @@ published versions on plugins.gradle.org.  The steps are:
 
 1.  As a separate commit, bump the version number in `build.gradle`. Use
 https://semver.org to guide which slot in the version number should be bumped.
-2.  Tag that separate commit as for example `v0.2.3-alpha` and push that
+File a PR, and merge that PR into master.
+2.  Tag the master merge commit where that PR is merged as for example `v0.2.3-alpha` and push that
 tag to the j2objc-contrib/j2objc-gradle repository.
 3.  Do a clean build and then publish the new version
 to https://plugins.gradle.org (`./gradlew clean build publishPlugins`).
