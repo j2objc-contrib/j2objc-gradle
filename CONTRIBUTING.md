@@ -87,3 +87,18 @@ git push -f
 
 For guidance on doing the merge itself, see
 https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging
+
+## Publishing and versioning
+These instructions are only for plugin maintainers; if you are just working
+on issues or pull requests, you can ignore this section.
+
+We'd like to maintain proper versioning history for the plugin.  This requires
+a little bit of coordination between in-code versions, GitHub tags, and
+published versions on plugins.gradle.org.  The steps are:
+
+1.  As a separate commit, bump the version number in `build.gradle`. Use
+https://semver.org to guide which slot in the version number should be bumped.
+2.  Tag that separate commit as for example `v0.2.3-alpha` and push that
+tag to the j2objc-contrib/j2objc-gradle repository.
+3.  Do a clean build and then publish the new version
+to https://plugins.gradle.org (`./gradlew clean build publishPlugins`).
