@@ -6,6 +6,22 @@
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create a new Pull Request (once your PR has been reviewed and is ready to submit see 'Preparing your pull request for submission' below).
 
+## Team workflow
+
+1.  An issue is created describing the change required.
+Feature requests should be labeled 'enhancement' while bugs should be labeled 'bug'.
+Issues are optional for trivial fixes like typos.
+2.  An issue is assigned to the developer working on it.
+3.  The issue assignee creates a pull request (PR) with their commits.
+PRs are never optional, even for trivial fixes.
+4.  The PR is assigned to one of the project committers and code review/fixes ensue.
+The PR assignee's LGTM is sufficient and neccessary to merge the PR, however additional
+code review from anyone is welcome.  The PR author should keep the PR in a state fit for submission
+(see [this section](#preparing-your-pull-request-for-submission)) through out this process.
+5.  After LGTM from the PR assignee, a project committer merges the PR into master.
+If the PR author is a committer, they can merge the PR themselves as long as they
+have an LGTM from the PR assignee (which should be a different committer).
+
 ## Style guide
 TODO
 
