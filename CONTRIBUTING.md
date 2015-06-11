@@ -86,4 +86,4 @@ git push -f
 ```
 
 For guidance on doing the merge itself, see
-http://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging
+https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging

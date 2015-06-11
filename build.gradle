@@ -14,28 +14,37 @@
  * limitations under the License.
  */
 
+// Based on https://plugins.gradle.org/docs/publish-plugin
+
+// First, apply the publishing plugin
+plugins {
+    id "com.gradle.plugin-publish" version "0.9.0"
+}
 apply plugin: 'groovy'
-apply plugin: 'java'
-apply plugin: 'maven'
 
 dependencies {
     compile gradleApi()
-    compile localGroovy()
 }
+
 
 task wrapper(type: Wrapper) {
     gradleVersion = '2.4'
     distributionUrl = 'https://services.gradle.org/distributions/gradle-2.4-all.zip'
 }
 
-repositories {
-    mavenCentral()
-}
-
 group = 'com.github.j2objccontrib.j2objcgradle'
-version = '0.2.0-alpha'
+version = '0.2.1-alpha'
 
-dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+pluginBundle {
+    website = 'https://www.github.com/j2objc-contrib/j2objc-gradle/'
+    vcsUrl = 'https://github.com/j2objc-contrib/j2objc-gradle'
+    description = 'J2ObjC Gradle Build Plugin'
+    tags = ['j2objc']
+
+    plugins {
+        j2objcPlugin {
+            id = 'com.github.j2objccontrib.j2objcgradle'
+            displayName = 'J2ObjC Gradle Build Plugin'
+        }
+    }
 }
-
