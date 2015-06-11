@@ -66,9 +66,17 @@ class J2objcTestTask extends DefaultTask {
     @Input
     int getTestMinExpectedTests() { return project.j2objcConfig.testMinExpectedTests }
 
+    @Input
+    boolean getTestSkip() { return project.j2objcConfig.testSkip }
+
 
     @TaskAction
     def test() {
+
+    	if (getTestSkip()) {
+        	logger.debug "Skipping j2objcTest"
+        	return
+    	}
 
         def binary = testBinaryFile.path
         logger.debug "Test Binary: $binary"
