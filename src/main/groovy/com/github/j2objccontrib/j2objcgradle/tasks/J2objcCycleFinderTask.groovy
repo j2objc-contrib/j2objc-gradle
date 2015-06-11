@@ -78,9 +78,6 @@ class J2objcCycleFinderTask extends DefaultTask {
     String getTranslateSourcepaths() { return project.j2objcConfig.translateSourcepaths }
 
     @Input
-    boolean getCycleFinderSkip() { return project.j2objcConfig.cycleFinderSkip }
-
-    @Input
     boolean getFilenameCollisionCheck() { return project.j2objcConfig.filenameCollisionCheck }
 
     @Input
@@ -95,11 +92,6 @@ class J2objcCycleFinderTask extends DefaultTask {
 
     @TaskAction
     def cycleFinder() {
-
-        if (getCycleFinderSkip()) {
-            logger.debug "Skipping j2objcCycleFinder"
-            return
-        }
 
         def cycleFinderExec = getJ2ObjCHome() + "/cycle_finder"
         def windowsOnlyArgs = ""

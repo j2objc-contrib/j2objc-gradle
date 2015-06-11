@@ -59,14 +59,6 @@ class J2objcPluginExtension {
 
     // CYCLEFINDER
     /**
-     * Whether to skip the j2objcCycleFinder task.
-     *
-     * @deprecated Prefer excluding the task in your own build.gradle using
-     * {@code j2objcCycleFinder &#123; enabled = false &#125; }
-     */
-    // TODO(bruno): consider enabling cycleFinder by default
-    boolean cycleFinderSkip = true
-    /**
      * Flags copied verbatim to cycle_finder command.
      */
     // Warning will ask user to configure this within j2objcConfig.
