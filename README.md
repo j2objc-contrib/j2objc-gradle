@@ -12,8 +12,8 @@ It may start as an empty project and allows you to gradually shift over code fro
 Android application. See the section below on [Folder Structure](#folder-structure).
 
 **Note: the `plugins { id 'com.github.j2objccontrib.j2objcgradle' }` syntax does
-not work for the j2objc plugin. You must use the old buildscript style.
-See: https://github.com/j2objc-contrib/j2objc-gradle/issues/130**
+not yet work for the j2objc plugin. You must use the old buildscript style shown below.
+Tracked issue: https://github.com/j2objc-contrib/j2objc-gradle/issues/130**
 
     // File: shared/build.gradle
     buildscript {
@@ -34,8 +34,8 @@ See: https://github.com/j2objc-contrib/j2objc-gradle/issues/130**
 
     // Plugin settings:
     j2objcConfig {
-        xcodeProjectDir "${projectDir}/../xcode"   // Xcode project directory
-        xcodeTarget "MyTarget"                     // Xcode application target name
+        xcodeProjectDir "${projectDir}/../ios"   // Xcode workspace directory
+        xcodeTarget "MyTarget"                   // Xcode application target name
         // More: https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcPluginExtension.groovy#L25
     }
 
@@ -46,7 +46,7 @@ Within the Android application's project `build.gradle`, make it dependent on th
         compile project(':shared')
     }
 
-## Folder Structure
+### Folder Structure
 
 The suggested folder structure is:
 
@@ -55,7 +55,7 @@ The suggested folder structure is:
     │   build.gradle
     ├───android
     │   │   build.gradle        // dependency on ':shared'
-    │   └───src                 // src/main/java/...
+    │   └───src                 // src/main/java/... no shared code
     ├───shared
     │   │   build.gradle        // apply 'java' then 'j2objc' plugins
     │   ├───build               // build directory
@@ -63,12 +63,12 @@ The suggested folder structure is:
     │   │   ├───binaries        // Contains test binary: testJ2objcExecutable/debug/testJ2objc
     │   │   └───j2objcOutputs   // j2objc generated headers and libraries
     │   ├───lib                 // if library jar has source, then j2objc can translate it
-    │   └───src                 // src/main/java/... i.e. main code for translation
-    └───xcode
+    │   └───src                 // src/main/java/... shared code for translation
+    └───ios
         ├───Project             // j2objcXcode configures dependency on j2objcOutputs/{libs|src}
         └───ProjectTests        // j2objcXcode configures the same except "debug" libraries
 
-## Disable tasks
+### Disable Tasks
 
 You can disable tasks performed by the plugin using the following configuration block in your ``build.gradle``
 
@@ -79,12 +79,14 @@ You can disable tasks performed by the plugin using the following configuration 
 Of the tasks that can be disabled, the major tasks (like ``j2objcTest``), are listed in
 [J2objcPlugin.groovy#L58](https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcPlugin.groovy#L58).
 
-### Interim development
+
+### Plugin Development
+
 For plugin contributors, you should build the plugin from this repository's root:
 
     ./gradlew build
 
-This will create a .jar containing the plugin at projectDir/build/libs/j2objc-gradle-*.jar (depending on the version).
+This will create a .jar containing the plugin at projectDir/build/libs/j2objc-gradle-X.Y.Z-alpha.jar
 
 In order to test your modification to the plugin using your own project, use the following build script in your
 java project's build.gradle:
