@@ -76,6 +76,10 @@ apply plugin: 'com.github.j2objccontrib.j2objcgradle'
 // (regular j2objcConfig here...)
 ```
 
+Note that when rapidly developing and testing changes to the plugin by building your own project,
+avoid using the Gradle daemon as issues sometimes arise with the daemon using an old version
+of the plugin jar.  You can stop an existing daemon with `./gradlew --stop` and avoid the daemon
+on a particular build with the `--no-daemon` flag to gradlew.
 
 ### Contributing
 See [CONTRIBUTING.md](CONTRIBUTING.md#quick-start).
