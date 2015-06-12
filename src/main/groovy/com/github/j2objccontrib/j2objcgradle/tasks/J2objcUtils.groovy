@@ -188,8 +188,7 @@ class J2objcUtils {
         def classPathList = []
         // user defined libraries
         libraries.each { library ->
-            def libPath = "${proj.projectDir}/lib/" + library
-            classPathList += libPath
+            classPathList += proj.file(library).absolutePath
         }
         // j2objc default libraries
         translateJ2objcLibs.each { library ->

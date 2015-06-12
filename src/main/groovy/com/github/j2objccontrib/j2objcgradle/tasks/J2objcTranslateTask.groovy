@@ -16,7 +16,6 @@
 
 package com.github.j2objccontrib.j2objcgradle.tasks
 import org.gradle.api.DefaultTask
-import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
@@ -64,15 +63,7 @@ class J2objcTranslateTask extends DefaultTask {
             allFiles = allFiles.plus(project.files(it))
         }
         translateClassPaths.each {
-            allFiles = allFiles.plus(project.files('lib/' + it))
-        }
-        if (getAppendProjectDependenciesToSourcepath()) {
-            project.configurations.compile.allDependencies.each { dep ->
-                if (dep instanceof ProjectDependency) {
-                    def depProj = ((ProjectDependency) dep).getDependencyProject()
-                    allFiles = allFiles.plus(J2objcUtils.srcDirs(depProj, 'main', 'java'))
-                }
-            }
+            allFiles = allFiles.plus(project.files(it))
         }
         return allFiles
     }
@@ -91,11 +82,6 @@ class J2objcTranslateTask extends DefaultTask {
 
     @Input @Optional
     String getTranslateSourcepaths() { return project.j2objcConfig.translateSourcepaths }
-
-    @Input
-    boolean getAppendProjectDependenciesToSourcepath() {
-        return project.j2objcConfig.appendProjectDependenciesToSourcepath
-    }
 
     @Input
     boolean getFilenameCollisionCheck() { return project.j2objcConfig.filenameCollisionCheck }
@@ -203,20 +189,6 @@ class J2objcTranslateTask extends DefaultTask {
 
         // Generated Files
         sourcepath += J2objcUtils.absolutePathOrEmpty(project, getGeneratedSourceDirs())
-
-        // Project Dependencies
-        if (getAppendProjectDependenciesToSourcepath()) {
-            def depSourcePaths = []
-            project.configurations.compile.allDependencies.each { dep ->
-                if (dep instanceof ProjectDependency) {
-                    def depProj = ((ProjectDependency) dep).getDependencyProject()
-                    J2objcUtils.srcDirs(depProj, 'main', 'java').srcDirs.each {
-                        depSourcePaths.add(it.path)
-                    }
-                }
-            }
-            sourcepath += ':' + depSourcePaths.join(':')
-        }
 
         // TODO perform file collision check with already translated files in the srcGenDir
         if (getFilenameCollisionCheck()) {

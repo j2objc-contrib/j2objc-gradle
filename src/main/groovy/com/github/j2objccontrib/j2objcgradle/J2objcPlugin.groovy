@@ -81,12 +81,20 @@ class J2objcPlugin implements Plugin<Project> {
                 throw new InvalidUserDataException(message)
             }
 
-            extensions.create('j2objcConfig', J2objcPluginExtension)
+            extensions.create('j2objcConfig', J2objcPluginExtension, project)
             afterEvaluate { evaluatedProject ->
                 // Validate minimally required parameters.
                 // j2objcHome() will throw the appropriate exception internally.
                 assert J2objcUtils.j2objcHome(evaluatedProject)
-                evaluatedProject.j2objcConfig.configureDefaults(evaluatedProject)
+
+                if (!evaluatedProject.j2objcConfig.isFinalConfigured()) {
+                    def message = "You must call finalConfigure() in j2objcConfig, ex:\n" +
+                                  "j2objcConfig {\n" +
+                                  "    // other settings\n" +
+                                  "    finalConfigure()\n" +
+                                  "}"
+                    throw new InvalidUserDataException(message)
+                }
             }
 
             // This is an intermediate directory only.  Clients should use only directories
@@ -130,9 +138,6 @@ class J2objcPlugin implements Plugin<Project> {
                 srcGenDir = j2objcSrcGenDir
             }
 
-            // Configures native compilation for the production library and the test executable.
-            new J2objcNativeCompilation().apply(project, j2objcSrcGenDir)
-
             // Note the 'debugTestJ2objcExecutable' task is dynamically created by the objective-c plugin applied
             // on the above line.  It is specified by the testJ2objc native component.
             tasks.create(name: 'j2objcTest', type: J2objcTestTask,
@@ -145,6 +150,7 @@ class J2objcPlugin implements Plugin<Project> {
             // 'check' task is added by 'java' plugin, it depends on 'test' and
             // all the other verification tasks, now including 'j2objcTest'.
             lateDependsOn(project, 'check', 'j2objcTest')
+
 
             tasks.create(name: 'j2objcPackLibrariesDebug', type: J2objcPackLibrariesTask,
                     dependsOn: 'buildAllObjcLibraries') {
