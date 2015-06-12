@@ -11,7 +11,8 @@
 1.  An issue is created describing the change required.
 Feature requests should be labeled 'enhancement' while bugs should be labeled 'bug'.
 Issues are optional for trivial fixes like typos.
-2.  An issue is assigned to the developer working on it.
+2.  An issue is assigned to the developer working on it.  If the developer is
+not assignable due to GitHub.com permissions, add the label 'public-dev-assigned'.
 3.  The issue assignee creates a pull request (PR) with their commits.
 PRs are never optional, even for trivial fixes.
 4.  The PR is assigned to one of the project committers and code review/fixes ensue.
