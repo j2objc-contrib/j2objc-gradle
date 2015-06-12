@@ -95,6 +95,16 @@ class J2objcPlugin implements Plugin<Project> {
                                   "}"
                     throw new InvalidUserDataException(message)
                 }
+
+                if (!('-fobjc-arc' in evaluatedProject.j2objcConfig.extraObjcCompilerArgs) &&
+                    evaluatedProject.j2objcConfig.translateFlags.contains('-use-arc')) {
+                    logger.warn "${evaluatedProject.name}: When translating with -use-arc, it is recommended " +
+                                "to use the '-fobjc-arc' Objective C compiler flag, ex:\n"
+                                "j2objcConfig {\n" +
+                                "    // other settings\n" +
+                                "    extraObjcCompilerArgs += '-fobjc-arc'\n" +
+                                "}"
+                }
             }
 
             // This is an intermediate directory only.  Clients should use only directories
