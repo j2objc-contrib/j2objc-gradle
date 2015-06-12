@@ -52,6 +52,17 @@ The preferred folder structure is:
         ├───Project
         └───ProjectTests
 
+## Disable tasks
+
+You can disable tasks performed by the plugin using the following configuration block in your ``build.gradle``
+
+```
+j2objcTest {
+    enabled = false
+}
+```
+Where ``j2objcTest`` can be any task defined [J2objcPlugin.groovy#L70](https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcPlugin.groovy#L70).
+
 ### Interim development
 For plugin contributors, you should build the plugin from this repository's root:
 ```
