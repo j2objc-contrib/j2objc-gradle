@@ -27,6 +27,9 @@ import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel
+import org.gradle.api.plugins.BasePlugin
+import org.gradle.api.plugins.JavaPlugin
+
 /*
  * Usage:
  * 1) Download a j2objc release and unzip it to a directory:
@@ -72,21 +75,20 @@ class J2objcPlugin implements Plugin<Project> {
     void apply(Project project) {
         // This avoids a lot of "project." prefixes, such as "project.tasks.create"
         project.with {
-            if (!plugins.hasPlugin('java')) {
-                def message =
-                        "j2objc plugin didn't find the 'java' plugin in the '${project.name}' project.\n"+
-                        "This is a requirement for using j2objc. Please see usage information at:\n" +
-                        "\n" +
-                        "https://github.com/j2objc-contrib/j2objc-gradle/#usage"
-                throw new InvalidUserDataException(message)
-            }
-
             extensions.create('j2objcConfig', J2objcPluginExtension)
             afterEvaluate { evaluatedProject ->
                 // Validate minimally required parameters.
                 // j2objcHome() will throw the appropriate exception internally.
                 assert J2objcUtils.j2objcHome(evaluatedProject)
                 evaluatedProject.j2objcConfig.configureDefaults(evaluatedProject)
+                if (!plugins.hasPlugin('java')) {
+                    def message =
+                            "\n\nJ2ObjC plugin didn't find the 'java' plugin in the '${project.name}' project.\n"+
+                            "This is a requirement for using j2objc. Please see usage information at:\n" +
+                            "\n" +
+                            "https://github.com/j2objc-contrib/j2objc-gradle/#usage\n"
+                    throw new InvalidUserDataException(message)
+                }
             }
 
             // This is an intermediate directory only.  Clients should use only directories
@@ -142,26 +144,28 @@ class J2objcPlugin implements Plugin<Project> {
                 description 'Runs all tests in the generated Objective-C code'
                 testBinaryFile = file("${buildDir}/binaries/testJ2objcExecutable/debug/testJ2objc")
             }
-            // 'check' task is added by 'java' plugin, it depends on 'test' and
-            // all the other verification tasks, now including 'j2objcTest'.
-            lateDependsOn(project, 'check', 'j2objcTest')
+            // 'check' task is added by 'java' plugin, it depends on 'test' and all the other verification tasks,
+            // now including 'j2objcTest'. Defer dependsOn as Java plugin may not be loaded yet.
+            plugins.withType(JavaPlugin) {
+                tasks.getByName('check').dependsOn 'j2objcTest'
+            }
 
             tasks.create(name: 'j2objcPackLibrariesDebug', type: J2objcPackLibrariesTask,
-                    dependsOn: 'buildAllObjcLibraries') {
+                    dependsOn: 'j2objcBuildAllObjcLibraries') {
                 group 'build'
                 description 'Packs multiple architectures into a single debug static library'
                 buildType = 'Debug'
             }
 
             tasks.create(name: 'j2objcPackLibrariesRelease', type: J2objcPackLibrariesTask,
-                    dependsOn: 'buildAllObjcLibraries') {
+                    dependsOn: 'j2objcBuildAllObjcLibraries') {
                 group 'build'
                 description 'Packs multiple architectures into a single release static library'
                 buildType = 'Release'
             }
 
             tasks.create(name: 'j2objcAssemble', type: J2objcAssembleTask,
-                    dependsOn: ['buildAllObjcLibraries',
+                    dependsOn: ['j2objcBuildAllObjcLibraries',
                                 'j2objcPackLibrariesDebug', 'j2objcPackLibrariesRelease']) {
                 group 'build'
                 description 'Copies final generated source after testing to assembly directories'
@@ -169,7 +173,9 @@ class J2objcPlugin implements Plugin<Project> {
                 libDir = file("${buildDir}/binaries/${project.name}-j2objcStaticLibrary")
                 packedLibDir = file("${buildDir}/packedBinaries/${project.name}-j2objcStaticLibrary")
             }
-            lateDependsOn(project, 'assemble', 'j2objcAssemble')
+            plugins.withType(JavaPlugin) {
+                tasks.getByName('assemble').dependsOn 'j2objcAssemble'
+            }
 
             // TODO: Where shall we fit this task in the plugin lifecycle?
             tasks.create(name: 'j2objcXcode', type: J2objcXcodeTask,
@@ -177,23 +183,6 @@ class J2objcPlugin implements Plugin<Project> {
                 // This is not in the build group because you do not need to do it on every build.
                 description 'Depends on j2objc translation, create a Pod file link it to Xcode project'
                 srcGenDir = j2objcSrcGenDir
-            }
-        }
-    }
-
-    // Has task named afterTaskName depend on the task named beforeTaskName, regardless of
-    // whether afterTaskName has been created yet or not.
-    // The before task must already exist.
-    private def lateDependsOn(Project proj, String afterTaskName, String beforeTaskName) {
-        assert null != proj.tasks.findByName(beforeTaskName)
-        def afterTask = proj.tasks.findByName(afterTaskName)
-        if (afterTask != null) {
-            afterTask.dependsOn beforeTaskName
-        } else {
-            proj.tasks.whenTaskAdded { task ->
-                if (task.name == afterTaskName) {
-                    task.dependsOn beforeTaskName
-                }
             }
         }
     }
