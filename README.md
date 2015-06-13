@@ -53,31 +53,66 @@ The suggested folder structure is:
     workspace
     │   .gitignore
     │   build.gradle
-    ├───android
-    │   │   build.gradle        // dependency on ':shared'
-    │   └───src                 // src/main/java/... no shared code
-    ├───shared
-    │   │   build.gradle        // apply 'java' then 'j2objc' plugins
-    │   ├───build               // build directory
-    │   │   ├───...             // build output
-    │   │   ├───binaries        // Contains test binary: testJ2objcExecutable/debug/testJ2objc
-    │   │   └───j2objcOutputs   // j2objc generated headers and libraries
-    │   ├───lib                 // if library jar has source, then j2objc can translate it
-    │   └───src                 // src/main/java/... shared code for translation
-    └───ios
-        ├───Project             // j2objcXcode configures dependency on j2objcOutputs/{libs|src}
-        └───ProjectTests        // j2objcXcode configures the same except "debug" libraries
+    ├── android
+    │   ├── build.gradle               // dependency on ':shared'
+    │   └── src                        // src/main/java/... no shared code
+    ├── shared
+    │   ├── build.gradle               // apply 'java' then 'j2objc' plugins
+    │   ├── build                      // build directory
+    │   │   ├── ...                    // build output
+    │   │   ├── binaries               // Contains test binary: testJ2objcExecutable/debug/testJ2objc
+    │   │   ├── j2objc-shared.podspec  // j2objcXcode generates these settings to modify Xcode
+    │   │   └── j2objcOutputs          // j2objc generated headers and libraries
+    │   ├── lib                        // library dependencies, must have source code
+    │   │   └── lib-with-src.jar       // library with source is translated
+    │   └── src                        // src/main/java/... shared code for translation
+    └── ios
+        ├── IosApp.xcworkspace         // Xcode workspace
+        ├── IosApp.xcodeproj           // Xcode project, which is modified by j2objcXcode / CocoaPods
+        ├── IosApp                     // j2objcXcode configures dependency on j2objcOutputs/{libs|src}
+        ├── IosAppTests                // j2objcXcode configures the same except "debug" libraries
+        └── Podfile                    // j2objcXcode modifies this file for use by CocoaPods
 
-### Disable Tasks
+### Tasks
 
-You can disable tasks performed by the plugin using the following configuration block in your ``build.gradle``
+These are the main tasks for the plugin:
+
+    j2objcCycleFinder           - Find cycles that can cause memory leaks, see notes below
+    j2objcTranslate             - Translates to Objective-C
+    j2objcBuildAllObjcLibraries - Build all the objective c libraries for all targets
+    j2objcAssemble              - Builds the debug and release libaries, packing them in to a fat library
+    j2objcTest                  - Run all java tests against the Objective-C test binary
+    j2objcXcode                 - Configure Xcode to link to static library and header files
+
+Note that you can use the Gradle shorthand of "$ gradlew jA" to do the j2objcAssemble task.
+The other shorthand expressions are `jC`, `jTr`, `jB`, `jTe` and `jX`.
+
+#### Task Enable and Disable
+
+You can disable tasks performed by the plugin using the following configuration block in your
+`build.gradle`. This is separate and alongside the j2objcConfig settings. For example, to
+disable the `j2objcTest` task, do the following:
 
     j2objcTest {
         enabled = false
     }
 
-Of the tasks that can be disabled, the major tasks (like ``j2objcTest``), are listed in
-[J2objcPlugin.groovy#L58](https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcPlugin.groovy#L58).
+    j2objcConfig {
+        ...
+    }
+
+#### j2objcCycleFinder
+
+This task is disabled by default as it requires greater sophistication to use. It runs the
+`cycle_finder` tool in the J2ObjC release to detect memory cycles in your application.
+Objects that are part of a memory cycle on iOS won't be deleted as it doesn't support
+garbage collection. The tool will give you feedback when you us it. To enable it:
+
+    j2objcTest {
+        enabled = false
+    }
+
+For more details: https://github.com/google/j2objc/wiki/Cycle-Finder-Tool
 
 
 ### Plugin Development
