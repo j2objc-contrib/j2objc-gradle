@@ -186,14 +186,19 @@ class J2objcPlugin implements Plugin<Project> {
     // The before task must already exist.
     private def lateDependsOn(Project proj, String afterTaskName, String beforeTaskName) {
         assert null != proj.tasks.findByName(beforeTaskName)
-        def afterTask = proj.tasks.findByName(afterTaskName)
-        if (afterTask != null) {
-            afterTask.dependsOn beforeTaskName
-        } else {
-            proj.tasks.whenTaskAdded { task ->
-                if (task.name == afterTaskName) {
-                    task.dependsOn beforeTaskName
-                }
+        // You can't just call tasks.findByName on afterTaskName - for certain tasks like 'assemble' for
+        // reasons unknown, the Java plugin creates - right there! - the task; this prevents
+        // later code from modifying binaries, sourceSets, etc.  If you see an error
+        // mentioning 'state GraphClosed' saying you can't mutate some object, see if you are magically
+        // causing Gradle to make the task by using findByName!  Issue #156
+
+        // tasks.all cleanly calls this closure on any existing elements and for all elements
+        // added in the future.
+        // TODO: Find a better way to have afterTask depend on beforeTask, without
+        // materializing afterTask early.
+        proj.tasks.all { task ->
+            if (task.name == afterTaskName) {
+                task.dependsOn beforeTaskName
             }
         }
     }
