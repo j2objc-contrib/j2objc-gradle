@@ -111,6 +111,10 @@ on a particular build with the `--no-daemon` flag to gradlew.
 ### Contributing
 See [CONTRIBUTING.md](CONTRIBUTING.md#quick-start).
 
+### FAQ
+
+See [FAQ.md](FAQ.md).
+
 ### License
 
 This library is distributed under the Apache 2.0 license found in the
