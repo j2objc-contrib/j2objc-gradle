@@ -30,13 +30,9 @@ class J2objcPackLibrariesTask extends DefaultTask {
     @InputFiles
     def getInputLibraries() {
         def staticLibraryPath = "${project.buildDir}/binaries/${project.name}-j2objcStaticLibrary"
-        return project.files([
-                "$staticLibraryPath/ios_arm64$buildType/lib${project.name}-j2objc.a",
-                "$staticLibraryPath/ios_armv7$buildType/lib${project.name}-j2objc.a",
-                "$staticLibraryPath/ios_armv7s$buildType/lib${project.name}-j2objc.a",
-                "$staticLibraryPath/ios_i386$buildType/lib${project.name}-j2objc.a",
-                "$staticLibraryPath/ios_x86_64$buildType/lib${project.name}-j2objc.a",
-        ])
+        return project.files(getSupportedArchs().collect { arch ->
+            "$staticLibraryPath/$arch$buildType/lib${project.name}-j2objc.a"
+        })
     }
 
     @OutputDirectory
@@ -47,6 +43,9 @@ class J2objcPackLibrariesTask extends DefaultTask {
     // Debug or Release for each library
     @Input
     String buildType
+
+    @Input
+    List<String> getSupportedArchs() { return project.j2objcConfig.supportedArchs }
 
     @TaskAction
     def lipoLibraries() {

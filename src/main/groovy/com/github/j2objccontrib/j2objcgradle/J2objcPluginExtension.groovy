@@ -16,15 +16,32 @@
 
 package com.github.j2objccontrib.j2objcgradle
 
-import groovy.transform.PackageScope
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.tasks.util.PatternSet
 import org.gradle.util.ConfigureUtil
-
 /**
  * Further configuration uses the following fields, setting them in j2objcConfig within build.gradle
  */
 class J2objcPluginExtension {
+
+    final protected Project project
+
+    J2objcPluginExtension(Project project) {
+        assert project != null
+        this.project = project
+
+        // The J2objcNativeCompilation effectively provides further extensions
+        // to the Project, by configuring the 'objective-c' native build plugin.
+        // We don't want to expose the instance to clients of the 'j2objc' plugin,
+        // but we also need to configure this object via methods on J2objcPluginExtension.
+        nativeCompilation = new J2objcNativeCompilation(project)
+
+        // Provide defaults for assembly output locations.
+        destSrcDir = "${project.buildDir}/j2objcOutputs/src/main/objc"
+        destSrcDirTest = "${project.buildDir}/j2objcOutputs/src/test/objc"
+        destLibDir = "${project.buildDir}/j2objcOutputs/lib"
+    }
 
     /**
      * Where to assemble generated main source files.
@@ -155,13 +172,76 @@ class J2objcPluginExtension {
     String translateSourcepaths = null
 
     /**
-     * Set to true if java project dependencies of the current project should be appended to the sourcepath
-     * automatically.
-     * <p/>
-     * You will most likely want to use --build-closure in the translateFlags as well.
+     * @see #dependsOnJ2objcLib(org.gradle.api.Project)
      */
-    // TODO: Handle this automatically in the future.
-    boolean appendProjectDependenciesToSourcepath = false
+    // TODO: Do this automatically based on project dependencies.
+    def dependsOnJ2objcLib(String beforeProjectName) {
+        return dependsOnJ2objcLib(project.project(beforeProjectName))
+    }
+
+    protected J2objcNativeCompilation nativeCompilation
+    /**
+     * Uses the generated headers and compiled j2objc libraries of the given project when
+     * compiling this project.
+     * <p/>
+     * Generally every cross-project 'compile' dependency should have a corresponding
+     * call to dependsOnJ2objcLib.
+     * <p/>
+     * It is safe to use this in conjunction with --build-closure.
+     * <p/>
+     * Do not also include beforeProject's java source or jar in the
+     * translateSourcepaths or translateClassPaths, respectively.  Calling this method
+     * is preferable and sufficient.
+     */
+    // TODO: Do this automatically based on project dependencies.
+    def dependsOnJ2objcLib(Project beforeProject) {
+        project.with {
+            // We need to have j2objcConfig on the beforeProject configured first.
+            evaluationDependsOn beforeProject.path
+
+            if (!beforeProject.plugins.hasPlugin(J2objcPlugin)) {
+                def message = "$beforeProject does not use the j2objc plugin.\n" +
+                              "dependsOnJ2objcLib can be used only with another project that\n" +
+                              "itself uses the j2objc plugin."
+                throw new InvalidUserDataException(message)
+            }
+
+            // Build the java/objc libraries and the objc headers of
+            // the other project first.
+            j2objcPreBuild.dependsOn {
+                beforeProject.tasks.getByName('j2objcAssemble')
+            }
+            // Since we assert the presence of the J2objcPlugin above,
+            // we are guaranteed that the java plugin, which creates the jar task,
+            // is also present.
+            j2objcPreBuild.dependsOn {
+                beforeProject.tasks.getByName('jar')
+            }
+
+            logger.debug "$project:j2objcTranslate must use ${beforeProject.jar.archivePath}"
+            j2objcConfig {
+                translateClassPaths += beforeProject.jar.archivePath
+            }
+        }
+
+        nativeCompilation.dependsOnJ2objcLib(beforeProject)
+    }
+
+    /**
+     * Which architectures will be built and supported in packed ('fat') libraries.
+     * <p/>
+     * The three ios_arm* architectures are for iPhone and iPad devices, while
+     * ios_i386 and ios_x86_64 are for their simulators.
+     * <p/>
+     * Adding an unrecognized new architecture here will fail.
+     * <p/>
+     * Removing an architecture here will cause that architecture not to be built
+     * and corresponding gradle tasks to not be created.
+     *
+     * @see J2objcNativeCompilation#ALL_SUPPORTED_ARCHS
+     */
+    String[] supportedArchs = J2objcNativeCompilation.ALL_SUPPORTED_ARCHS.clone()
+
 
     // TEST
     /**
@@ -210,7 +290,22 @@ class J2objcPluginExtension {
         return ConfigureUtil.configure(cl, testPattern)
     }
 
-    // LINK
+    // Native build customization.
+    /**
+     * Directories of objective-c source to compile in addition to the
+     * translated source.
+     */
+    String[] extraObjcSrcDirs = []
+    /**
+     * Additional arguments to pass to the objective-c compiler.
+     */
+    String[] extraObjcCompilerArgs = []
+    /**
+     * Additional arguments to pass to the native linker.
+     */
+    String[] extraLinkerArgs = []
+
+    // XCODE
     /**
      * Directory of the target Xcode project.
      */
@@ -221,18 +316,20 @@ class J2objcPluginExtension {
      */
     String xcodeTarget = null
 
-    // Configures defaults whose values are dependent on the project.
-    @PackageScope
-    def configureDefaults(Project project) {
-        // Provide defaults for assembly output locations.
-        if (destSrcDir == null) {
-            destSrcDir = "${project.buildDir}/j2objcOutputs/src/main/objc"
-        }
-        if (destSrcDirTest == null) {
-            destSrcDirTest = "${project.buildDir}/j2objcOutputs/src/test/objc"
-        }
-        if (destLibDir == null) {
-            destLibDir = "${project.buildDir}/j2objcOutputs/lib"
-        }
+    protected boolean finalConfigured = false
+    /**
+     * Configures the native build using.  Must be called at the very
+     * end of your j2objcConfig block.
+     */
+    // TODO: When Gradle makes it possible to modify a native build config
+    // after initial creation, we can remove this, and have methods on this object
+    // mutate the existing native model { } block.  See:
+    // https://discuss.gradle.org/t/problem-with-model-block-when-switching-from-2-2-1-to-2-4/9937
+    def finalConfigure() {
+        nativeCompilation.apply(project.file("${project.buildDir}/j2objcSrcGen"))
+        finalConfigured = true
+    }
+    boolean isFinalConfigured() {
+        return finalConfigured
     }
 }

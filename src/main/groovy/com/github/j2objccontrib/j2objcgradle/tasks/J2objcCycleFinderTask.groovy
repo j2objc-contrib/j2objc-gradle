@@ -54,7 +54,7 @@ class J2objcCycleFinderTask extends DefaultTask {
             allFiles = allFiles.plus(project.files(it))
         }
         translateClassPaths.each {
-            allFiles = allFiles.plus(project.files('lib/' + it))
+            allFiles = allFiles.plus(project.files(it))
         }
         return allFiles
     }
