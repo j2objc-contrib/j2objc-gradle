@@ -270,12 +270,17 @@ class J2objcNativeCompilation {
                 }
             }
 
-            // Marker task to build all objective-c libraries.
-            // From Gradle User Guide: 54.14.5. Building all possible variants
+            // Marker tasks to build all objective-c libraries.
+            // See Gradle User Guide: 54.14.5. Building all possible variants
             // https://docs.gradle.org/current/userguide/nativeBinaries.html#N161B3
-            task('j2objcBuildAllObjcLibraries').configure {
+            task('j2objcBuildObjcDebug').configure {
                 dependsOn binaries.withType(NativeLibraryBinary).matching {
-                    it.buildable
+                    it.buildable && it.buildType.name == 'debug'
+                }
+            }
+            task('j2objcBuildObjcRelease').configure {
+                dependsOn binaries.withType(NativeLibraryBinary).matching {
+                    it.buildable && it.buildType.name == 'release'
                 }
             }
         }
