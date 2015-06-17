@@ -118,12 +118,16 @@ class J2objcTranslateTask extends DefaultTask {
             }
             srcFilesChanged = originalSrcFiles
         } else {
+            boolean nonSourceFileChanged = false
             srcFilesChanged = project.files()
             inputs.outOfDate { change ->
                 // We must filter by srcFiles, since all possible input files are @InputFiles to this task.
                 if (originalSrcFiles.contains(change.file)) {
                     logger.debug "New or Updated file: " + change.file
                     srcFilesChanged += project.files(change.file)
+                } else {
+                    nonSourceFileChanged = true
+                    logger.debug "New or Updated non-source file: " + change.file
                 }
             }
             def removedFileNames = []
@@ -133,6 +137,9 @@ class J2objcTranslateTask extends DefaultTask {
                     logger.debug "Removed file: " + change.file.name
                     def nameWithoutExt = file.name.toString().replaceFirst("\\..*", "")
                     removedFileNames += nameWithoutExt
+                } else {
+                    nonSourceFileChanged = true
+                    logger.debug "Removed non-source file: " + change.file
                 }
             }
             logger.debug "Removed files: " + removedFileNames.size()
@@ -141,34 +148,43 @@ class J2objcTranslateTask extends DefaultTask {
             FileCollection unchangedSrcFiles = originalSrcFiles - srcFilesChanged
             logger.debug "Unchanged files: " + unchangedSrcFiles.getFiles().size()
 
-            def translatedFiles = 0
-            if (srcGenDir.exists()) {
-                FileCollection destFiles = project.files(project.fileTree(
-                        dir: srcGenDir, includes: ["**/*.h", "**/*.m"]))
+            if (!nonSourceFileChanged) {
+                def translatedFiles = 0
+                if (srcGenDir.exists()) {
+                    FileCollection destFiles = project.files(project.fileTree(
+                            dir: srcGenDir, includes: ["**/*.h", "**/*.m"]))
 
-                // remove translated .h and .m files which has no corresponding .java files anymore
-                destFiles.each { File file ->
-                    def nameWithoutExt = file.name.toString().replaceFirst("\\..*", "")
-                    if (removedFileNames.contains(nameWithoutExt)) {
-                        file.delete()
+                    // remove translated .h and .m files which has no corresponding .java files anymore
+                    destFiles.each { File file ->
+                        def nameWithoutExt = file.name.toString().replaceFirst("\\..*", "")
+                        if (removedFileNames.contains(nameWithoutExt)) {
+                            file.delete()
+                        }
                     }
+                    // compute the number of translated files
+                    translatedFiles = destFiles.getFiles().size()
                 }
-                // compute the number of translated files
-                translatedFiles = destFiles.getFiles().size()
-            }
 
-            // add java classpath base to classpath for incremental translation
-            // we have to check if translation has been done before or not
-            // if it is only an incremental build we must remove the --build-closure
-            // argument to make fewer translations of dependent classes
-            // NOTE: There is one case which fails, when you have translated the code
-            // make an incremental change which refers to a not yet translated class from a
-            // source lib. In this case due to not using --build-closure the dependent source
-            // will not be translated, this can be fixed with a clean and fresh build.
-            // Due to this issue, incremental builds with --build-closure are enabled ONLY
-            // if the user requests it with the UNSAFE_incrementalBuildClosure flag.
-            if (translatedFiles > 0 && project.j2objcConfig.UNSAFE_incrementalBuildClosure) {
-                translateFlags = translateFlags.toString().replaceFirst("--build-closure", "").trim()
+                // add java classpath base to classpath for incremental translation
+                // we have to check if translation has been done before or not
+                // if it is only an incremental build we must remove the --build-closure
+                // argument to make fewer translations of dependent classes
+                // NOTE: There is one case which fails, when you have translated the code
+                // make an incremental change which refers to a not yet translated class from a
+                // source lib. In this case due to not using --build-closure the dependent source
+                // will not be translated, this can be fixed with a clean and fresh build.
+                // Due to this issue, incremental builds with --build-closure are enabled ONLY
+                // if the user requests it with the UNSAFE_incrementalBuildClosure flag.
+                if (translatedFiles > 0 && project.j2objcConfig.UNSAFE_incrementalBuildClosure) {
+                    translateFlags = translateFlags.toString().replaceFirst("--build-closure", "").trim()
+                }
+            } else {
+                // A change outside of the source set directories has occurred, so an incremental build isn't possible.
+                if (srcGenDir.exists()) {
+                    srcGenDir.deleteDir()
+                    srcGenDir.mkdirs()
+                }
+                srcFilesChanged = originalSrcFiles
             }
         }
 
