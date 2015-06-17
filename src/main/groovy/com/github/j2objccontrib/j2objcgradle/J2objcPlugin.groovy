@@ -29,42 +29,6 @@ import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel
 /*
  * Usage:
- * 1) Download a j2objc release and unzip it to a directory:
- *     https://github.com/google/j2objc/releases
- * 2) Copy this file (j2objc.gradle) next to the build.gradle file of the project to be translated
- * 3) Copy and paste the following to your project's build.gradle file
- *     (it's currently best to run "gradlew clean" when changing this configuration)
-
- apply from: 'j2objc.gradle'
-
- j2objcConfig {
-
- // MODIFY to where your unzipped j2objc directory is located
- // NOTE download the latest version from: https://github.com/google/j2objc/releases
- j2objcHome null  // e.g. "${projectDir}/../../j2objc or absolute path
-
- // MODIFY to where generated objc files should be put for Xcode project
- // NOTE these files should be checked in to the repository and updated as needed
- // NOTE this should contain ONLY j2objc generated files, other contents will be deleted
- destDir null  // e.g. "${projectDir}/../Xcode/j2objc-generated"
-
- // Further settings are listed in the "J2objcPluginExtension" class below
- }
-
- * 4) Run command to generate and copyfiles. This will only succeed if all steps succeed.
- *
- *     $ gradlew <SHARED_PROJECT>:j2objcCopy
- *
- * Main Tasks:
- *     j2objcCycleFinder - Find cycles that can cause memory leaks
- *                         See https://github.com/google/j2objc/wiki/Cycle-Finder-Tool
- *     j2objcTranslate   - Translates to Objective-C
- *     j2objcTest        - Run all java tests against the Objective-C test binary
- *     j2objcAssemble    - Builds the debug and release libaries, packing them in to a fat library
- *     j2objcXcode       - Configure Xcode to link to static library and header files
- *
- * Note that you can use the Gradle shorthand of "$ gradlew jAs" to do the j2objcAssemble task.
- * The other shorthand expressions are "jTr", "jTe" and "jX"
  */
 
 class J2objcPlugin implements Plugin<Project> {
@@ -153,21 +117,21 @@ class J2objcPlugin implements Plugin<Project> {
 
 
             tasks.create(name: 'j2objcPackLibrariesDebug', type: J2objcPackLibrariesTask,
-                    dependsOn: 'buildAllObjcLibraries') {
+                    dependsOn: 'j2objcBuildAllObjcLibraries') {
                 group 'build'
                 description 'Packs multiple architectures into a single debug static library'
                 buildType = 'Debug'
             }
 
             tasks.create(name: 'j2objcPackLibrariesRelease', type: J2objcPackLibrariesTask,
-                    dependsOn: 'buildAllObjcLibraries') {
+                    dependsOn: 'j2objcBuildAllObjcLibraries') {
                 group 'build'
                 description 'Packs multiple architectures into a single release static library'
                 buildType = 'Release'
             }
 
             tasks.create(name: 'j2objcAssemble', type: J2objcAssembleTask,
-                    dependsOn: ['buildAllObjcLibraries',
+                    dependsOn: ['j2objcBuildAllObjcLibraries',
                                 'j2objcPackLibrariesDebug', 'j2objcPackLibrariesRelease']) {
                 group 'build'
                 description 'Copies final generated source after testing to assembly directories'
