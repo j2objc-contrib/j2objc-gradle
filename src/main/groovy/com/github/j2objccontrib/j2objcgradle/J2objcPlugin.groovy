@@ -114,7 +114,7 @@ class J2objcPlugin implements Plugin<Project> {
                 srcGenDir = j2objcSrcGenDir
             }
 
-            // Note the 'debugTestJ2objcExecutable' task is dynamically created by the objective-c plugin applied
+            // Note the 'debugTestJ2objcExecutable' task is dynamically created by the Objective-C plugin applied
             // on the above line.  It is specified by the testJ2objc native component.
             tasks.create(name: 'j2objcTest', type: J2objcTestTask,
                     dependsOn: ['test', 'debugTestJ2objcExecutable']) {

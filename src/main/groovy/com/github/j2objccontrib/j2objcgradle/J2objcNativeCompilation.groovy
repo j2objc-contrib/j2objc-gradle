@@ -25,7 +25,7 @@ class J2objcNativeCompilation {
         project.with {
             // Wire up dependencies with tasks created dynamically by native plugin(s).
             tasks.whenTaskAdded { task ->
-                // The objective-c native plugin will add tasks of the form 'compile...Objc' for each
+                // The Objective-C native plugin will add tasks of the form 'compile...Objc' for each
                 // combination of buildType, platform, and component.  Note that components having only
                 // one buildType or platform will NOT have the given buildType/platform in the task name, so
                 // we have to use a very broad regular expression.
@@ -46,8 +46,8 @@ class J2objcNativeCompilation {
 
             // TODO: Figure out a better way to force compilation.
             // We create these files so that before the first j2objcTranslate execution is performed, at least
-            // one file exists for each of the objective-c sourceSets, at project evaluation time.
-            // Otherwise the objective-c plugin skips creation of the compile tasks altogether.
+            // one file exists for each of the Objective-C sourceSets, at project evaluation time.
+            // Otherwise the Objective-C plugin skips creation of the compile tasks altogether.
             file("${buildDir}/j2objcHackToForceCompilation").mkdirs()
             file("${buildDir}/j2objcHackToForceCompilation/Empty.m").createNewFile()
             file("${buildDir}/j2objcHackToForceCompilation/EmptyTest.m").createNewFile()
@@ -234,7 +234,7 @@ class J2objcNativeCompilation {
 
             // We need to run clang with the flags j2objcc would usually pass.
             binaries.all {
-                // Only want to modify the objective-c toolchain, not the JDK one.
+                // Only want to modify the Objective-C toolchain, not the JDK one.
                 if (toolChain in Clang) {
                     def j2objcPath = J2objcUtils.j2objcHome(project)
 
@@ -243,7 +243,7 @@ class J2objcNativeCompilation {
                     // Gradle User Guide: 54.11. Configuring the compiler, assembler and linker
                     // https://docs.gradle.org/current/userguide/nativeBinaries.html#N16030
                     // TODO: Consider making this configuration easier using plugin extension.
-                    // If we do that, however, we will become inconsistent with Gradle objective-c building.
+                    // If we do that, however, we will become inconsistent with Gradle Objective-C building.
                     objcCompiler.args "-I$j2objcPath/include"
                     objcCompiler.args '-Werror', '-Wno-parentheses', '-fno-strict-overflow'
                     objcCompiler.args '-std=c11'
