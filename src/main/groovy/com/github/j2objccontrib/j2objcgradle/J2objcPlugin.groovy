@@ -59,6 +59,18 @@ class J2objcPlugin implements Plugin<Project> {
                                   "}"
                     throw new InvalidUserDataException(message)
                 }
+
+                if (!('-fobjc-arc' in evaluatedProject.j2objcConfig.extraObjcCompilerArgs) &&
+                    evaluatedProject.j2objcConfig.translateFlags.contains('-use-arc')) {
+                    logger.warn "${evaluatedProject.name}: When translating with -use-arc, it is recommended " +
+                                "to use the '-fobjc-arc' Objective C compiler flag, ex:\n"
+                                "j2objcConfig {\n" +
+                                "    // other settings\n" +
+                                "    extraObjcCompilerArgs += '-fobjc-arc'\n" +
+                                "}\n" +
+                                "-fobjc-arc enables Automatic Reference Counting functionality in the compiler:\n" +
+                                "https://developer.apple.com/library/mac/releasenotes/ObjectiveC/RN-TransitioningToARC/Introduction/Introduction.html#//apple_ref/doc/uid/TP40011226-CH1-SW15"
+                }
             }
 
             // This is an intermediate directory only.  Clients should use only directories
