@@ -129,22 +129,21 @@ class J2objcPlugin implements Plugin<Project> {
 
 
             tasks.create(name: 'j2objcPackLibrariesDebug', type: J2objcPackLibrariesTask,
-                    dependsOn: 'j2objcBuildAllObjcLibraries') {
+                    dependsOn: 'j2objcBuildObjcDebug') {
                 group 'build'
                 description 'Packs multiple architectures into a single debug static library'
                 buildType = 'Debug'
             }
 
             tasks.create(name: 'j2objcPackLibrariesRelease', type: J2objcPackLibrariesTask,
-                    dependsOn: 'j2objcBuildAllObjcLibraries') {
+                    dependsOn: 'j2objcBuildObjcRelease') {
                 group 'build'
                 description 'Packs multiple architectures into a single release static library'
                 buildType = 'Release'
             }
 
             tasks.create(name: 'j2objcAssemble', type: J2objcAssembleTask,
-                    dependsOn: ['j2objcBuildAllObjcLibraries',
-                                'j2objcPackLibrariesDebug', 'j2objcPackLibrariesRelease']) {
+                    dependsOn: ['j2objcPackLibrariesDebug', 'j2objcPackLibrariesRelease', 'j2objcTranslate']) {
                 group 'build'
                 description 'Copies final generated source after testing to assembly directories'
                 srcGenDir = j2objcSrcGenDir
