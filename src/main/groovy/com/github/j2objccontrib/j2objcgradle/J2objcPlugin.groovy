@@ -103,7 +103,9 @@ class J2objcPlugin implements Plugin<Project> {
                                 "j2objcConfig {\n" +
                                 "    // other settings\n" +
                                 "    extraObjcCompilerArgs += '-fobjc-arc'\n" +
-                                "}"
+                                "}\n" +
+                                "-fobjc-arc enables Automatic Reference Counting functionality in the compiler:\n" +
+                                "https://developer.apple.com/library/mac/releasenotes/ObjectiveC/RN-TransitioningToARC/Introduction/Introduction.html#//apple_ref/doc/uid/TP40011226-CH1-SW15"
                 }
             }
 
