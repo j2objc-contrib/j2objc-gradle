@@ -1,19 +1,23 @@
 # FAQ
+(for contributors, see [CONTRIBUTING.md](CONTRIBUTING.md))
 
-### Eclipse raises error ``Obtaining Gradle model...``?
+### What version of Gradle do I need?
 
-You have to create the gralde wrapper first. Go to your project folder and do ``gradle wrapper``. Refresh your eclipse project.
+You need at least [Gradle version 2.4](https://discuss.gradle.org/t/gradle-2-4-released/9471), due to support for native compilation features.
 
+### How do I solve the Eclipse error message ``Obtaining Gradle model...``?
 
-### How to include files from additional source dirs?
+You have to create the [Gradle wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html) first. Go to your project folder and do ``gradle wrapper``. Refresh your Eclipse project.
 
-In order to include source files from sources different than ``src/main/java`` you have to define a sourceSet. Assume you want to include files from ``build/source/base`` add to your ``build.gradle``:
+### How do I include Java files from additional source directories?
+
+In order to include source files from sources different than ``src/main/java`` you have to [modify the Java plugin's sourceSet(s)](https://docs.gradle.org/current/userguide/java_plugin.html#N11FD1). For example, if you want to include files from ``src-gen/base`` both into your JAR and (translated) into your Objective C libraries, then add to your ``build.gradle``:
 
 ```
 sourceSets {
   main {
     java {
-      srcDir 'build/source/base'
+      srcDir 'src-gen/base'
     }
   }
 }
