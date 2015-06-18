@@ -37,6 +37,9 @@ Tracked issue: https://github.com/j2objc-contrib/j2objc-gradle/issues/130**
         xcodeProjectDir "${projectDir}/../ios"   // Xcode workspace directory
         xcodeTarget "MyTarget"                   // Xcode application target name
         // More: https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcPluginExtension.groovy#L25
+        
+        // You must include this call (at the end of the block) even if you do not configure any other settings.
+        finalConfigure()
     }
 
 Within the Android application's project `build.gradle`, make it dependent on the `shared` project:
