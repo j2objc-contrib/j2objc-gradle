@@ -1,4 +1,4 @@
-# User FAQ
+# FAQ
 (for contributors, see [CONTRIBUTING.md](CONTRIBUTING.md))
 
 ### What version of Gradle do I need?
