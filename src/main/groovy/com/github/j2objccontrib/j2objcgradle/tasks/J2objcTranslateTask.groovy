@@ -149,14 +149,19 @@ class J2objcTranslateTask extends DefaultTask {
             logger.debug "Unchanged files: " + unchangedSrcFiles.getFiles().size()
 
             if (!nonSourceFileChanged) {
+                // All changes were within srcFiles (i.e. in a Java source-set).
                 def translatedFiles = 0
                 if (srcGenDir.exists()) {
                     FileCollection destFiles = project.files(project.fileTree(
                             dir: srcGenDir, includes: ["**/*.h", "**/*.m"]))
 
-                    // remove translated .h and .m files which has no corresponding .java files anymore
+                    // With --build-closure, files outside the source set can end up in the srcGen
+                    // directory from prior translations.
+                    // So only remove translated .h and .m files which has no corresponding .java files anymore
                     destFiles.each { File file ->
                         def nameWithoutExt = file.name.toString().replaceFirst("\\..*", "")
+                        // TODO: Check for --no-package-directories when deciding whether
+                        // to compare file name vs. full path.
                         if (removedFileNames.contains(nameWithoutExt)) {
                             file.delete()
                         }
@@ -180,6 +185,8 @@ class J2objcTranslateTask extends DefaultTask {
                 }
             } else {
                 // A change outside of the source set directories has occurred, so an incremental build isn't possible.
+                // The most common such change is in the JAR for a dependent library, for example if Java project
+                // that this project depends on had its source changed and was recompiled.
                 if (srcGenDir.exists()) {
                     srcGenDir.deleteDir()
                     srcGenDir.mkdirs()
