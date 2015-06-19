@@ -22,3 +22,19 @@ sourceSets {
   }
 }
 ```
+
+
+### How do I enable ARC for my objective-c classes?
+
+Add the following to your configuration block. [See](https://developer.apple.com/library/mac/releasenotes/ObjectiveC/RN-TransitioningToARC/Introduction/Introduction.html#//apple_ref/doc/uid/TP40011226-CH1-SW15).
+
+```
+j2objcConfig {
+   translateFlags '-use-arc'
+   extraObjcCompilerArgs += '-fobjc-arc'
+}
+```
+
+### Error: implicit declaration of function 'JreRelease' is invalid in C99 [-Werror,-Wimplicit-function-declaration] JreRelease(this$0_)
+
+See: [How do I enable ARC for my objective-c classes?](#How do I enable ARC for my objective-c classes?)
