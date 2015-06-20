@@ -15,6 +15,7 @@
  */
 
 package com.github.j2objccontrib.j2objcgradle
+
 import com.github.j2objccontrib.j2objcgradle.tasks.J2objcAssembleTask
 import com.github.j2objccontrib.j2objcgradle.tasks.J2objcCycleFinderTask
 import com.github.j2objccontrib.j2objcgradle.tasks.J2objcPackLibrariesTask
@@ -27,10 +28,10 @@ import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel
-/*
- * Usage:
- */
 
+/*
+ * Main plugin class for creation of extension object and all the tasks.
+ */
 class J2objcPlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
@@ -147,7 +148,7 @@ class J2objcPlugin implements Plugin<Project> {
             tasks.create(name: 'j2objcAssemble', type: J2objcAssembleTask,
                     dependsOn: ['j2objcPackLibrariesDebug', 'j2objcPackLibrariesRelease', 'j2objcTranslate']) {
                 group 'build'
-                description 'Copies final generated source after testing to assembly directories'
+                description 'Copies final generated source and libraries to assembly directories'
                 srcGenDir = j2objcSrcGenDir
                 libDir = file("${buildDir}/binaries/${project.name}-j2objcStaticLibrary")
                 packedLibDir = file("${buildDir}/packedBinaries/${project.name}-j2objcStaticLibrary")

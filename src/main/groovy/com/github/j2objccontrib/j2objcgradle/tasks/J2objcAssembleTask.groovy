@@ -15,14 +15,17 @@
  */
 
 package com.github.j2objccontrib.j2objcgradle.tasks
+
 import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
+
 /**
- *
+ * Assemble task copies generated source and libaries to assembly directories for
+ * use by an iOS application.
  */
 class J2objcAssembleTask extends DefaultTask {
 
@@ -33,6 +36,7 @@ class J2objcAssembleTask extends DefaultTask {
     // Generated ObjC binaries
     @InputDirectory
     File libDir
+
     @InputDirectory
     File packedLibDir
 
