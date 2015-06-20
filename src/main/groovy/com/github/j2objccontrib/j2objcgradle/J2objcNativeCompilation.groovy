@@ -250,15 +250,15 @@ class J2objcNativeCompilation {
                 }
             }
 
-            // We need to run clang with the flags j2objcc would usually pass.
+            // We need to run clang with the arguments that j2objcc would usually pass.
             binaries.all {
                 // Only want to modify the Objective-C toolchain, not the JDK one.
                 if (toolChain in Clang) {
                     def j2objcPath = J2objcUtils.j2objcHome(project)
 
-                    // If you want to override the flags passed to the compiler and linker, you must configure
-                    // the binaries in your own build.gradle.  See
-                    // Gradle User Guide: 54.11. Configuring the compiler, assembler and linker
+                    // If you want to override the arguments passed to the compiler and linker,
+                    // you must configure the binaries in your own build.gradle.
+                    // See "Gradle User Guide: 54.11. Configuring the compiler, assembler and linker"
                     // https://docs.gradle.org/current/userguide/nativeBinaries.html#N16030
                     // TODO: Consider making this configuration easier using plugin extension.
                     // If we do that, however, we will become inconsistent with Gradle Objective-C building.

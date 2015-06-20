@@ -15,6 +15,7 @@
  */
 
 package com.github.j2objccontrib.j2objcgradle.tasks
+
 import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.file.FileCollection
@@ -23,8 +24,10 @@ import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+
 /**
- *
+ * CycleFinder task checks for memory cycles that can cause memory leaks
+ * since iOS doesn't have garbage collection.
  */
 class J2objcCycleFinderTask extends DefaultTask {
 
@@ -72,7 +75,7 @@ class J2objcCycleFinderTask extends DefaultTask {
 
     @Input
     @Optional
-    String getCycleFinderFlags() { return project.j2objcConfig.cycleFinderFlags }
+    List<String> getCycleFinderArgs() { return project.j2objcConfig.cycleFinderArgs }
 
     @Input @Optional
     String getTranslateSourcepaths() { return project.j2objcConfig.translateSourcepaths }
@@ -93,38 +96,35 @@ class J2objcCycleFinderTask extends DefaultTask {
     @TaskAction
     def cycleFinder() {
 
-        def cycleFinderExec = getJ2ObjCHome() + "/cycle_finder"
-        def windowsOnlyArgs = ""
+        String cycleFinderExec = "${getJ2ObjCHome()}/j2objc"
+        List<String> windowsOnlyArgs = new ArrayList<String>()
         if (J2objcUtils.isWindows()) {
-            cycleFinderExec = "java"
-            windowsOnlyArgs = "-jar ${getJ2ObjCHome()}/lib/cycle_finder.jar"
+            cycleFinderExec = 'java'
+            windowsOnlyArgs.add('-jar')
+            windowsOnlyArgs.add("${getJ2ObjCHome()}/lib/cycle_finder.jar")
         }
 
-        if (getCycleFinderFlags() == null) {
+        if (getCycleFinderArgs().isEmpty()) {
             def message =
-                    "CycleFinder is more difficult to setup and use, though it's hoped to improve\n" +
+                    "CycleFinder is difficult to setup and use, though it's hoped to improve\n" +
                     "this for the future. There are two ways to configure it in build.gradle:\n" +
                     "\n" +
-                    "SIMPLE: set cycleFinderFlags to empty string:\n" +
+                    "SIMPLE: set cycleFinderArgs to empty string:\n" +
                     "\n" +
                     "j2objcConfig {\n" +
-                    "    cycleFinder true\n" +
-                    "    cycleFinderFlags \"\"\n" +
+                    // TODO: cycleFinderArgs ''
+                    "    cycleFinderArgs.add('')\n" +
                     "}\n" +
                     "\n" +
                     "DIFFICULT:\n" +
-                    "1) Download the j2objc source:\n" +
+                    "1) Download the j2objc source to a directory (hereafter <J2OJBC_REPO>):\n" +
                     "    https://github.com/google/j2objc\n" +
-                    "2) Within your local j2objc repo run:\n" +
+                    "2) Within the <J2OJBC_REPO>, run:\n" +
                     "    \$ (cd jre_emul && make java_sources_manifest)\n" +
                     "3) Configure j2objcConfig in build.gradle so CycleFinder uses j2objc source:\n" +
                     "j2objcConfig {\n" +
-                    "    cycleFinder true\n" +
-                    "    cycleFinderFlags (\n" +
-                    "            \"--whitelist \${projectDir}/../../<J2OBJC_REPO>/jre_emul/cycle_whitelist.txt " +
-                    "\\\n" +
-                    "             --sourcefilelist \${projectDir}/../." +
-                    "./<J2OBJC_REPO>/jre_emul/build_result/java_sources.mf\")\n" +
+                    "    cycleFinderArgs \"--whitelist <J2OBJC_REPO>/jre_emul/cycle_whitelist.txt\"\n" +
+                    "    cycleFinderArgs \"--sourcefilelist <J2OBJC_REPO>/jre_emul/build_result/java_sources.mf\"\n" +
                     "    cycleFinderExpectedCycles 0\n" +
                     "}\n" +
                     "Also see: https://groups.google.com/forum/#!msg/j2objc-discuss/2fozbf6-liM/R83v7ffX5NMJ"
@@ -156,14 +156,14 @@ class J2objcCycleFinderTask extends DefaultTask {
             project.exec {
                 executable cycleFinderExec
 
-                args windowsOnlyArgs.split()
+                args windowsOnlyArgs
                 args "-sourcepath", sourcepath
 
                 if (classPathArg.size() > 0) {
                     args "-classpath", classPathArg
                 }
 
-                args getCycleFinderFlags().split()
+                args getCycleFinderArgs()
 
                 fullSrcFiles.each { file ->
                     args file.path

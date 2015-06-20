@@ -20,6 +20,7 @@ import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.tasks.util.PatternSet
 import org.gradle.util.ConfigureUtil
+
 /**
  * Further configuration uses the following fields, setting them in j2objcConfig within build.gradle
  */
@@ -73,13 +74,15 @@ class J2objcPluginExtension {
      * main and/or test sourceSets.
      */
     String[] generatedSourceDirs = []
+    // TODO: void generatedSourceDirs(String... generatedSourceDirs) {
+
 
     // CYCLEFINDER
     /**
-     * Flags copied verbatim to cycle_finder command.
+     * Add command line arguments to cycle_finder command.
      */
-    // Warning will ask user to configure this within j2objcConfig.
-    String cycleFinderFlags = null
+    final List<String> cycleFinderArgs = new ArrayList<>()
+    // TODO: void cycleFinderArgs(String... cycleFinderArgs) {
     /**
      * Expected number of cycles, defaults to all those found in JRE.
      * <p/>
@@ -88,23 +91,40 @@ class J2objcPluginExtension {
     // TODO(bruno): convert to a default whitelist and change expected cyles to 0
     int cycleFinderExpectedCycles = 40
 
+
     // TRANSLATE
+    final List<String> translateArgs = new ArrayList<>()
     /**
-     * Flags copied verbatim to j2objc command.
+     * Add command line arguments for j2objc translate.
      * <p/>
-     * A list of all possible flag can be found here:
+     * A list of all possible arguments can be found here:
      * https://github.com/google/j2objc/blob/master/translator/src/main/resources/com/google/devtools/j2objc/J2ObjC.properties
+     *
+     * @param translateArgs args for the translate task
      */
-    String translateFlags = ""
+    // Provides a subset of "args" interface from project.exec as implemented by ExecHandleBuilder:
+    // https://github.com/gradle/gradle/blob/master/subprojects/core/src/main/groovy/org/gradle/process/internal/ExecHandleBuilder.java
+    // Allows the following:
+    // j2objcConfig {
+    //     translateArgs '--no-package-directories', '--prefixes', 'prefixes.properties'
+    // }
+    void translateArgs(String... translateArgs) {
+        if (translateArgs == null) {
+            throw new IllegalArgumentException("args == null!");
+        }
+        this.translateArgs.addAll(Arrays.asList(translateArgs));
+    }
     /**
      * -classpath library additions from ${projectDir}/lib/, e.g.: "json-20140107.jar", "somelib.jar"
      */
     String[] translateClassPaths = []
+    // TODO: void translateClassPaths(String... translateClassPaths) {
+
 
     // Do not use groovydoc, this option should remain undocumented.
     // WARNING: Do not use this unless you know what you are doing.
     // If true, incremental builds will be supported even if --build-closure is included in
-    // translateFlags. This may break the build in unexpected ways if you change the dependencies
+    // translateArgs. This may break the build in unexpected ways if you change the dependencies
     // (e.g. adding new files or changing translateClassPaths). When you change the dependencies and
     // the build breaks, you need to do a clean build.
     boolean UNSAFE_incrementalBuildClosure = false
@@ -114,6 +134,7 @@ class J2objcPluginExtension {
      */
     // TODO: just import everything in the j2objc/lib/ directory?
     // J2objc default libraries, from $J2OBJC_HOME/lib/...
+    // TODO: void translateJ2objcLibs(String... translateJ2objcLibs) {
     String[] translateJ2objcLibs = [
             // Memory annotations, e.g. @Weak, @AutoreleasePool
             "j2objc_annotations.jar",
@@ -240,14 +261,16 @@ class J2objcPluginExtension {
      *
      * @see J2objcNativeCompilation#ALL_SUPPORTED_ARCHS
      */
+    // TODO: void supportedArchs(String... supportedArchs) {
     String[] supportedArchs = J2objcNativeCompilation.ALL_SUPPORTED_ARCHS.clone()
 
 
     // TEST
     /**
-     * Flags copied verbatim to testrunner command.
+     * Adds command line arguments for test executable.
      */
-    String testFlags = ""
+    final List<String> testArgs = new ArrayList<>()
+    // TODO: void testArgs(String... testArgs) {
     /**
      * j2objcTest will fail if it runs less than the expected number of tests; set to 0 to disable.
      * <p/>
@@ -295,14 +318,17 @@ class J2objcPluginExtension {
      * Directories of objective-c source to compile in addition to the
      * translated source.
      */
+    // TODO: void extraObjcSrcDirs(String... extraObjcSrcDirs) {
     String[] extraObjcSrcDirs = []
     /**
      * Additional arguments to pass to the objective-c compiler.
      */
+    // TODO: void extraObjcCompilerArgs(String... extraObjcCompilerArgs) {
     String[] extraObjcCompilerArgs = []
     /**
      * Additional arguments to pass to the native linker.
      */
+    // TODO: void extraLinkerArgs(String... extraLinkerArgs) {
     String[] extraLinkerArgs = []
 
     // XCODE

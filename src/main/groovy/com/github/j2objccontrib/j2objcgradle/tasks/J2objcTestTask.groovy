@@ -17,7 +17,6 @@
 package com.github.j2objccontrib.j2objcgradle.tasks
 
 import org.gradle.api.DefaultTask
-import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.Input
@@ -25,8 +24,6 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-
-import java.util.regex.Pattern
 
 /**
  *
@@ -58,10 +55,10 @@ class J2objcTestTask extends DefaultTask {
 
     // j2objcConfig dependencies for UP-TO-DATE checks
     @Input
-    String getTestFlags() { return project.j2objcConfig.testFlags }
+    List<String> getTestArgs() { return project.j2objcConfig.testArgs }
 
     @Input
-    String getTranslateFlags() { return project.j2objcConfig.translateFlags }
+    List<String> getTranslateArgs() { return project.j2objcConfig.translateArgs }
 
     @Input
     int getTestMinExpectedTests() { return project.j2objcConfig.testMinExpectedTests }
@@ -74,8 +71,8 @@ class J2objcTestTask extends DefaultTask {
         logger.debug "Test Binary: $binary"
 
         // list of test names: ['com.example.dir.ClassOneTest', 'com.example.dir.ClassTwoTest']
-        // depends on "--prefixes dir/prefixes.properties" in translateFlags
-        def testNames = testNames(project, getSrcFiles(), getTranslateFlags())
+        // depends on "--prefixes dir/prefixes.properties" in translateArgs
+        def testNames = testNames(project, getSrcFiles(), getTranslateArgs())
 
         def output = new ByteArrayOutputStream()
         try {
@@ -83,7 +80,7 @@ class J2objcTestTask extends DefaultTask {
                 executable binary
                 args "org.junit.runner.JUnitCore"
 
-                args getTestFlags().split()
+                args getTestArgs()
 
                 testNames.each { testName ->
                     args testName
@@ -108,7 +105,7 @@ class J2objcTestTask extends DefaultTask {
                     "    }\n" +
                     "}\n" +
                     "\n" +
-                    "To identify the failing test, run with the --debug flag and look for:\n" +
+                    "To identify the failing test, run with the --debug argument and look for:\n" +
                     "    testJ2objc org.junit.runner.JUnitCore\n" +
                     "Copy the command from \"Command:\" onwards, then try varying the command\n" +
                     "to drop tests and figure out which ones are causing the failures.\n"
@@ -174,9 +171,9 @@ class J2objcTestTask extends DefaultTask {
     // Generate Test Names
     // Generate list of tests from the source java files
     // e.g. src/test/java/com/example/dir/ClassTest.java => "com.example.dir.ClassTest"
-    // depends on --prefixes dir/prefixes.properties in translateFlags
-    def static testNames(Project proj, FileCollection srcFiles, String translateFlags) {
-        def prefixesProperties = J2objcUtils.prefixProperties(proj, translateFlags)
+    // depends on --prefixes dir/prefixes.properties in translateArgs
+    def static testNames(Project proj, FileCollection srcFiles, List<String> translateArgs) {
+        def prefixesProperties = J2objcUtils.prefixProperties(proj, translateArgs)
 
         def testNames = srcFiles.collect { file ->
             // src/test/java/com/example/dir/SomeTest.java => com.example.dir.SomeTest
