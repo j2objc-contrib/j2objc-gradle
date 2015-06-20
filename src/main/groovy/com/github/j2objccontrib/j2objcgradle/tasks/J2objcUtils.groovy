@@ -22,6 +22,7 @@ import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.tasks.SourceSet
+import java.util.regex.Matcher
 
 /**
  * Internal utilities supporting plugin implementation.
@@ -33,8 +34,8 @@ class J2objcUtils {
     // TODO: ideally bundle j2objc binaries with plugin jar and load at runtime with
     // TODO: ClassLoader.getResourceAsStream(), extract, chmod and then execute
 
-    static isWindows() {
-        return System.getProperty("os.name").toLowerCase().contains("windows")
+    static boolean isWindows() {
+        return System.getProperty('os.name').toLowerCase().contains('windows')
     }
 
     // Retrieves the configured source directories from the Java plugin SourceSets.
@@ -47,8 +48,8 @@ class J2objcUtils {
         return sourceSet.getProperty(fileType)
     }
 
-    static def sourcepathJava(Project proj) {
-        def javaRoots = []
+    static String sourcepathJava(Project proj) {
+        String[] javaRoots = []
         srcDirs(proj, 'main', 'java').srcDirs.each {
             javaRoots += it.path
         }
@@ -60,8 +61,8 @@ class J2objcUtils {
 
     // MUST be used only in @Input getJ2ObjCHome() methods to ensure UP-TO-DATE checks are correct
     // @Input getJ2ObjCHome() method can be used freely inside the task action
-    static def j2objcHome(Project proj) {
-        def localPropertiesFile = new File(proj.rootDir, 'local.properties')
+    static String j2objcHome(Project proj) {
+        File localPropertiesFile = new File(proj.rootDir, 'local.properties')
         String result = null
         if (localPropertiesFile.exists()) {
             Properties localProperties = new Properties();
@@ -74,7 +75,7 @@ class J2objcUtils {
             result = System.getenv('J2OBJC_HOME')
         }
         if (result == null) {
-            def message =
+            String message =
                     "j2objc home not set, this should be configured either:\n" +
                     "1) in a 'local.properties' file in the project root directory as:\n" +
                     "   j2objc.home=/PATH/TO/J2OBJC/DISTRIBUTION\n" +
@@ -87,38 +88,30 @@ class J2objcUtils {
             throw new InvalidUserDataException(message)
         }
         if (!proj.file(result).exists()) {
-            def message = "j2objc directory not found, expected location: ${result}"
+            String message = "j2objc directory not found, expected location: ${result}"
             throw new InvalidUserDataException(message)
         }
         return result
     }
 
-    // Filters a FileCollection by path:
-    // must match includeRegex and NOT match excludeRegex, regex ignored if null
-    static def fileFilter(FileCollection files, String includeRegex, String excludeRegex) {
-        return files.filter { file ->
-            return file.path.matches(includeRegex)
-        }.filter { file ->
-            return !file.path.matches(excludeRegex)
-        }
-    }
-
-    // Reads properties file and flags from translateFlags (last flag takes precedence)
+    // Reads properties file and arguments from translateArgs (last argument takes precedence)
     //   --prefixes dir/prefixes.properties --prefix com.ex.dir=Short --prefix com.ex.dir2=Short2
-    // TODO: separate this out to a distinct flag that's added to translateFlags
+    // TODO: separate this out to a distinct argument that's added to translateArgs
     // TODO: @InputFile conversion for this
-    static def prefixProperties(Project proj, String translateFlags) {
+    static Properties prefixProperties(Project proj, List<String> translateArgs) {
         Properties props = new Properties()
-        def matcher = (translateFlags =~ /--prefix(|es)\s+(\S+)/)
-        def start = 0
+        String joinedTranslateArgs = translateArgs.join(' ')
+        Matcher matcher = (joinedTranslateArgs =~ /--prefix(|es)\s+(\S+)/)
+        int start = 0
         while (matcher.find(start)) {
             start = matcher.end()
-            def newProps = new Properties()
-            def argValue = matcher.group(2)
+            Properties newProps = new Properties()
+            String argValue = matcher.group(2)
             if (matcher.group(1) == "es") {
                 // --prefixes prefixes.properties
                 // trailing space confuses FileInputStream
-                def prefixesPath = argValue.trim()
+                String prefixesPath = argValue.trim()
+                log.debug "Loading prefixesPath: $prefixesPath"
                 newProps.load(new FileInputStream(proj.file(prefixesPath).path))
             } else {
                 // --prefix com.example.dir=CED
@@ -126,19 +119,26 @@ class J2objcUtils {
             }
             props.putAll(newProps)
         }
-//        for (key in props.keys()) {
-//            log.debug key + ": " + props.getProperty(key)
-//        }
+
+        log.debug 'Package Prefixes: http://j2objc.org/docs/Package-Prefixes.html'
+        for (key in props.keys()) {
+            log.debug "Package Prefix Property: $key : ${props.getProperty((String) key)}"
+        }
 
         return props
     }
 
-    static def filenameCollisionCheck(FileCollection files) {
-        def nameMap = [:]
+    /*
+     * Throws exception if two filenames match, even if in distinct directories.
+     * This is important for referencing files with Xcode.
+     */
+    static void filenameCollisionCheck(FileCollection files) {
+        HashMap<String, File> nameMap = [:]
         for (file in files) {
+            log.debug "CollisionCheck: ${file.name}, ${file.absolutePath}"
             if (nameMap.containsKey(file.name)) {
-                def prevFile = nameMap.get(file.name)
-                def message =
+                File prevFile = nameMap.get(file.name)
+                String message =
                         "File name collision detected:\n" +
                         "  ${prevFile.path}\n" +
                         "  ${file.path}\n" +
@@ -155,37 +155,33 @@ class J2objcUtils {
     }
 
     // add Java files to a FileCollection
-    static def addJavaFiles(Project proj, FileCollection files, List<String> generatedSourceDirs) {
+    static FileCollection addJavaFiles(Project proj, FileCollection files, List<String> generatedSourceDirs) {
         if (generatedSourceDirs.size() > 0) {
             generatedSourceDirs.each { sourceDir ->
                 log.debug "include generatedSourceDir: " + sourceDir
-                def buildSrcFiles = proj.files(proj.fileTree(dir: sourceDir, includes: ["**/*.java"]))
+                FileCollection buildSrcFiles = proj.files(proj.fileTree(dir: sourceDir, includes: ["**/*.java"]))
                 files += buildSrcFiles
             }
         }
         return files
     }
 
-    static def absolutePathOrEmpty(Project proj, List<String> relativePaths) {
-        if (relativePaths.size() > 0) {
-            def tmpPaths = ""
-            relativePaths.each { relativePath ->
-                log.debug "Added to Path: " + relativePath
-                tmpPaths += ":${proj.file(relativePath).path}"
-            }
-            return tmpPaths
+    static String absolutePathOrEmpty(Project proj, List<String> relativePaths) {
+        if (relativePaths.isEmpty()) {
+            return ''
         } else {
-            return ""
+            // TODO: see if it works to return ':' for empty relativePaths
+            return ':' + relativePaths.collect({ proj.file(it).path }).join(':')
         }
     }
 
-    // -classpath javac flag generation from set of libraries (includes j2objc default libraries)
+    // -classpath javac argument generation from set of libraries (includes j2objc default libraries)
     // TODO: @InputFiles for libraries and j2objcLibs
-    static def getClassPathArg(Project proj,
+    static String getClassPathArg(Project proj,
                                String j2objcHome,
                                List<String> libraries,
                                List<String> translateJ2objcLibs) {
-        def classPathList = []
+        String[] classPathList = []
         // user defined libraries
         libraries.each { library ->
             classPathList += proj.file(library).absolutePath
@@ -197,20 +193,20 @@ class J2objcUtils {
         return classPathList.join(':')
     }
 
-    static def filterJ2objcOutputForErrorLines(String processOutput) {
+    static String filterJ2objcOutputForErrorLines(String processOutput) {
         return processOutput.tokenize('\n').grep(~/^(.*: )?error:.*/).join('\n')
     }
 
     // Matches regex within 'str', extracts first match and then returns as int
     static int matchNumberRegex(String str, String regex) {
-        def matcher = (str =~ regex)
+        Matcher matcher = (str =~ regex)
         if (!matcher.find()) {
             throw new IllegalArgumentException(
                     "${str}\n" +
                     "\n" +
                     "Regex couldn't match number in output: ${regex}")
         } else {
-            def value = matcher[0][1]
+            String value = matcher[0][1]
             if (!value.isInteger()) {
                 throw new IllegalArgumentException(
                         "${str}\n" +
