@@ -155,7 +155,7 @@ java project's build.gradle:
 Note that when rapidly developing and testing changes to the plugin by building your own project,
 avoid using the Gradle daemon as issues sometimes arise with the daemon using an old version
 of the plugin jar.  You can stop an existing daemon with `./gradlew --stop` and avoid the daemon
-on a particular build with the `--no-daemon` flag to gradlew.
+on a particular build with the `--no-daemon` argument to gradlew.
 
 
 ### Contributing

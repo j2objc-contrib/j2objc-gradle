@@ -24,6 +24,8 @@ import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.tasks.SourceSet
 import java.util.regex.Matcher
 
+import java.util.regex.Matcher
+
 /**
  * Internal utilities supporting plugin implementation.
  */

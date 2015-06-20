@@ -15,6 +15,7 @@
  */
 
 package com.github.j2objccontrib.j2objcgradle.tasks
+
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.Input
@@ -23,8 +24,9 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
+
 /**
- *
+ * Translation task for Java to Objective-C using j2objc tool.
  */
 class J2objcTranslateTask extends DefaultTask {
 
@@ -78,7 +80,7 @@ class J2objcTranslateTask extends DefaultTask {
     String getJ2ObjCHome() { return J2objcUtils.j2objcHome(project) }
 
     @Input
-    String getTranslateFlags() { return project.j2objcConfig.translateFlags }
+    List<String> getTranslateArgs() { return project.j2objcConfig.translateArgs }
 
     @Input @Optional
     String getTranslateSourcepaths() { return project.j2objcConfig.translateSourcepaths }
@@ -97,19 +99,19 @@ class J2objcTranslateTask extends DefaultTask {
 
     @TaskAction
     def translate(IncrementalTaskInputs inputs) {
-        def translateFlags = project.j2objcConfig.translateFlags
+        List<String> translateArgs = getTranslateArgs()
         // Don't evaluate this expensive property multiple times.
-        def originalSrcFiles = srcFiles
+        FileCollection originalSrcFiles = getSrcFiles()
 
         logger.debug "All source files: " + originalSrcFiles.getFiles().size()
 
         FileCollection srcFilesChanged
-        if (translateFlags.contains('--build-closure') && !project.j2objcConfig.UNSAFE_incrementalBuildClosure) {
+        if (('--build-closure' in translateArgs) && !project.j2objcConfig.UNSAFE_incrementalBuildClosure) {
             // We cannot correctly perform incremental compilation with --build-closure.
             // Consider the example where src/main/Something.java is deleted, we would not
             // be able to also delete the files that only Something.java depends on.
             // Due to this issue, incremental builds with --build-closure are enabled ONLY
-            // if the user requests it with the UNSAFE_incrementalBuildClosure flag.
+            // if the user requests it with the UNSAFE_incrementalBuildClosure argument.
             // TODO: One correct way to incrementally compile with --build-closure would be to use
             // allInputFiles someway, but this will require some research.
             if (srcGenDir.exists()) {
@@ -179,9 +181,9 @@ class J2objcTranslateTask extends DefaultTask {
                 // source lib. In this case due to not using --build-closure the dependent source
                 // will not be translated, this can be fixed with a clean and fresh build.
                 // Due to this issue, incremental builds with --build-closure are enabled ONLY
-                // if the user requests it with the UNSAFE_incrementalBuildClosure flag.
+                // if the user requests it with the UNSAFE_incrementalBuildClosure argument.
                 if (translatedFiles > 0 && project.j2objcConfig.UNSAFE_incrementalBuildClosure) {
-                    translateFlags = translateFlags.toString().replaceFirst("--build-closure", "").trim()
+                    translateArgs.remove('--build-closure')
                 }
             } else {
                 // A change outside of the source set directories has occurred, so an incremental build isn't possible.
@@ -195,11 +197,12 @@ class J2objcTranslateTask extends DefaultTask {
             }
         }
 
-        def j2objcExec = getJ2ObjCHome() + "/j2objc"
-        def windowsOnlyArgs = ""
+        String j2objcExecutable = "${getJ2ObjCHome()}/j2objc"
+        List<String> windowsOnlyArgs = new ArrayList<String>()
         if (J2objcUtils.isWindows()) {
-            j2objcExec = "java"
-            windowsOnlyArgs = "-jar ${getJ2ObjCHome()}/lib/j2objc.jar"
+            j2objcExecutable = 'java'
+            windowsOnlyArgs.add('-jar')
+            windowsOnlyArgs.add("${getJ2ObjCHome()}/lib/j2objc.jar")
         }
 
         def sourcepath = J2objcUtils.sourcepathJava(project)
@@ -226,9 +229,9 @@ class J2objcTranslateTask extends DefaultTask {
         def output = new ByteArrayOutputStream()
         try {
             project.exec {
-                executable j2objcExec
+                executable j2objcExecutable
 
-                args windowsOnlyArgs.split()
+                args windowsOnlyArgs
                 args "-d", srcGenDir
                 args "-sourcepath", sourcepath
 
@@ -236,7 +239,7 @@ class J2objcTranslateTask extends DefaultTask {
                     args "-classpath", classPathArg
                 }
 
-                args translateFlags.split()
+                args translateArgs
 
                 srcFilesChanged.each { file ->
                     args file.path

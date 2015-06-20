@@ -30,7 +30,7 @@ Add the following to your configuration block. [See](https://developer.apple.com
 
 ```
 j2objcConfig {
-   translateFlags '-use-arc'
+   translateArgs '-use-arc'
    extraObjcCompilerArgs += '-fobjc-arc'
 }
 ```
