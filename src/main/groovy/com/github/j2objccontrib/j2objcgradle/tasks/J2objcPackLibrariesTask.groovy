@@ -15,11 +15,13 @@
  */
 
 package com.github.j2objccontrib.j2objcgradle.tasks
+
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
+
 /**
  * Uses 'lipo' binary to combine multiple architecture flavors of a library into a
  * single 'fat' library.
