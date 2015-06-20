@@ -37,20 +37,15 @@ class J2objcPlugin implements Plugin<Project> {
     void apply(Project project) {
         // This avoids a lot of "project." prefixes, such as "project.tasks.create"
         project.with {
-            if (!plugins.hasPlugin('java')) {
-                def message =
-                        "j2objc plugin didn't find the 'java' plugin in the '${project.name}' project.\n"+
-                        "This is a requirement for using j2objc. Please see usage information at:\n" +
-                        "\n" +
-                        "https://github.com/j2objc-contrib/j2objc-gradle/#usage"
-                throw new InvalidUserDataException(message)
-            }
-
             extensions.create('j2objcConfig', J2objcPluginExtension, project)
+
             afterEvaluate { evaluatedProject ->
+
                 // Validate minimally required parameters.
                 // j2objcHome() will throw the appropriate exception internally.
                 assert J2objcUtils.j2objcHome(evaluatedProject)
+
+                J2objcUtils.throwIfNoJavaPlugin(evaluatedProject)
 
                 if (!evaluatedProject.j2objcConfig.isFinalConfigured()) {
                     def message = "You must call finalConfigure() in j2objcConfig, ex:\n" +

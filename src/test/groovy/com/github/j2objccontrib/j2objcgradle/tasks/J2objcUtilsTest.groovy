@@ -42,6 +42,13 @@ public class J2objcUtilsTest {
         J2objcUtils.isWindows()
     }
 
+    @Test(expected = InvalidUserDataException.class)
+    public void testThrowIfNoJavaPlugin_NoJavaPlugin() {
+        J2objcUtils.throwIfNoJavaPlugin(proj)
+    }
+
+    // TODO: testThrowIfNoJavaPlugin_JavaPluginExists
+
     // TODO: testSrcDirs() - requires 'java' plugin
 
     // TODO: testSourcepathJava() - requires 'java' plugin

@@ -40,8 +40,21 @@ class J2objcUtils {
         return System.getProperty('os.name').toLowerCase().contains('windows')
     }
 
+    static void throwIfNoJavaPlugin(Project proj) {
+        if (!proj.plugins.hasPlugin('java')) {
+            String message =
+                    "j2objc plugin didn't find the 'java' plugin in the '${proj.name}' project.\n" +
+                    "This is a requirement for using j2objc. Please see usage information at:\n" +
+                    "\n" +
+                    "https://github.com/j2objc-contrib/j2objc-gradle/#usage"
+            throw new InvalidUserDataException(message)
+        }
+    }
+
     // Retrieves the configured source directories from the Java plugin SourceSets.
     static SourceDirectorySet srcDirs(Project proj, String sourceSetName, String fileType) {
+        throwIfNoJavaPlugin(proj)
+
         assert fileType == 'java' || fileType == 'resources'
         assert sourceSetName == 'main' || sourceSetName == 'test'
         SourceSet sourceSet = proj.sourceSets.findByName(sourceSetName)

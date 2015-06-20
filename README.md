@@ -38,9 +38,10 @@ Tracked issue: https://github.com/j2objc-contrib/j2objc-gradle/issues/130**
         xcodeProjectDir "${projectDir}/../ios"   // Xcode workspace directory
         xcodeTarget "IosApp"                     // Xcode application target name
     
-        // More: https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcPluginExtension.groovy#L25
+        // Help information on other settings:
+        // https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcPluginExtension.groovy#L25
         
-        // You must include this call (at the end of the block) even if you do not configure any other settings.
+        // You must include this call (at the end of j2objcConfig) regardless of settings
         finalConfigure()
     }
 
