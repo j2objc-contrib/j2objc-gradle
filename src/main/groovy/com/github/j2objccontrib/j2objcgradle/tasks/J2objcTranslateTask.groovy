@@ -18,12 +18,14 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.FileCollection
+import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
+import org.gradle.api.tasks.incremental.InputFileDetails
 
 /**
  * Translation task for Java to Objective-C using j2objc tool.
@@ -39,7 +41,7 @@ class J2objcTranslateTask extends DefaultTask {
         // Note that neither additionalSrcFiles nor translatePattern need
         // to be @Inputs because they are solely inputs to this method, which
         // is already an input.
-        def allFiles = J2objcUtils.srcDirs(project, 'main', 'java')
+        SourceDirectorySet allFiles = J2objcUtils.srcDirs(project, 'main', 'java')
         allFiles = allFiles.plus(J2objcUtils.srcDirs(project, 'test', 'java'))
 
         if (project.j2objcConfig.translatePattern != null) {
@@ -56,16 +58,16 @@ class J2objcTranslateTask extends DefaultTask {
     FileCollection getAllInputFiles() {
         FileCollection allFiles = srcFiles
         if (getTranslateSourcepaths()) {
-            def translateSourcepathPaths = getTranslateSourcepaths().split(':') as List<String>
-            translateSourcepathPaths.each {
-                allFiles = allFiles.plus(project.files(it))
+            List<String> translateSourcepathPaths = getTranslateSourcepaths().split(':') as List<String>
+            translateSourcepathPaths.each { String sourcePath ->
+                allFiles = allFiles.plus(project.files(sourcePath))
             }
         }
-        generatedSourceDirs.each {
-            allFiles = allFiles.plus(project.files(it))
+        generatedSourceDirs.each { String sourceDir ->
+            allFiles = allFiles.plus(project.files(sourceDir))
         }
-        translateClassPaths.each {
-            allFiles = allFiles.plus(project.files(it))
+        translateClassPaths.each { String classPath ->
+            allFiles = allFiles.plus(project.files(classPath))
         }
         return allFiles
     }
@@ -98,7 +100,7 @@ class J2objcTranslateTask extends DefaultTask {
     List<String> getTranslateJ2objcLibs() { return project.j2objcConfig.translateJ2objcLibs }
 
     @TaskAction
-    def translate(IncrementalTaskInputs inputs) {
+    void translate(IncrementalTaskInputs inputs) {
         List<String> translateArgs = getTranslateArgs()
         // Don't evaluate this expensive property multiple times.
         FileCollection originalSrcFiles = getSrcFiles()
@@ -122,7 +124,7 @@ class J2objcTranslateTask extends DefaultTask {
         } else {
             boolean nonSourceFileChanged = false
             srcFilesChanged = project.files()
-            inputs.outOfDate { change ->
+            inputs.outOfDate { InputFileDetails change ->
                 // We must filter by srcFiles, since all possible input files are @InputFiles to this task.
                 if (originalSrcFiles.contains(change.file)) {
                     logger.debug "New or Updated file: " + change.file
@@ -132,12 +134,12 @@ class J2objcTranslateTask extends DefaultTask {
                     logger.debug "New or Updated non-source file: " + change.file
                 }
             }
-            def removedFileNames = []
-            inputs.removed { change ->
+            List<String> removedFileNames = new ArrayList<>()
+            inputs.removed { InputFileDetails change ->
                 // We must filter by srcFiles, since all possible input files are @InputFiles to this task.
                 if (originalSrcFiles.contains(change.file)) {
                     logger.debug "Removed file: " + change.file.name
-                    def nameWithoutExt = file.name.toString().replaceFirst("\\..*", "")
+                    String nameWithoutExt = file.name.toString().replaceFirst("\\..*", "")
                     removedFileNames += nameWithoutExt
                 } else {
                     nonSourceFileChanged = true
@@ -152,7 +154,7 @@ class J2objcTranslateTask extends DefaultTask {
 
             if (!nonSourceFileChanged) {
                 // All changes were within srcFiles (i.e. in a Java source-set).
-                def translatedFiles = 0
+                int translatedFiles = 0
                 if (srcGenDir.exists()) {
                     FileCollection destFiles = project.files(project.fileTree(
                             dir: srcGenDir, includes: ["**/*.h", "**/*.m"]))
@@ -161,7 +163,7 @@ class J2objcTranslateTask extends DefaultTask {
                     // directory from prior translations.
                     // So only remove translated .h and .m files which has no corresponding .java files anymore
                     destFiles.each { File file ->
-                        def nameWithoutExt = file.name.toString().replaceFirst("\\..*", "")
+                        String nameWithoutExt = file.name.toString().replaceFirst("\\..*", "")
                         // TODO: Check for --no-package-directories when deciding whether
                         // to compare file name vs. full path.
                         if (removedFileNames.contains(nameWithoutExt)) {
@@ -205,7 +207,7 @@ class J2objcTranslateTask extends DefaultTask {
             windowsOnlyArgs.add("${getJ2ObjCHome()}/lib/j2objc.jar")
         }
 
-        def sourcepath = J2objcUtils.sourcepathJava(project)
+        String sourcepath = J2objcUtils.sourcepathJava(project)
 
         // Additional Sourcepaths, e.g. source jars
         if (getTranslateSourcepaths()) {
@@ -221,12 +223,12 @@ class J2objcTranslateTask extends DefaultTask {
             J2objcUtils.filenameCollisionCheck(srcFiles)
         }
 
-        def classPathArg = J2objcUtils.getClassPathArg(
+        String classPathArg = J2objcUtils.getClassPathArg(
                 project, getJ2ObjCHome(), getTranslateClassPaths(), getTranslateJ2objcLibs())
 
         classPathArg += ":${project.buildDir}/classes"
 
-        def output = new ByteArrayOutputStream()
+        ByteArrayOutputStream output = new ByteArrayOutputStream()
         try {
             project.exec {
                 executable j2objcExecutable
@@ -241,7 +243,7 @@ class J2objcTranslateTask extends DefaultTask {
 
                 args translateArgs
 
-                srcFilesChanged.each { file ->
+                srcFilesChanged.each {File file ->
                     args file.path
                 }
                 standardOutput output
@@ -249,7 +251,7 @@ class J2objcTranslateTask extends DefaultTask {
             }
 
         } catch (Exception exception) {
-            def outputStr = output.toString()
+            String outputStr = output.toString()
             logger.debug 'Translation output:'
             logger.debug outputStr
             // Put to stderr only the lines at fault.

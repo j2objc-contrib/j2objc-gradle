@@ -63,11 +63,11 @@ class J2objcXcodeTask extends DefaultTask {
 
 
     @TaskAction
-    def pod(IncrementalTaskInputs inputs) {
+    void pod(IncrementalTaskInputs inputs) {
 
         if (getXcodeProjectDir() == null ||
             getXcodeTarget() == null) {
-            def message =
+            String message =
                     "Xcode settings needs to be configured, modify in build.gradle:\n" +
                     "\n" +
                     "j2objcConfig {\n" +
@@ -119,7 +119,7 @@ class J2objcXcodeTask extends DefaultTask {
         File podFile = getPodFile()
         if (!podFile.exists()) {
             // TODO: offer to run the setup commands
-            def message =
+            String message =
                     "No podfile exists in the directory: ${getXcodeProjectDir()}\n" +
                     "Create the Podfile in that directory with this command:\n" +
                     "\n" +
@@ -146,7 +146,7 @@ class J2objcXcodeTask extends DefaultTask {
             }
 
             // install the pod
-            def output = new ByteArrayOutputStream()
+            ByteArrayOutputStream output = new ByteArrayOutputStream()
             try {
                 project.exec {
                     workingDir getXcodeProjectDir()
@@ -160,7 +160,7 @@ class J2objcXcodeTask extends DefaultTask {
 
                 if (exception.getMessage().find(
                         "A problem occurred starting process 'command 'pod install''")) {
-                    def message =
+                    String message =
                             "Fix this by installing CocoaPods:\n" +
                             "    sudo gem install cocoapods \n" +
                             "\n" +
@@ -177,7 +177,7 @@ class J2objcXcodeTask extends DefaultTask {
 
     // checks if a pod is still integrated into a pod file
     // return: if podspec exists and the target line for insertion
-    static def checkPodDefExistence(File podFile, String xcodeTarget, String podName) {
+    static List<Object> checkPodDefExistence(File podFile, String xcodeTarget, String podName) {
         boolean podIntegrationExists = false
         boolean isInOpenBlock = false
         List<String> lines = podFile.readLines()
@@ -186,7 +186,7 @@ class J2objcXcodeTask extends DefaultTask {
         // if the `podName` does not exist in the Xcode build target of the pod
         // it has to be added to the pod's target
         String targetPodLine = ""
-        for (def line : lines) {
+        for (String line : lines) {
             if (line.contains("'${xcodeTarget}'")) {
                 isInOpenBlock = true
                 targetPodLine = line
