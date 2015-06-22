@@ -21,6 +21,7 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
+import org.gradle.api.file.ConfigurableFileCollection
 
 /**
  * Uses 'lipo' binary to combine multiple architecture flavors of a library into a
@@ -30,9 +31,9 @@ class J2objcPackLibrariesTask extends DefaultTask {
 
     // Generated ObjC binaries
     @InputFiles
-    def getInputLibraries() {
-        def staticLibraryPath = "${project.buildDir}/binaries/${project.name}-j2objcStaticLibrary"
-        return project.files(getSupportedArchs().collect { arch ->
+    ConfigurableFileCollection getInputLibraries() {
+        String staticLibraryPath = "${project.buildDir}/binaries/${project.name}-j2objcStaticLibrary"
+        return project.files(getSupportedArchs().collect { String arch ->
             "$staticLibraryPath/$arch$buildType/lib${project.name}-j2objc.a"
         })
     }
@@ -50,20 +51,20 @@ class J2objcPackLibrariesTask extends DefaultTask {
     List<String> getSupportedArchs() { return project.j2objcConfig.supportedArchs }
 
     @TaskAction
-    def lipoLibraries() {
+    void lipoLibraries() {
         if (outputLibDir.exists()) {
             // Clear it out.
             outputLibDir.deleteDir()
             outputLibDir.mkdirs()
         }
-        def output = new ByteArrayOutputStream()
+        ByteArrayOutputStream output = new ByteArrayOutputStream()
         try {
             project.exec {
                 executable 'xcrun'
 
                 args 'lipo'
                 args '-create', '-output', "${outputLibDir}/lib${project.name}-j2objc.a"
-                inputLibraries.each { libFile ->
+                inputLibraries.each { File libFile ->
                     args libFile.absolutePath
                 }
 
@@ -72,7 +73,7 @@ class J2objcPackLibrariesTask extends DefaultTask {
             }
 
         } catch (Exception exception) {
-            def outputStr = output.toString()
+            String outputStr = output.toString()
             logger.error "$name failed, output: "
             logger.error outputStr
             throw exception

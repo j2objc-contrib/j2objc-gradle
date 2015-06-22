@@ -29,10 +29,12 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel
 
+
 /*
  * Main plugin class for creation of extension object and all the tasks.
  */
 class J2objcPlugin implements Plugin<Project> {
+  
     @Override
     void apply(Project project) {
         // This avoids a lot of "project." prefixes, such as "project.tasks.create"
@@ -48,7 +50,7 @@ class J2objcPlugin implements Plugin<Project> {
                 J2objcUtils.throwIfNoJavaPlugin(evaluatedProject)
 
                 if (!evaluatedProject.j2objcConfig.isFinalConfigured()) {
-                    def message = "You must call finalConfigure() in j2objcConfig, ex:\n" +
+                    String message = "You must call finalConfigure() in j2objcConfig, ex:\n" +
                                   "j2objcConfig {\n" +
                                   "    // other settings\n" +
                                   "    finalConfigure()\n" +
@@ -74,7 +76,7 @@ class J2objcPlugin implements Plugin<Project> {
 
             // This is an intermediate directory only.  Clients should use only directories
             // specified in j2objcConfig (or associated defaults in J2objcPluginExtension).
-            def j2objcSrcGenDir = file("${buildDir}/j2objcSrcGen")
+            File j2objcSrcGenDir = file("${buildDir}/j2objcSrcGen")
 
             // Produces a modest amount of output
             logging.captureStandardOutput LogLevel.INFO
@@ -164,7 +166,7 @@ class J2objcPlugin implements Plugin<Project> {
     // Has task named afterTaskName depend on the task named beforeTaskName, regardless of
     // whether afterTaskName has been created yet or not.
     // The before task must already exist.
-    private def lateDependsOn(Project proj, String afterTaskName, String beforeTaskName) {
+    private void lateDependsOn(Project proj, String afterTaskName, String beforeTaskName) {
         assert null != proj.tasks.findByName(beforeTaskName)
         // You can't just call tasks.findByName on afterTaskName - for certain tasks like 'assemble' for
         // reasons unknown, the Java plugin creates - right there! - the task; this prevents

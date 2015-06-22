@@ -351,7 +351,7 @@ class J2objcPluginExtension {
     // after initial creation, we can remove this, and have methods on this object
     // mutate the existing native model { } block.  See:
     // https://discuss.gradle.org/t/problem-with-model-block-when-switching-from-2-2-1-to-2-4/9937
-    def finalConfigure() {
+    void finalConfigure() {
         nativeCompilation.apply(project.file("${project.buildDir}/j2objcSrcGen"))
         finalConfigured = true
     }

@@ -19,6 +19,7 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
+import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
@@ -38,7 +39,7 @@ class J2objcTestTask extends DefaultTask {
     FileCollection getSrcFiles() {
         // Note that neither testPattern nor translatePattern need  to be @Input methods because they are solely
         // inputs to this method, which is already an input via @InputFiles.
-        def allFiles = J2objcUtils.srcDirs(project, 'test', 'java')
+        SourceDirectorySet allFiles = J2objcUtils.srcDirs(project, 'test', 'java')
 
         if (project.j2objcConfig.translatePattern != null) {
             allFiles = allFiles.matching(project.j2objcConfig.translatePattern)
@@ -65,16 +66,16 @@ class J2objcTestTask extends DefaultTask {
 
 
     @TaskAction
-    def test() {
+    void test() {
 
-        def binary = testBinaryFile.path
+        String binary = testBinaryFile.path
         logger.debug "Test Binary: $binary"
 
         // list of test names: ['com.example.dir.ClassOneTest', 'com.example.dir.ClassTwoTest']
         // depends on "--prefixes dir/prefixes.properties" in translateArgs
-        def testNames = testNames(project, getSrcFiles(), getTranslateArgs())
+        FileCollection testNames = testNames(project, getSrcFiles(), getTranslateArgs())
 
-        def output = new ByteArrayOutputStream()
+        ByteArrayOutputStream output = new ByteArrayOutputStream()
         try {
             project.exec {
                 executable binary
@@ -82,7 +83,7 @@ class J2objcTestTask extends DefaultTask {
 
                 args getTestArgs()
 
-                testNames.each { testName ->
+                testNames.each { File testName ->
                     args testName
                 }
 
@@ -92,7 +93,7 @@ class J2objcTestTask extends DefaultTask {
         } catch (Exception exception) {
             logger.error "STDOUT and STDERR from failed j2objcTest task:"
             logger.error output.toString()
-            def message =
+            String message =
                     "The j2objcTest task failed. Given that the java plugin 'test' task\n" +
                     "completed successfully, this shows an error specific to the j2objc build.\n" +
                     "It may be that the code will still perform correctly. If you can identify\n" +
@@ -124,12 +125,12 @@ class J2objcTestTask extends DefaultTask {
         }
 
         // Test Output Report
-        def outputStr = output.toString()
+        String outputStr = output.toString()
         reportFile.write(outputStr)
         logger.debug "Test Output: ${reportFile.path}"
 
         int testCount = J2objcUtils.matchNumberRegex(outputStr, /OK \((\d+) tests\)/)
-        def message =
+        String message =
                 "\n" +
                 "j2objcConfig {\n" +
                 "    testMinExpectedTests ${testCount}\n" +
@@ -172,25 +173,25 @@ class J2objcTestTask extends DefaultTask {
     // Generate list of tests from the source java files
     // e.g. src/test/java/com/example/dir/ClassTest.java => "com.example.dir.ClassTest"
     // depends on --prefixes dir/prefixes.properties in translateArgs
-    def static testNames(Project proj, FileCollection srcFiles, List<String> translateArgs) {
-        def prefixesProperties = J2objcUtils.prefixProperties(proj, translateArgs)
+    static FileCollection testNames(Project proj, FileCollection srcFiles, List<String> translateArgs) {
+        Properties prefixesProperties = J2objcUtils.prefixProperties(proj, translateArgs)
 
-        def testNames = srcFiles.collect { file ->
+        FileCollection testNames = srcFiles.collect { File file ->
             // src/test/java/com/example/dir/SomeTest.java => com.example.dir.SomeTest
-            def testName = proj.relativePath(file)
+            String testName = proj.relativePath(file)
                     .replace('src/test/java/', '')
                     .replace('/', '.')
                     .replace('.java', '')
 
             // Translate test name according to prefixes.properties
             // E.g. com.example.dir.SomeTest => PREFIX.SomeTest
-            def namespaceRegex = /^(([^.]+\.)+)[^.]+$/  // No match for test outside a namespace
-            def matcher = (testName =~ namespaceRegex)
+            String namespaceRegex = /^(([^.]+\.)+)[^.]+$/  // No match for test outside a namespace
+            String matcher = (testName =~ namespaceRegex)
             if (matcher.find()) {
-                def namespace = matcher[0][1]            // com.example.dir.
-                def namespaceChopped = namespace[0..-2]  // com.example.dir
+                String namespace = matcher[0][1]            // com.example.dir.
+                String namespaceChopped = namespace[0..-2]  // com.example.dir
                 if (prefixesProperties.containsKey(namespaceChopped)) {
-                    def value = prefixesProperties.getProperty(namespaceChopped)
+                    String value = prefixesProperties.getProperty(namespaceChopped)
                     testName = testName.replace(namespace, value)
                 }
             }

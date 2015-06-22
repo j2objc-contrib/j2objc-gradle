@@ -22,6 +22,7 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
+import org.gradle.api.file.ConfigurableFileCollection
 
 /**
  * Assemble task copies generated source and libaries to assembly directories for
@@ -69,12 +70,12 @@ class J2objcAssembleTask extends DefaultTask {
     String getDestLibDirPath() { return project.j2objcConfig.destLibDir }
 
 
-    private def clearDestSrcDirWithChecks(File destDir, String name) {
-        def nonObjcDestFiles = project.files(project.fileTree(
+    private void clearDestSrcDirWithChecks(File destDir, String name) {
+        ConfigurableFileCollection nonObjcDestFiles = project.files(project.fileTree(
                 dir: destDir, excludes: ["**/*.h", "**/*.m"]))
         // Warn if deleting non-generated objc files from destDir
-        nonObjcDestFiles.each { file ->
-            def message =
+        nonObjcDestFiles.each { File file ->
+            String message =
                     "Unexpected files in $name - this folder should contain ONLY j2objc\n" +
                     "generated files Objective-C. The folder contents are deleted to remove\n" +
                     "files that are nolonger generated. Please check the directory and remove\n" +
@@ -89,7 +90,7 @@ class J2objcAssembleTask extends DefaultTask {
     }
 
     @TaskAction
-    def destCopy() {
+    void destCopy() {
         clearDestSrcDirWithChecks(destSrcDir, 'destSrcDir')
         project.copy {
             includeEmptyDirs = false
