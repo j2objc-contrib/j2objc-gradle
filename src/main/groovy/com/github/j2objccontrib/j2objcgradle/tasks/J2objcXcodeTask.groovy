@@ -135,15 +135,15 @@ class J2objcXcodeTask extends DefaultTask {
             def (boolean podIntegrationExists, String targetPodLine) =
             checkPodDefExistence(podFile, xcodeTarget, getPodName())
 
+            String text = podFile.getText()
+            String replacement = "pod '${getPodName()}', :path => '${project.buildDir}'"
             if (!podIntegrationExists) {
                 // add pod to podfile, e.g., pod 'projectName', :path => '/pathToJ2objcProject/projectName/build'
-                String text = podFile.getText()
-                String replacement = targetPodLine + "\n" +
-                                     "pod '${getPodName()}', :path => '${project.buildDir}'"
-                String newText = text.replaceFirst(targetPodLine, replacement)
-                podFile.write(newText)
-                logger.debug "Added pod ${getPodName()} to Xcode target ${xcodeTarget} of podfile."
-            }
+                replacement = targetPodLine + "\n" + replacement                                     
+            }            
+            String newText = text.replaceFirst(targetPodLine, replacement)
+            podFile.write(newText)
+            logger.debug "Added pod ${getPodName()} to Xcode target ${xcodeTarget} of podfile."
 
             // install the pod
             ByteArrayOutputStream output = new ByteArrayOutputStream()
@@ -194,6 +194,7 @@ class J2objcXcodeTask extends DefaultTask {
             if (isInOpenBlock) {
                 if (line.contains(podName)) {
                     podIntegrationExists = true
+                    targetPodLine = line
                 }
             }
             if (line.contains("end")) {
