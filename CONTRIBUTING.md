@@ -23,11 +23,62 @@ code review from anyone is welcome.  The PR author should keep the PR in a state
 If the PR author is a committer, they can merge the PR themselves as long as they
 have an LGTM from the PR assignee (which should be a different committer).
 
-## Style guide
-TODO
+## Style Guidelines
+The style guidelines use the following external style guides in priority order, along with
+a customizations that aren't explicit in those guides.
+
+1. Groovy Style Guidlines (highest priority):<br>
+   http://www.groovy-lang.org/style-guide.html
+2. Java Style Guidelines (when not in conflict with above):<br>
+   https://google-styleguide.googlecode.com/svn/trunk/javaguide.html
+
+Further Customizations:
+
+* Function calls should use parentheses:
+```
+logging.captureStandardOutput(LogLevel.INFO)  // approved
+logging.captureStandardOutput LogLevel.INFO   // avoid
+```
+* Configure calls do not use parentheses:
+```
+project.exec {
+    executable 'j2objc'              // approved
+    args "-sourcepath", sourcepath   // approved
+
+    executable('j2objc')             // avoid
+    args("-sourcepath", sourcepath)  // avoid
+}
+```
+* Explicit Types instead of 'def':
+```
+String message = 'a message'  // approved
+def message = 'a message'     // avoid
+```
+* GString curly braces only for methods or object members:
+```
+String message = "the count is $count"           // approved
+String message = "the count is ${object.count}"  // approved
+String message = "the count is ${method()}"      // approved
+
+String message = "the count is ${count}"         // avoid
+String message = "the count is $method()"        // avoid
+String message = "the count is $object.count"    // incorrect as it only prints "$object"
+```
+* Single quotes for non-GString, i.e. no string interpolation:
+```
+String message = 'the count is negative'  // approved
+String message = "the count is negative"  // avoid
+```
+
 
 ## Testing your code
-TODO
+Unit tests must be written for all new code and major changes. Please follow the example
+of existing tests within the code.
+
+To run the build and all the tests:
+```
+./gradlew build
+```
 
 ## Preparing your pull request for submission
 Say you have a pull request ready for submission into the main repository - it has
