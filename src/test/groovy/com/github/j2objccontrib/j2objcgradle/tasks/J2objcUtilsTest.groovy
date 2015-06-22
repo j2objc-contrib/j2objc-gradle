@@ -60,7 +60,7 @@ public class J2objcUtilsTest {
         // TODO: fix to use this.getClass().getResource(...) once Android Studio issue fixed
         // https://code.google.com/p/android/issues/detail?id=75991
         File prefixesProp = new File(
-                'src/test/resources/com/github/j2objccontrib/j2objcgradle/prefixes.properties')
+                'src/test/resources/com/github/j2objccontrib/j2objcgradle/tasks/prefixes.properties')
 
         List<String> translateArgs = new ArrayList<String>()
         translateArgs.add("--prefixes ${prefixesProp.absolutePath}")
@@ -78,7 +78,7 @@ public class J2objcUtilsTest {
     public void testPrefixProperties_FileAndArgs() {
         // TODO: repeat as above
         File prefixesProp = new File(
-                'src/test/resources/com/github/j2objccontrib/j2objcgradle/prefixes.properties')
+                'src/test/resources/com/github/j2objccontrib/j2objcgradle/tasks/prefixes.properties')
 
         List<String> translateArgs = new ArrayList<String>()
         // prefix is overwritten by prefixes.properties
