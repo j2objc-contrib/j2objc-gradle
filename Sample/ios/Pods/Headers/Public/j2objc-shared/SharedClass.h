@@ -1,0 +1,1 @@
+../../../../../shared/build/j2objcSrcGen/SharedClass.h

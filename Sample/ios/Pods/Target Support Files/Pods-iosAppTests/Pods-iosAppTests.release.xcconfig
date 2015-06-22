@@ -1,0 +1,7 @@
+GCC_PREPROCESSOR_DEFINITIONS = $(inherited) COCOAPODS=1
+HEADER_SEARCH_PATHS = $(inherited) "${PODS_ROOT}/Headers/Public" "${PODS_ROOT}/Headers/Public/j2objc-shared" /Applications/J2Objc/j2objc-0.9.7b/include
+LIBRARY_SEARCH_PATHS = /Applications/J2Objc/j2objc-0.9.7b/lib /Users/mg/Documents/Android/Android-Studio/Sample/shared/build/j2objcOutputs/lib/iosDebug
+OTHER_CFLAGS = $(inherited) -isystem "${PODS_ROOT}/Headers/Public" -isystem "${PODS_ROOT}/Headers/Public/j2objc-shared"
+OTHER_LDFLAGS = $(inherited) -ObjC -l"ObjC" -l"guava" -l"icucore" -l"javax_inject" -l"jre_emul" -l"jsr305" -l"shared-j2objc" -l"z"
+OTHER_LIBTOOLFLAGS = $(OTHER_LDFLAGS)
+PODS_ROOT = ${SRCROOT}/Pods

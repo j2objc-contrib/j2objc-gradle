@@ -1,0 +1,20 @@
+
+pod 'j2objc-shared', :path => '/Users/mg/Documents/Android/Android-Studio/Sample/shared/build'
+pod 'j2objc-shared', :path => '/Users/mg/Documents/Android/Android-Studio/Sample/shared/build'
+pod 'j2objc-shared', :path => '/Users/mg/Documents/Android/Android-Studio/Sample/shared/build'
+pod 'j2objc-shared', :path => '/Users/mg/Documents/Android/Android-Studio/Sample/shared/build'
+pod 'j2objc-shared', :path => '/Users/mg/Documents/Android/Android-Studio/Sample/shared/build'
+pod 'j2objc-shared', :path => '/Users/mg/Documents/Android/Android-Studio/Sample/shared/build'
+pod 'j2objc-shared', :path => '/Users/mg/Documents/Android/Android-Studio/Sample/shared/build'
+pod 'j2objc-shared', :path => '/Users/mg/Documents/Android/Android-Studio/Sample/shared/build'
+pod 'j2objc-shared', :path => '/Users/mg/Documents/Android/Android-Studio/Sample/shared/build'# Uncomment this line to define a global platform for your project
+# platform :ios, '6.0'
+
+target 'iosApp' do
+
+end
+
+target 'iosAppTests' do
+
+end
+
