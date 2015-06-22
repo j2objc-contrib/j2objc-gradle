@@ -23,8 +23,8 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.tasks.SourceSet
 import java.util.regex.Matcher
-
-import java.util.regex.Matcher
+// TODO: import is used, Android Studio mistakenly marks it as unused
+import java.util.Properties
 
 /**
  * Internal utilities supporting plugin implementation.

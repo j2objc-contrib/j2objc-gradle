@@ -179,6 +179,7 @@ class J2objcCycleFinderTask extends DefaultTask {
             String outputStr = output.toString()
             int cyclesFound = J2objcUtils.matchNumberRegex(outputStr, /(\d+) CYCLES FOUND/)
             if (cyclesFound != getCycleFinderExpectedCycles()) {
+                // Suppress exception when cycles found == cycleFinderExpectedCycles
                 logger.error outputStr
                 String message =
                         "Unexpected number of cycles founder:\n" +
@@ -192,7 +193,9 @@ class J2objcCycleFinderTask extends DefaultTask {
                         "}\n"
                 throw new Exception(message)
             }
-            // Suppress exception when cycles found == cycleFinderExpectedCycles
+
+            // rethrow unknown exception
+            throw exception
         }
 
         reportFile.write(output.toString())
