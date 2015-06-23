@@ -52,15 +52,15 @@ class J2objcUtils {
     }
 
     // Retrieves the configured source directories from the Java plugin SourceSets.
-    static SourceDirectorySet srcDirs(Project proj, String sourceSetName, String fileType) {
+    static FileCollection srcDirs(Project proj, String sourceSetName, String fileType) {
         throwIfNoJavaPlugin(proj)
 
         assert fileType == 'java' || fileType == 'resources'
         assert sourceSetName == 'main' || sourceSetName == 'test'
         SourceSet sourceSet = proj.sourceSets.findByName(sourceSetName)
-        // For standard fileTypes 'java' and 'resources,' per contract
-        // this cannot be null.
-        return sourceSet.getProperty(fileType)
+        // For standard fileTypes 'java' and 'resources,' per contract this cannot be null.
+        // Convert from SourceDirectorySet to FileCollection, see issue #216
+        return (FileCollection) sourceSet.getProperty(fileType)
     }
 
     static String sourcepathJava(Project proj) {
