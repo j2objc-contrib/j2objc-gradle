@@ -41,7 +41,7 @@ class J2objcTranslateTask extends DefaultTask {
         // Note that neither additionalSrcFiles nor translatePattern need
         // to be @Inputs because they are solely inputs to this method, which
         // is already an input.
-        FileCollection allFiles = J2objcUtils.srcDirs(project, 'main', 'java')
+        SourceDirectorySet allFiles = J2objcUtils.srcDirs(project, 'main', 'java')
         allFiles = allFiles.plus(J2objcUtils.srcDirs(project, 'test', 'java'))
 
         if (project.j2objcConfig.translatePattern != null) {
