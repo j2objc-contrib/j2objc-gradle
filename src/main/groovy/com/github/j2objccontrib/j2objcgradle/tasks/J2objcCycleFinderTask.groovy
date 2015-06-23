@@ -36,7 +36,7 @@ class J2objcCycleFinderTask extends DefaultTask {
     FileCollection getSrcFiles() {
         // Note that translatePattern does not need to be an @Input because it is
         // solely an input to this method, which is already an input (via @InputFiles).
-        SourceDirectorySet allFiles = J2objcUtils.srcDirs(project, 'main', 'java')
+        FileCollection allFiles = J2objcUtils.srcDirs(project, 'main', 'java')
         allFiles = allFiles.plus(J2objcUtils.srcDirs(project, 'test', 'java'))
         if (project.j2objcConfig.translatePattern != null) {
             allFiles = allFiles.matching(project.j2objcConfig.translatePattern)
