@@ -43,16 +43,20 @@ logging.captureStandardOutput LogLevel.INFO   // avoid
 ```
 project.exec {
     executable 'j2objc'              // approved
-    args "-sourcepath", sourcepath   // approved
+    args '-sourcepath', sourcepath   // approved
 
     executable('j2objc')             // avoid
-    args("-sourcepath", sourcepath)  // avoid
+    args('-sourcepath', sourcepath)  // avoid
 }
 ```
 * Explicit Types instead of 'def':
 ```
 String message = 'a message'  // approved
 def message = 'a message'     // avoid
+
+// This also applies for '->' iterators:
+translateArgs.each { String arg ->  // approved
+translateArgs.each { arg ->         // avoid
 ```
 * GString curly braces only for methods or object members:
 ```
@@ -67,7 +71,7 @@ String message = "the count is $object.count"    // incorrect as it only prints 
 * Single quotes for non-GString, i.e. no string interpolation:
 ```
 String message = 'the count is negative'  // approved
-String message = "the count is negative"  // avoid
+String message = "the count is negative"  // avoid - only needed for $var interpolation
 ```
 
 
