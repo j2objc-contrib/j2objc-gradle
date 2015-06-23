@@ -18,7 +18,6 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.FileCollection
-import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
@@ -41,7 +40,7 @@ class J2objcTranslateTask extends DefaultTask {
         // Note that neither additionalSrcFiles nor translatePattern need
         // to be @Inputs because they are solely inputs to this method, which
         // is already an input.
-        SourceDirectorySet allFiles = J2objcUtils.srcDirs(project, 'main', 'java')
+        FileCollection allFiles = J2objcUtils.srcDirs(project, 'main', 'java')
         allFiles = allFiles.plus(J2objcUtils.srcDirs(project, 'test', 'java'))
 
         if (project.j2objcConfig.translatePattern != null) {

@@ -19,7 +19,6 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
-import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
@@ -39,7 +38,7 @@ class J2objcTestTask extends DefaultTask {
     FileCollection getSrcFiles() {
         // Note that neither testPattern nor translatePattern need  to be @Input methods because they are solely
         // inputs to this method, which is already an input via @InputFiles.
-        SourceDirectorySet allFiles = J2objcUtils.srcDirs(project, 'test', 'java')
+        FileCollection allFiles = J2objcUtils.srcDirs(project, 'test', 'java')
 
         if (project.j2objcConfig.translatePattern != null) {
             allFiles = allFiles.matching(project.j2objcConfig.translatePattern)
