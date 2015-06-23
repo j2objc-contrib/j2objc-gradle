@@ -19,13 +19,12 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
+import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-
-import java.util.regex.Matcher
 
 /**
  *
@@ -37,10 +36,10 @@ class J2objcTestTask extends DefaultTask {
     File testBinaryFile
 
     @InputFiles
-    FileCollection getTestSrcFiles() {
-        // Note that neither testPattern nor translatePattern need to be @Input methods because they are solely
+    FileCollection getSrcFiles() {
+        // Note that neither testPattern nor translatePattern need  to be @Input methods because they are solely
         // inputs to this method, which is already an input via @InputFiles.
-        FileCollection allFiles = J2objcUtils.srcDirs(project, 'test', 'java')
+        SourceDirectorySet allFiles = J2objcUtils.srcDirs(project, 'test', 'java')
 
         if (project.j2objcConfig.translatePattern != null) {
             allFiles = allFiles.matching(project.j2objcConfig.translatePattern)
@@ -51,7 +50,7 @@ class J2objcTestTask extends DefaultTask {
         return allFiles
     }
 
-    // Report of test failures, Gradle requires @Output for UP-TO-DATE checks
+    // Report of test failures
     @OutputFile
     File reportFile = project.file("${project.buildDir}/reports/${name}.out")
 
@@ -74,8 +73,7 @@ class J2objcTestTask extends DefaultTask {
 
         // list of test names: ['com.example.dir.ClassOneTest', 'com.example.dir.ClassTwoTest']
         // depends on "--prefixes dir/prefixes.properties" in translateArgs
-        Properties packagePrefixes = J2objcUtils.prefixProperties(project, translateArgs)
-        List<String> testNames = getTestNames(project, getTestSrcFiles(), packagePrefixes)
+        FileCollection testNames = testNames(project, getSrcFiles(), getTranslateArgs())
 
         ByteArrayOutputStream output = new ByteArrayOutputStream()
         try {
@@ -85,7 +83,7 @@ class J2objcTestTask extends DefaultTask {
 
                 args getTestArgs()
 
-                testNames.each { String testName ->
+                testNames.each { File testName ->
                     args testName
                 }
 
@@ -175,9 +173,10 @@ class J2objcTestTask extends DefaultTask {
     // Generate list of tests from the source java files
     // e.g. src/test/java/com/example/dir/ClassTest.java => "com.example.dir.ClassTest"
     // depends on --prefixes dir/prefixes.properties in translateArgs
-    static List<String> getTestNames(Project proj, FileCollection srcFiles, Properties packagePrefixes) {
+    static FileCollection testNames(Project proj, FileCollection srcFiles, List<String> translateArgs) {
+        Properties prefixesProperties = J2objcUtils.prefixProperties(proj, translateArgs)
 
-        List<String> testNames = srcFiles.collect { File file ->
+        FileCollection testNames = srcFiles.collect { File file ->
             // src/test/java/com/example/dir/SomeTest.java => com.example.dir.SomeTest
             String testName = proj.relativePath(file)
                     .replace('src/test/java/', '')
@@ -185,19 +184,18 @@ class J2objcTestTask extends DefaultTask {
                     .replace('.java', '')
 
             // Translate test name according to prefixes.properties
-            // E.g. com.example.dir.SomeTest => PrefixSomeTest
-
-            // First match against the set of Java packages, excluding the filename
-            Matcher matcher = (testName =~ /^(([^.]+\.)+)[^.]+$/)
+            // E.g. com.example.dir.SomeTest => PREFIX.SomeTest
+            String namespaceRegex = /^(([^.]+\.)+)[^.]+$/  // No match for test outside a namespace
+            String matcher = (testName =~ namespaceRegex)
             if (matcher.find()) {
                 String namespace = matcher[0][1]            // com.example.dir.
                 String namespaceChopped = namespace[0..-2]  // com.example.dir
-                if (packagePrefixes.containsKey(namespaceChopped)) {
-                    String prefix = packagePrefixes.getProperty(namespaceChopped)
-                    testName = testName.replace(namespace, prefix)  // PrefixSomeTest
+                if (prefixesProperties.containsKey(namespaceChopped)) {
+                    String value = prefixesProperties.getProperty(namespaceChopped)
+                    testName = testName.replace(namespace, value)
                 }
             }
-            // com.example.dir.SomeTest or PrefixSomeTest
+            // com.example.dir.SomeTest
             return testName
         }
         return testNames
