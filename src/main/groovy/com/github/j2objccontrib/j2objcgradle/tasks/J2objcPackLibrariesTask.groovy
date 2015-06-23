@@ -52,10 +52,10 @@ class J2objcPackLibrariesTask extends DefaultTask {
 
     @TaskAction
     void lipoLibraries() {
-        if (outputLibDir.exists()) {
+        if (getOutputLibDir().exists()) {
             // Clear it out.
-            outputLibDir.deleteDir()
-            outputLibDir.mkdirs()
+            getOutputLibDir().deleteDir()
+            getOutputLibDir().mkdirs()
         }
         ByteArrayOutputStream output = new ByteArrayOutputStream()
         try {
@@ -64,7 +64,7 @@ class J2objcPackLibrariesTask extends DefaultTask {
 
                 args 'lipo'
                 args '-create', '-output', "${outputLibDir}/lib${project.name}-j2objc.a"
-                inputLibraries.each { File libFile ->
+                getInputLibraries().each { File libFile ->
                     args libFile.absolutePath
                 }
 

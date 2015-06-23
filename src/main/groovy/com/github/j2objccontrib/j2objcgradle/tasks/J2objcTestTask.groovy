@@ -74,7 +74,7 @@ class J2objcTestTask extends DefaultTask {
 
         // list of test names: ['com.example.dir.ClassOneTest', 'com.example.dir.ClassTwoTest']
         // depends on "--prefixes dir/prefixes.properties" in translateArgs
-        Properties packagePrefixes = J2objcUtils.prefixProperties(project, translateArgs)
+        Properties packagePrefixes = J2objcUtils.packagePrefixes(project, translateArgs)
         List<String> testNames = getTestNames(project, getTestSrcFiles(), packagePrefixes)
 
         ByteArrayOutputStream output = new ByteArrayOutputStream()

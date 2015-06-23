@@ -64,7 +64,7 @@ public class J2objcUtilsTest {
 
         List<String> translateArgs = new ArrayList<String>()
         translateArgs.add("--prefixes ${prefixesProp.absolutePath}")
-        Properties properties = J2objcUtils.prefixProperties(proj, translateArgs)
+        Properties properties = J2objcUtils.packagePrefixes(proj, translateArgs)
 
         Properties expected = new Properties()
         expected.setProperty('com.example.parent', 'ParentPrefixesFile')
@@ -87,7 +87,7 @@ public class J2objcUtilsTest {
         // prefix overwrites prefixes.properties
         translateArgs.add('--prefix com.example.parent.subdir=SubdirPrefixArg')
 
-        Properties properties = J2objcUtils.prefixProperties(proj, translateArgs)
+        Properties properties = J2objcUtils.packagePrefixes(proj, translateArgs)
 
         Properties expected = new Properties()
         expected.setProperty('com.example.parent', 'ParentPrefixesFile')

@@ -47,7 +47,7 @@ class J2objcCycleFinderTask extends DefaultTask {
     // All input files that could affect translation output, except those in j2objc itself.
     @InputFiles
     FileCollection getAllInputFiles() {
-        FileCollection allFiles = srcFiles
+        FileCollection allFiles = getSrcFiles()
         if (getTranslateSourcepaths()) {
             List<String> translateSourcepathPaths = getTranslateSourcepaths().split(':') as List<String>
             translateSourcepathPaths.each { String sourcePath ->
@@ -139,7 +139,7 @@ class J2objcCycleFinderTask extends DefaultTask {
         // vs. translate task.  Here they are directly passed to the binary, but in translate
         // they are only on the translate source path (meaning they will only be translated with --build-closure).
         FileCollection fullSrcFiles = J2objcUtils.addJavaFiles(
-                project, srcFiles, getGeneratedSourceDirs())
+                project, getSrcFiles(), getGeneratedSourceDirs())
         sourcepath += J2objcUtils.absolutePathOrEmpty(
                 project, getGeneratedSourceDirs())
 
@@ -166,7 +166,7 @@ class J2objcCycleFinderTask extends DefaultTask {
 
                 args getCycleFinderArgs()
 
-                fullSrcFiles.each { file ->
+                fullSrcFiles.each { File file ->
                     args file.path
                 }
 

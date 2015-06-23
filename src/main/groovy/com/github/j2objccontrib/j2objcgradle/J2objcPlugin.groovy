@@ -27,6 +27,7 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.api.logging.LogLevel
 
 
@@ -41,7 +42,7 @@ class J2objcPlugin implements Plugin<Project> {
         project.with {
             extensions.create('j2objcConfig', J2objcPluginExtension, project)
 
-            afterEvaluate { evaluatedProject ->
+            afterEvaluate { Project evaluatedProject ->
 
                 // Validate minimally required parameters.
                 // j2objcHome() will throw the appropriate exception internally.
@@ -178,7 +179,7 @@ class J2objcPlugin implements Plugin<Project> {
         // added in the future.
         // TODO: Find a better way to have afterTask depend on beforeTask, without
         // materializing afterTask early.
-        proj.tasks.all { task ->
+        proj.tasks.all { Task task ->
             if (task.name == afterTaskName) {
                 task.dependsOn beforeTaskName
             }
