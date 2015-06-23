@@ -80,4 +80,25 @@ public class J2objcPluginExtensionTest {
                 ['--no-package-directories', '--prefixes', 'prefixes.properties'])
         assert ext.translateArgs == expected
     }
+
+    @Test
+    public void testconfigureArgs() {
+        List<String> args = new ArrayList()
+        J2objcPluginExtension.appendArgs(args, 'testArgs', '-arg1', '-arg2')
+
+        List<String> expected = Arrays.asList('-arg1', '-arg2')
+        assert expected == args
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testconfigureArgs_Null() {
+        List<String> args = new ArrayList()
+        J2objcPluginExtension.appendArgs(args, 'testArgs', null)
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testconfigureArgs_Spaces() {
+        List<String> args = new ArrayList()
+        J2objcPluginExtension.appendArgs(args, 'testArgs', '-arg1 -arg2')
+    }
 }
