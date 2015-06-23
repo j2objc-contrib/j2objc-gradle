@@ -20,6 +20,7 @@ import com.github.j2objccontrib.j2objcgradle.tasks.J2objcUtils
 import groovy.transform.PackageScope
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.nativeplatform.NativeExecutableSpec
 import org.gradle.nativeplatform.NativeLibraryBinary
 import org.gradle.nativeplatform.NativeLibrarySpec
@@ -42,7 +43,7 @@ class J2objcNativeCompilation {
     def apply(File srcGenDir) {
         project.with {
             // Wire up dependencies with tasks created dynamically by native plugin(s).
-            tasks.whenTaskAdded { task ->
+            tasks.whenTaskAdded { Task task ->
                 // The Objective-C native plugin will add tasks of the form 'compile...Objc' for each
                 // combination of buildType, platform, and component.  Note that components having only
                 // one buildType or platform will NOT have the given buildType/platform in the task name, so
@@ -99,10 +100,10 @@ class J2objcNativeCompilation {
                                     '-arch',
                                     'arm64']
                             iosClangArgs += iphoneClangArgs
-                            objcCompiler.withArguments { args ->
+                            objcCompiler.withArguments { List<String> args ->
                                 iosClangArgs.each { args << it }
                             }
-                            linker.withArguments { args ->
+                            linker.withArguments { List<String> args ->
                                 iosClangArgs.each { args << it }
                             }
                         }
@@ -111,10 +112,10 @@ class J2objcNativeCompilation {
                                     '-arch',
                                     'armv7']
                             iosClangArgs += iphoneClangArgs
-                            objcCompiler.withArguments { args ->
+                            objcCompiler.withArguments { List<String> args ->
                                 iosClangArgs.each { args << it }
                             }
-                            linker.withArguments { args ->
+                            linker.withArguments { List<String> args ->
                                 iosClangArgs.each { args << it }
                             }
                         }
@@ -123,10 +124,10 @@ class J2objcNativeCompilation {
                                     '-arch',
                                     'armv7s']
                             iosClangArgs += iphoneClangArgs
-                            objcCompiler.withArguments { args ->
+                            objcCompiler.withArguments { List<String> args ->
                                 iosClangArgs.each { args << it }
                             }
-                            linker.withArguments { args ->
+                            linker.withArguments { List<String> args ->
                                 iosClangArgs.each { args << it }
                             }
                         }
@@ -135,10 +136,10 @@ class J2objcNativeCompilation {
                                     '-arch',
                                     'i386']
                             iosClangArgs += simulatorClangArgs
-                            objcCompiler.withArguments { args ->
+                            objcCompiler.withArguments { List<String> args ->
                                 iosClangArgs.each { args << it }
                             }
-                            linker.withArguments { args ->
+                            linker.withArguments { List<String> args ->
                                 iosClangArgs.each { args << it }
                             }
                         }
@@ -147,15 +148,15 @@ class J2objcNativeCompilation {
                                     '-arch',
                                     'x86_64']
                             iosClangArgs += simulatorClangArgs
-                            objcCompiler.withArguments { args ->
+                            objcCompiler.withArguments { List<String> args ->
                                 iosClangArgs.each { args << it }
                             }
-                            linker.withArguments { args ->
+                            linker.withArguments { List<String> args ->
                                 iosClangArgs.each { args << it }
                             }
                         }
                         target('x86_64') {
-                            linker.withArguments { args ->
+                            linker.withArguments { List<String> args ->
                                 args << '-framework'
                                 args << 'ExceptionHandling'
                             }
@@ -205,7 +206,7 @@ class J2objcNativeCompilation {
                                 }
                             }
                         }
-                        j2objcConfig.supportedArchs.each { arch ->
+                        j2objcConfig.supportedArchs.each { String arch ->
                             if (!(arch in ALL_SUPPORTED_ARCHS)) {
                                 def message = "Requested architecture $arch must be one of $ALL_SUPPORTED_ARCHS"
                                 throw new InvalidUserDataException(message)
@@ -217,7 +218,7 @@ class J2objcNativeCompilation {
 
                         // Resolve dependencies from all java j2objc projects using the compiled static libs.
                         binaries.all {
-                            beforeProjects.each { beforeProject ->
+                            beforeProjects.each { Project beforeProject ->
                                 lib project: beforeProject.path, library: "${beforeProject.name}-j2objc", linkage: 'static'
                             }
                         }
@@ -237,7 +238,7 @@ class J2objcNativeCompilation {
                         binaries.all {
                             lib library: "${project.name}-j2objc", linkage: 'static'
                             // Resolve dependencies from all java j2objc projects using the compiled static libs.
-                            beforeProjects.each { beforeProject ->
+                            beforeProjects.each { Project beforeProject ->
                                 lib project: beforeProject.path, library: "${beforeProject.name}-j2objc", linkage: 'static'
                             }
 

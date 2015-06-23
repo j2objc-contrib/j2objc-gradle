@@ -24,8 +24,6 @@ import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.tasks.SourceSet
 import java.util.regex.Matcher
 
-import java.util.regex.Matcher
-
 /**
  * Internal utilities supporting plugin implementation.
  */
@@ -112,7 +110,7 @@ class J2objcUtils {
     //   --prefixes dir/prefixes.properties --prefix com.ex.dir=Short --prefix com.ex.dir2=Short2
     // TODO: separate this out to a distinct argument that's added to translateArgs
     // TODO: @InputFile conversion for this
-    static Properties prefixProperties(Project proj, List<String> translateArgs) {
+    static Properties packagePrefixes(Project proj, List<String> translateArgs) {
         Properties props = new Properties()
         String joinedTranslateArgs = translateArgs.join(' ')
         Matcher matcher = (joinedTranslateArgs =~ /--prefix(|es)\s+(\S+)/)
@@ -171,7 +169,7 @@ class J2objcUtils {
     // add Java files to a FileCollection
     static FileCollection addJavaFiles(Project proj, FileCollection files, List<String> generatedSourceDirs) {
         if (generatedSourceDirs.size() > 0) {
-            generatedSourceDirs.each { sourceDir ->
+            generatedSourceDirs.each { String sourceDir ->
                 log.debug "include generatedSourceDir: " + sourceDir
                 FileCollection buildSrcFiles = proj.files(proj.fileTree(dir: sourceDir, includes: ["**/*.java"]))
                 files += buildSrcFiles
@@ -197,11 +195,11 @@ class J2objcUtils {
                                List<String> translateJ2objcLibs) {
         String[] classPathList = []
         // user defined libraries
-        libraries.each { library ->
+        libraries.each { String library ->
             classPathList += proj.file(library).absolutePath
         }
         // j2objc default libraries
-        translateJ2objcLibs.each { library ->
+        translateJ2objcLibs.each { String library ->
             classPathList += j2objcHome + "/lib/" + library
         }
         return classPathList.join(':')
