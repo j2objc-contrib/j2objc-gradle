@@ -16,6 +16,8 @@
 
 package com.github.j2objccontrib.j2objcgradle.tasks
 
+import com.github.j2objccontrib.j2objcgradle.J2objcPluginExtension
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
@@ -34,6 +36,38 @@ public class J2objcXcodeTaskTest {
     @Before
     void setUp() {
         proj = ProjectBuilder.builder().build()
+    }
+
+    @Test
+    public void getPodFile_Valid() {
+        J2objcPluginExtension j2objcConfig =
+                proj.extensions.create('j2objcConfig', J2objcPluginExtension, proj)
+        j2objcConfig.xcodeProjectDir = '../ios'
+        j2objcConfig.xcodeTarget = 'IosApp'
+
+        // Cast required as return type of create(...) is Task
+        J2objcXcodeTask j2objcXcode =
+                (J2objcXcodeTask) proj.tasks.create(name: 'j2objcXcode', type: J2objcXcodeTask) {}
+        j2objcXcode.verifyXcodeArgs()
+        File podFile = j2objcXcode.getPodFile()
+
+        String expectedPath = proj.file('../ios').absolutePath + '/Podfile'
+        assert expectedPath == podFile.absolutePath
+    }
+
+    // Test that null xcode arguments cause the expected exception
+    @Test(expected = InvalidUserDataException.class)
+    public void getPodFile_Invalid() {
+        J2objcPluginExtension j2objcConfig =
+                proj.extensions.create('j2objcConfig', J2objcPluginExtension, proj)
+        assert j2objcConfig.xcodeProjectDir == null
+        assert j2objcConfig.xcodeTarget == null
+
+        // Cast required as return type of create(...) is Task
+        J2objcXcodeTask j2objcXcode =
+                (J2objcXcodeTask) proj.tasks.create(name: 'j2objcXcode', type: J2objcXcodeTask) {}
+        // Test for fixing issue #226
+        j2objcXcode.getPodFile()
     }
 
     @Test
