@@ -24,6 +24,8 @@ import org.junit.Test;
 /**
  * J2objcUtils tests.
  */
+// Double quotes are used throughout this file to avoid escaping single quotes
+// which are common in Podfiles, used extensively within these tests
 public class J2objcXcodeTaskTest {
 
     // TODO: use this within future tests
@@ -48,11 +50,11 @@ public class J2objcXcodeTaskTest {
                 PodFile, 'IosApp', 'j2objc-shared',
                 '/Users/USERNAME/dev/workspace/shared/build')
 
-        List<String> expectedLines = Arrays.asList(
+        List<String> expectedLines = [
                 "target 'IosApp' do",
                 // Newly added line
                 "pod 'j2objc-shared', :path => '/Users/USERNAME/dev/workspace/shared/build'",
-                "end")
+                "end"]
 
         List<String> readPodFileLines = PodFile.readLines()
         assert expectedLines == readPodFileLines
@@ -60,10 +62,10 @@ public class J2objcXcodeTaskTest {
 
     @Test
     public void testGetPodFileLinesIfChanged_UpToDate() {
-        List<String> podFileLines = Arrays.asList(
+        List<String> podFileLines = [
                 "target 'IosApp' do",
                 "pod 'j2objc-shared', :path => '/Users/USERNAME/dev/workspace/shared/build'",
-                "end")
+                "end"]
 
         List<String> newPodFileLines = J2objcXcodeTask.getPodFileLinesIfChanged(
                 podFileLines, 'IosApp', 'j2objc-shared',
@@ -74,67 +76,67 @@ public class J2objcXcodeTaskTest {
 
     @Test
     public void testGetPodFileLinesIfChanged_PodPathMissing() {
-        List<String> podFileLines = Arrays.asList(
+        List<String> podFileLines = [
                 "target 'IosApp' do",
                 "",
-                "end")
+                "end"]
 
         List<String> newPodFileLines = J2objcXcodeTask.getPodFileLinesIfChanged(
                 podFileLines, 'IosApp', 'j2objc-shared',
                 '/Users/USERNAME/dev/workspace/shared/build')
 
-        List<String> expectedLines = Arrays.asList(
+        List<String> expectedLines = [
                 "target 'IosApp' do",
                 "",
                 // Newly added line
                 "pod 'j2objc-shared', :path => '/Users/USERNAME/dev/workspace/shared/build'",
-                "end")
+                "end"]
 
         assert expectedLines == newPodFileLines
     }
 
     @Test
     public void testGetPodFileLinesIfChanged_PodPathWrong() {
-        List<String> podFileLines = Arrays.asList(
+        List<String> podFileLines = [
                 "target 'IosApp' do",
                 "pod 'j2objc-shared', :path => '/Users/WRONG/dev/workspace/shared/build'",
-                "end")
+                "end"]
 
         List<String> newPodFileLines = J2objcXcodeTask.getPodFileLinesIfChanged(
                 podFileLines, 'IosApp', 'j2objc-shared',
                 '/Users/USERNAME/dev/workspace/shared/build')
 
-        List<String> expectedLines = Arrays.asList(
+        List<String> expectedLines = [
                 "target 'IosApp' do",
                 // Modified line
                 "pod 'j2objc-shared', :path => '/Users/USERNAME/dev/workspace/shared/build'",
-                "end")
+                "end"]
 
         assert expectedLines == newPodFileLines
     }
 
     @Test
     public void testGetPodFileLinesIfChanged_CleansUpDuplicates() {
-        List<String> podFileLines = Arrays.asList(
+        List<String> podFileLines = [
                 "target 'IosApp' do",
                 "pod 'pod1', :path => 'IGNORE'",
                 // Note the duplicated lines with the WRONG_PATH
                 "pod 'j2objc-shared', :path => '/Users/WRONG_PATH_ONE/dev/workspace/shared/build'",
                 "pod 'j2objc-shared', :path => '/Users/WRONG_PATH_TWO/dev/workspace/shared/build'",
                 "pod 'pod1', :path => 'IGNORE'",
-                "end")
+                "end"]
 
         List<String> newPodFileLines = J2objcXcodeTask.getPodFileLinesIfChanged(
                 podFileLines, 'IosApp', 'j2objc-shared',
                 '/Users/USERNAME/dev/workspace/shared/build')
 
-        List<String> expectedLines = Arrays.asList(
+        List<String> expectedLines = [
                 "target 'IosApp' do",
                 "pod 'pod1', :path => 'IGNORE'",
                 "pod 'j2objc-shared', :path => '/Users/USERNAME/dev/workspace/shared/build'",
                 // Only cleans up podName that it's looking for, so this duplicate isn't fixed
                 "pod 'pod1', :path => 'IGNORE'",
-                "end")
+                "end"]
 
         assert expectedLines == newPodFileLines
     }
@@ -144,7 +146,7 @@ public class J2objcXcodeTaskTest {
         // Updates incorrect path
         // Cleans up duplicates
         // Handles multiple Xcode Targets
-        List<String> podFileLines = Arrays.asList(
+        List<String> podFileLines = [
                 "target 'WrongTarget' do",
                 "pod 'pod1', :path => 'IGNORE'",
                 "end",
@@ -159,13 +161,13 @@ public class J2objcXcodeTaskTest {
                 "target 'AnotherWrongTarget' do",
                 "",
                 "pod 'pod3', :path => 'IGNORE'",
-                "end")
+                "end"]
 
         List<String> newPodFileLines = J2objcXcodeTask.getPodFileLinesIfChanged(
                 podFileLines, 'DifferentTargetName', 'j2objc-different-name',
                 '/Users/USERNAME/dev/workspace/shared/build')
 
-        List<String> expectedLines = Arrays.asList(
+        List<String> expectedLines = [
                 "target 'WrongTarget' do",
                 "pod 'pod1', :path => 'IGNORE'",
                 "end",
@@ -179,17 +181,17 @@ public class J2objcXcodeTaskTest {
                 "target 'AnotherWrongTarget' do",
                 "",
                 "pod 'pod3', :path => 'IGNORE'",
-                "end")
+                "end"]
 
         assert expectedLines == newPodFileLines
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testGetPodFileLinesIfChanged_XcodeTargetNotFound() {
-        List<String> podFileLines = Arrays.asList(
+        List<String> podFileLines = [
                 "target 'IosApp' do",
                 "pod 'j2objc-shared', :path => '/Users/USERNAME/dev/workspace/shared/build'",
-                "end")
+                "end"]
 
         J2objcXcodeTask.getPodFileLinesIfChanged(
                 podFileLines, 'XCODE_TARGET_NOT_FOUND', 'j2objc-shared',
