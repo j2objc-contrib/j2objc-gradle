@@ -16,10 +16,12 @@
 
 package com.github.j2objccontrib.j2objcgradle.tasks
 
+import com.google.common.annotations.VisibleForTesting
 import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
@@ -49,33 +51,29 @@ class J2objcXcodeTask extends DefaultTask {
     File getPodspecFile() { new File(project.buildDir, "${getPodName()}.podspec") }
 
     @OutputFile
-    File getPodFile() { new File(project.j2objcConfig.xcodeProjectDir, "Podfile") }
+    // Cast to string to avoid Groovy throwing exception on ambiguous method call: issue #226
+    File getPodFile() {
+        verifyXcodeArgs()
+        // xcodeProjectDir is relative to projectDir if it's not an absolute path
+        File xcodeProjectDir = project.file(getXcodeProjectDir())
+        return new File(xcodeProjectDir, "Podfile")
+    }
 
     // j2objcConfig dependencies for UP-TO-DATE checks
     @Input
     String getJ2ObjCHome() { return J2objcUtils.j2objcHome(project) }
 
-    @Input
+    @Input @Optional
     String getXcodeProjectDir() { return project.j2objcConfig.xcodeProjectDir }
 
-    @Input
+    @Input @Optional
     String getXcodeTarget() { return project.j2objcConfig.xcodeTarget }
 
 
     @TaskAction
-    void pod(IncrementalTaskInputs inputs) {
+    void xcodeConfig(IncrementalTaskInputs inputs) {
 
-        if (getXcodeProjectDir() == null ||
-            getXcodeTarget() == null) {
-            String message =
-                    'Xcode settings needs to be configured, modify in build.gradle:\n' +
-                    '\n' +
-                    'j2objcConfig {\n' +
-                    '    xcodeProjectDir "\${projectDir}/../ios"\n' +
-                    '    xcodeTarget "<TARGET_NAME>"\n' +
-                    '}\n'
-            throw new InvalidUserDataException(message)
-        }
+        verifyXcodeArgs()
 
         // Resource Folder is copied to buildDir where it's accessed by the pod later
         // TODO: is it necessary to copy the files or can they be referenced in place?
@@ -119,11 +117,13 @@ class J2objcXcodeTask extends DefaultTask {
         File podFile = getPodFile()
         if (!podFile.exists()) {
             // TODO: offer to run the setup commands
+            String xcodeAbsPath = project.file(getXcodeProjectDir()).absolutePath
             String message =
-                    "No podfile exists in the directory: ${getXcodeProjectDir()}\n" +
-                    "Create the Podfile in that directory with this command:\n" +
+                    "No podfile exists in the xcodeProjectDir directory:\n" +
+                    "    ${podFile.path}\n" +
                     "\n" +
-                    "(cd ${getXcodeProjectDir()} && pod init)\n" +
+                    "The Podfile needes to be created with this command:\n" +
+                    "    (cd $xcodeAbsPath && pod init)\n" +
                     "\n" +
                     "If the pod command isn't found, then install CocoaPods:\n" +
                     "    sudo gem install cocoapods"
@@ -160,6 +160,21 @@ class J2objcXcodeTask extends DefaultTask {
             }
             logger.debug 'Pod install output:'
             logger.debug output.toString()
+        }
+    }
+
+    @VisibleForTesting
+    void verifyXcodeArgs() {
+        if (getXcodeProjectDir() == null ||
+            getXcodeTarget() == null) {
+            String message =
+                    'Xcode settings need to be configured in this project\'s build.gradle:\n' +
+                    '\n' +
+                    'j2objcConfig {\n' +
+                    '    xcodeProjectDir \'../ios\'\n' +
+                    '    xcodeTarget \'<TARGET_NAME>\'\n' +
+                    '}\n'
+            throw new InvalidUserDataException(message)
         }
     }
 
