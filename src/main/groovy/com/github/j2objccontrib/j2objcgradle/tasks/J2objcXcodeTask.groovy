@@ -68,18 +68,18 @@ class J2objcXcodeTask extends DefaultTask {
         if (getXcodeProjectDir() == null ||
             getXcodeTarget() == null) {
             String message =
-                    "Xcode settings needs to be configured, modify in build.gradle:\n" +
-                    "\n" +
-                    "j2objcConfig {\n" +
-                    "    xcodeProjectDir \"\${projectDir}/../Xcode\"\n" +
-                    "    xcodeTarget \"<TARGET_NAME>\"\n" +
-                    "}\n"
+                    'Xcode settings needs to be configured, modify in build.gradle:\n' +
+                    '\n' +
+                    'j2objcConfig {\n' +
+                    '    xcodeProjectDir "\${projectDir}/../ios"\n' +
+                    '    xcodeTarget "<TARGET_NAME>"\n' +
+                    '}\n'
             throw new InvalidUserDataException(message)
         }
 
         // Resource Folder is copied to buildDir where it's accessed by the pod later
         // TODO: is it necessary to copy the files or can they be referenced in place?
-        String j2objcResourceDirName = "j2objcResources"
+        String j2objcResourceDirName = 'j2objcResources'
         String j2objcResourceDirPath = "${project.buildDir}/${j2objcResourceDirName}"
         project.delete j2objcResourceDirPath
         project.copy {
@@ -111,7 +111,7 @@ class J2objcXcodeTask extends DefaultTask {
                 "s.xcconfig = { 'HEADER_SEARCH_PATHS' => '${getJ2ObjCHome()}/include', " +
                 "'LIBRARY_SEARCH_PATHS' => '${getJ2ObjCHome()}/lib ${project.buildDir}/j2objcOutputs/lib/iosDebug' }\n" +
                 "end\n"
-        logger.debug "podspecFileContents creation...\n\n" + podspecFileContents
+        logger.debug 'podspecFileContents creation...\n\n' + podspecFileContents
         File podspecFile = getPodspecFile()
         podspecFile.write(podspecFileContents)
 
@@ -130,28 +130,16 @@ class J2objcXcodeTask extends DefaultTask {
             throw new InvalidUserDataException(message)
         } else {
             logger.debug "Pod exists at path: ${getXcodeProjectDir()}"
-            // check if this podspec has been included before
-            // (a, b) = f() syntax unpacks the values in the return tuple
-            def (boolean podIntegrationExists, String targetPodLine) =
-            checkPodDefExistence(podFile, xcodeTarget, getPodName())
-
-            if (!podIntegrationExists) {
-                // add pod to podfile, e.g., pod 'projectName', :path => '/pathToJ2objcProject/projectName/build'
-                String text = podFile.getText()
-                String replacement = targetPodLine + "\n" +
-                                     "pod '${getPodName()}', :path => '${project.buildDir}'"
-                String newText = text.replaceFirst(targetPodLine, replacement)
-                podFile.write(newText)
-                logger.debug "Added pod ${getPodName()} to Xcode target ${xcodeTarget} of podfile."
-            }
+            // TODO: should use relative path, see if that's possible
+            writeUpdatedPodFileIfNeeded(podFile, getXcodeTarget(), getPodName(), project.buildDir.path)
 
             // install the pod
             ByteArrayOutputStream output = new ByteArrayOutputStream()
             try {
                 project.exec {
                     workingDir getXcodeProjectDir()
-                    executable "pod"
-                    args "install"
+                    executable 'pod'
+                    args 'install'
                     standardOutput output
                     errorOutput output
                 }
@@ -161,10 +149,10 @@ class J2objcXcodeTask extends DefaultTask {
                 if (exception.getMessage().find(
                         "A problem occurred starting process 'command 'pod install''")) {
                     String message =
-                            "Fix this by installing CocoaPods:\n" +
-                            "    sudo gem install cocoapods \n" +
-                            "\n" +
-                            "See: https://cocoapods.org/"
+                            'Fix this by installing CocoaPods:\n' +
+                            '    sudo gem install cocoapods\n' +
+                            '\n' +
+                            'See: https://cocoapods.org/'
                     throw new InvalidUserDataException(message)
                 }
                 // unrecognized errors are rethrown:
@@ -175,35 +163,83 @@ class J2objcXcodeTask extends DefaultTask {
         }
     }
 
-    // checks if a pod is still integrated into a pod file
-    // return: if podspec exists and the target line for insertion
-    static List<Object> checkPodDefExistence(File podFile, String xcodeTarget, String podName) {
-        boolean podIntegrationExists = false
-        boolean isInOpenBlock = false
-        List<String> lines = podFile.readLines()
-        // Search for `podName` within the Xcode build target
-        // `end` signifies the end of the build target
-        // if the `podName` does not exist in the Xcode build target of the pod
-        // it has to be added to the pod's target
-        String targetPodLine = ""
-        for (String line : lines) {
-            if (line.contains("'${xcodeTarget}'")) {
-                isInOpenBlock = true
-                targetPodLine = line
-            }
-            if (isInOpenBlock) {
-                if (line.contains(podName)) {
-                    podIntegrationExists = true
+    /**
+     * Modify in place the existing podFile.
+     */
+    static void writeUpdatedPodFileIfNeeded(
+            File podFile, String xcodeTarget, String podName, String podPath) {
+
+        List<String> podFileLines = podFile.readLines()
+        List<String> newPodFileLines = getPodFileLinesIfChanged(
+                podFileLines, xcodeTarget, podName, podPath)
+
+        // Write file only if it's changed
+        if (newPodFileLines != null) {
+            podFile.write(newPodFileLines.join("\n"))
+        }
+    }
+
+    /**
+     * Modify the existing podFile and return the new contents.
+     *
+     * @return null if file doesn't need modification, otherwise modified copy of podFile
+     */
+    static List<String> getPodFileLinesIfChanged(
+            List<String> oldPodFileLines, String xcodeTarget, String podName, String podPath) {
+
+        List<String> newPodFileLines = new ArrayList<>()
+
+        // Search for pod within the xcodeTarget, until "end" is found for that target
+        // Either update pod line in place or add line if pod doesn't exist
+        String podMatchedLine = "pod '$podName'"
+        String newPodPathLine = "pod '$podName', :path => '$podPath'"
+        boolean withinXcodeTarget = false
+        boolean podNameWritten = false
+
+        oldPodFileLines.each { String line ->
+
+            // Copies each line to newPodFileLines, unless skipped
+            boolean skipWritingLine = false
+
+            // Find xcodeTarget within single quote marks
+            if (line.contains("'$xcodeTarget'")) {
+                withinXcodeTarget = true
+
+            } else if (withinXcodeTarget) {
+                if (line.contains(podMatchedLine)) {
+                    // skip copying this line
+                    skipWritingLine = true
+                    if (podNameWritten) {
+                        // repeated podName lines, drop them as they should not be here
+                    } else {
+                        // write updated line the first time pod is seen
+                        newPodFileLines += newPodPathLine
+                        podNameWritten = true
+                    }
+                } else if (line.contains('end')) {
+                    if (!podNameWritten) {
+                        // no existing podName, so write that additional line
+                        newPodFileLines += newPodPathLine
+                        podNameWritten = true
+                    }
                 }
             }
-            if (line.contains("end")) {
-                if (isInOpenBlock) {
-                    // TODO(confile): This line does not do anything.  What is the intended effect?
-                    isInOpenBlock = false
-                    break
-                }
+
+            if (!skipWritingLine) {
+                newPodFileLines += line
             }
         }
-        return [podIntegrationExists, targetPodLine]
+
+        if (!podNameWritten) {
+            throw new IllegalArgumentException(
+                    "Unable to modify PodFile, likely unable to find target $xcodeTarget.")
+        }
+
+        if (oldPodFileLines == newPodFileLines) {
+            // PodFile unmodified
+            return null
+        } else {
+            return newPodFileLines
+        }
     }
 }
