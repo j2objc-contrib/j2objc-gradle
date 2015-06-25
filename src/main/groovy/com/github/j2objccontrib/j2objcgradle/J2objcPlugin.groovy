@@ -51,28 +51,16 @@ class J2objcPlugin implements Plugin<Project> {
                 Utils.throwIfNoJavaPlugin(evaluatedProject)
 
                 if (!evaluatedProject.j2objcConfig.isFinalConfigured()) {
-                    String message = "You must call finalConfigure() in j2objcConfig, ex:\n" +
-                                  "j2objcConfig {\n" +
-                                  "    // other settings\n" +
-                                  "    finalConfigure()\n" +
-                                  "}"
-                    throw new InvalidUserDataException(message)
+                    logger.error "Project '${evaluatedProject.name}' is missing finalConfigure():\n" +
+                                 "https://github.com/j2objc-contrib/j2objc-gradle/blob/master/FAQ.md#How-do-I-call-finalConfigure"
                 }
 
                 boolean arcTranslateArg = '-use-arc' in evaluatedProject.j2objcConfig.translateArgs
                 boolean arcCompilerArg = '-fobjc-arc' in evaluatedProject.j2objcConfig.extraObjcCompilerArgs
                 if (arcTranslateArg && !arcCompilerArg || !arcTranslateArg && arcCompilerArg) {
-                    logger.error "${evaluatedProject.name}: using ARC with J2ObjC, the project is missing one of the two arguments required:\n" +
-                        "\n" +
-                        "j2objcConfig {\n" +
-                        "    // other settings\n" +
-                        "    translateArgs '-use-arc'\n" +
-                        // TODO: extraObjcCompilerArgs '-fobjc-arc'
-                        "    extraObjcCompilerArgs = ['-fobjc-arc']\n" +
-                        "}\n" +
-                        "-fobjc-arc enables Automatic Reference Counting functionality in the compiler:\n" +
-                        "https://developer.apple.com/library/mac/releasenotes/ObjectiveC/RN-TransitioningToARC/Introduction/Introduction.html#//apple_ref/doc/uid/TP40011226-CH1-SW15"
-                } 
+                    logger.error "Project '${evaluatedProject.name}' is missing required ARC flags:\n" +
+                                 "https://github.com/j2objc-contrib/j2objc-gradle/blob/master/FAQ.md#how-do-i-enable-arc-for-my-objective-c-classes"
+                }
             }
 
             // This is an intermediate directory only.  Clients should use only directories

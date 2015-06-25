@@ -1,15 +1,18 @@
 # FAQ
 (for contributors, see [CONTRIBUTING.md](CONTRIBUTING.md))
 
+
 ### What version of Gradle do I need?
 
 You need at least [Gradle version 2.4](https://discuss.gradle.org/t/gradle-2-4-released/9471),
 due to support for native compilation features.
 
+
 ### How do I solve the Eclipse error message ``Obtaining Gradle model...``?
 
 You have to first create the [Gradle wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html).
 Go to your project folder and do ``gradle wrapper``. Refresh your Eclipse project.
+
 
 ### How do I properly pass multiple arguments to j2objc?
 
@@ -58,9 +61,21 @@ Add the following to your configuration block. [See](https://developer.apple.com
 ```
 j2objcConfig {
    translateArgs '-use-arc'
-   extraObjcCompilerArgs += '-fobjc-arc'
+   extraObjcCompilerArgs '-fobjc-arc'
 }
 ```
+
+### How do I call finalConfigure()?
+
+You must always call finalConfigure at the end of `j2objcConfig {...}` within your project's
+`build.gradle` file. You need to include an otherwise empty j2objcConfig { } block with this
+call even if you do not need to customize any other `j2objConfig` option.
+
+    j2objcConfig {
+        ...
+        finalConfigure()
+    }
+
 
 ### Error: implicit declaration of function 'JreRelease' is invalid in C99 [-Werror,-Wimplicit-function-declaration] JreRelease(this$0_)
 
