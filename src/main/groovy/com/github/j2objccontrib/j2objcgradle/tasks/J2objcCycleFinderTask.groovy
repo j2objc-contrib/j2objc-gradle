@@ -19,7 +19,6 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.file.FileCollection
-import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
@@ -97,39 +96,12 @@ class J2objcCycleFinderTask extends DefaultTask {
     @TaskAction
     void cycleFinder() {
 
-        String cycleFinderExec = "${getJ2ObjCHome()}/j2objc"
+        String cycleFinderExec = "${getJ2ObjCHome()}/cycle_finder"
         List<String> windowsOnlyArgs = new ArrayList<String>()
         if (J2objcUtils.isWindows()) {
             cycleFinderExec = 'java'
             windowsOnlyArgs.add('-jar')
             windowsOnlyArgs.add("${getJ2ObjCHome()}/lib/cycle_finder.jar")
-        }
-
-        if (getCycleFinderArgs().isEmpty()) {
-            String message =
-                    "CycleFinder is difficult to setup and use, though it's hoped to improve\n" +
-                    "this for the future. There are two ways to configure it in build.gradle:\n" +
-                    "\n" +
-                    "SIMPLE: set cycleFinderArgs to empty string:\n" +
-                    "\n" +
-                    "j2objcConfig {\n" +
-                    // TODO: cycleFinderArgs ''
-                    "    cycleFinderArgs.add('')\n" +
-                    "}\n" +
-                    "\n" +
-                    "DIFFICULT:\n" +
-                    "1) Download the j2objc source to a directory (hereafter <J2OJBC_REPO>):\n" +
-                    "    https://github.com/google/j2objc\n" +
-                    "2) Within the <J2OJBC_REPO>, run:\n" +
-                    "    \$ (cd jre_emul && make java_sources_manifest)\n" +
-                    "3) Configure j2objcConfig in build.gradle so CycleFinder uses j2objc source:\n" +
-                    "j2objcConfig {\n" +
-                    "    cycleFinderArgs \"--whitelist <J2OBJC_REPO>/jre_emul/cycle_whitelist.txt\"\n" +
-                    "    cycleFinderArgs \"--sourcefilelist <J2OBJC_REPO>/jre_emul/build_result/java_sources.mf\"\n" +
-                    "    cycleFinderExpectedCycles 0\n" +
-                    "}\n" +
-                    "Also see: https://groups.google.com/forum/#!msg/j2objc-discuss/2fozbf6-liM/R83v7ffX5NMJ"
-            throw new InvalidUserDataException(message)
         }
 
         String sourcepath = J2objcUtils.sourcepathJava(project)
@@ -174,21 +146,25 @@ class J2objcCycleFinderTask extends DefaultTask {
                 standardOutput output;
             }
 
+            logger.debug "CycleFinder found 0 cycles"
+            assert 0 == getCycleFinderExpectedCycles()
+
         } catch (Exception exception) {
 
             String outputStr = output.toString()
+            // matchNumberRegex throws exception if regex isn't found
             int cyclesFound = J2objcUtils.matchNumberRegex(outputStr, /(\d+) CYCLES FOUND/)
             if (cyclesFound != getCycleFinderExpectedCycles()) {
                 logger.error outputStr
                 String message =
                         "Unexpected number of cycles founder:\n" +
-                        "Cycles found:     ${cyclesFound}\n" +
-                        "Expected cycles:  ${getCycleFinderExpectedCycles()}\n" +
+                        "Expected Cycles:  ${getCycleFinderExpectedCycles()}\n" +
+                        "Actual Cycles:    $cyclesFound\n" +
                         "\n" +
                         "You should investigate the change and if ok, modify build.gradle:\n" +
                         "\n" +
                         "j2objcConfig {\n" +
-                        "    cycleFinderExpectedCycles ${cyclesFound}\n" +
+                        "    cycleFinderExpectedCycles $cyclesFound\n" +
                         "}\n"
                 throw new Exception(message)
             }
