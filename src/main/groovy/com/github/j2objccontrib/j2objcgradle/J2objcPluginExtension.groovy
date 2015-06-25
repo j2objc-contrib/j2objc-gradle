@@ -212,7 +212,7 @@ class J2objcPluginExtension {
      * @see
      * <a href="https://docs.gradle.org/current/userguide/working_with_files.html#sec:file_trees">Gradle User Guide</a>
      */
-    def translatePattern(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = PatternSet) Closure cl) {
+    PatternSet translatePattern(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = PatternSet) Closure cl) {
         if (translatePattern == null) {
             translatePattern = new PatternSet()
         }
@@ -228,8 +228,8 @@ class J2objcPluginExtension {
      * @see #dependsOnJ2objcLib(org.gradle.api.Project)
      */
     // TODO: Do this automatically based on project dependencies.
-    def dependsOnJ2objcLib(String beforeProjectName) {
-        return dependsOnJ2objcLib(project.project(beforeProjectName))
+    void dependsOnJ2objcLib(String beforeProjectName) {
+        dependsOnJ2objcLib(project.project(beforeProjectName))
     }
 
     protected J2objcNativeCompilation nativeCompilation
@@ -247,13 +247,13 @@ class J2objcPluginExtension {
      * is preferable and sufficient.
      */
     // TODO: Do this automatically based on project dependencies.
-    def dependsOnJ2objcLib(Project beforeProject) {
+    void dependsOnJ2objcLib(Project beforeProject) {
         project.with {
             // We need to have j2objcConfig on the beforeProject configured first.
             evaluationDependsOn beforeProject.path
 
             if (!beforeProject.plugins.hasPlugin(J2objcPlugin)) {
-                def message = "$beforeProject does not use the j2objc plugin.\n" +
+                String message = "$beforeProject does not use the j2objc plugin.\n" +
                               "dependsOnJ2objcLib can be used only with another project that\n" +
                               "itself uses the j2objc plugin."
                 throw new InvalidUserDataException(message)
@@ -350,7 +350,7 @@ class J2objcPluginExtension {
      * @see
      * <a href="https://docs.gradle.org/current/userguide/working_with_files.html#sec:file_trees">Gradle User Guide</a>
      */
-    def testPattern(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = PatternSet) Closure cl) {
+    PatternSet testPattern(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = PatternSet) Closure cl) {
         if (testPattern == null) {
             testPattern = new PatternSet()
         }

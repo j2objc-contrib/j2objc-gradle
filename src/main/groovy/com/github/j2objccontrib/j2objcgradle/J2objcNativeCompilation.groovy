@@ -40,7 +40,7 @@ class J2objcNativeCompilation {
     }
 
     @PackageScope
-    def apply(File srcGenDir) {
+    void apply(File srcGenDir) {
         project.with {
             // Wire up dependencies with tasks created dynamically by native plugin(s).
             tasks.whenTaskAdded { Task task ->
@@ -71,18 +71,16 @@ class J2objcNativeCompilation {
             file("${buildDir}/j2objcHackToForceCompilation/Empty.m").createNewFile()
             file("${buildDir}/j2objcHackToForceCompilation/EmptyTest.m").createNewFile()
 
-            def simulatorClangArgs = [
+            String[] simulatorClangArgs = [
                     '-isysroot',
-                    '/Applications/Xcode' +
-                            '.app/Contents/Developer/Platforms/iPhoneSimulator' +
-                            '.platform/Developer/SDKs/iPhoneSimulator.sdk',
+                    '/Applications/Xcode.app/Contents/Developer/Platforms/' +
+                            'iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk',
                     '-mios-simulator-version-min=8.3',
             ]
-            def iphoneClangArgs = [
+            String[] iphoneClangArgs = [
                     '-isysroot',
-                    '/Applications/Xcode' +
-                            '.app/Contents/Developer/Platforms/iPhoneOS' +
-                            '.platform/Developer/SDKs/iPhoneOS.sdk',
+                    '/Applications/Xcode.app/Contents/Developer/Platforms/' +
+                            'iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk',
                     '-miphoneos-version-min=8.3',
             ]
 
@@ -96,63 +94,83 @@ class J2objcNativeCompilation {
                     // https://docs.gradle.org/current/userguide/nativeBinaries.html#withArguments
                     clang(Clang) {
                         target('ios_arm64') {
-                            def iosClangArgs = [
+                            String[] iosClangArgs = [
                                     '-arch',
                                     'arm64']
                             iosClangArgs += iphoneClangArgs
                             objcCompiler.withArguments { List<String> args ->
-                                iosClangArgs.each { args << it }
+                                iosClangArgs.each { String arg ->
+                                    args << arg
+                                }
                             }
                             linker.withArguments { List<String> args ->
-                                iosClangArgs.each { args << it }
+                                iosClangArgs.each { String arg ->
+                                    args << arg
+                                }
                             }
                         }
                         target('ios_armv7') {
-                            def iosClangArgs = [
+                            String[] iosClangArgs = [
                                     '-arch',
                                     'armv7']
                             iosClangArgs += iphoneClangArgs
                             objcCompiler.withArguments { List<String> args ->
-                                iosClangArgs.each { args << it }
+                                iosClangArgs.each { String arg ->
+                                    args << arg
+                                }
                             }
                             linker.withArguments { List<String> args ->
-                                iosClangArgs.each { args << it }
+                                iosClangArgs.each { String arg ->
+                                    args << arg
+                                }
                             }
                         }
                         target('ios_armv7s') {
-                            def iosClangArgs = [
+                            String[] iosClangArgs = [
                                     '-arch',
                                     'armv7s']
                             iosClangArgs += iphoneClangArgs
                             objcCompiler.withArguments { List<String> args ->
-                                iosClangArgs.each { args << it }
+                                iosClangArgs.each { String arg ->
+                                    args << arg
+                                }
                             }
                             linker.withArguments { List<String> args ->
-                                iosClangArgs.each { args << it }
+                                iosClangArgs.each { String arg ->
+                                    args << arg
+                                }
                             }
                         }
                         target('ios_i386') {
-                            def iosClangArgs = [
+                            String[] iosClangArgs = [
                                     '-arch',
                                     'i386']
                             iosClangArgs += simulatorClangArgs
                             objcCompiler.withArguments { List<String> args ->
-                                iosClangArgs.each { args << it }
+                                iosClangArgs.each { String arg ->
+                                    args << arg
+                                }
                             }
                             linker.withArguments { List<String> args ->
-                                iosClangArgs.each { args << it }
+                                iosClangArgs.each { String arg ->
+                                    args << arg
+                                }
                             }
                         }
                         target('ios_x86_64') {
-                            def iosClangArgs = [
+                            String[] iosClangArgs = [
                                     '-arch',
                                     'x86_64']
                             iosClangArgs += simulatorClangArgs
                             objcCompiler.withArguments { List<String> args ->
-                                iosClangArgs.each { args << it }
+                                iosClangArgs.each { String arg ->
+                                    args << arg
+                                }
                             }
                             linker.withArguments { List<String> args ->
-                                iosClangArgs.each { args << it }
+                                iosClangArgs.each { String arg ->
+                                    args << arg
+                                }
                             }
                         }
                         target('x86_64') {
@@ -208,8 +226,8 @@ class J2objcNativeCompilation {
                         }
                         j2objcConfig.supportedArchs.each { String arch ->
                             if (!(arch in ALL_SUPPORTED_ARCHS)) {
-                                def message = "Requested architecture $arch must be one of $ALL_SUPPORTED_ARCHS"
-                                throw new InvalidUserDataException(message)
+                                throw new InvalidUserDataException(
+                                        "Requested architecture $arch must be one of $ALL_SUPPORTED_ARCHS")
                             }
                             targetPlatform arch
                         }
@@ -255,7 +273,7 @@ class J2objcNativeCompilation {
             binaries.all {
                 // Only want to modify the Objective-C toolchain, not the JDK one.
                 if (toolChain in Clang) {
-                    def j2objcPath = J2objcUtils.j2objcHome(project)
+                    String j2objcPath = J2objcUtils.j2objcHome(project)
 
                     // If you want to override the arguments passed to the compiler and linker,
                     // you must configure the binaries in your own build.gradle.
@@ -293,13 +311,13 @@ class J2objcNativeCompilation {
             // See Gradle User Guide: 54.14.5. Building all possible variants
             // https://docs.gradle.org/current/userguide/nativeBinaries.html#N161B3
             task('j2objcBuildObjcDebug').configure {
-                dependsOn binaries.withType(NativeLibraryBinary).matching {
-                    it.buildable && it.buildType.name == 'debug'
+                dependsOn binaries.withType(NativeLibraryBinary).matching { NativeLibraryBinary lib ->
+                    lib.buildable && lib.buildType.name == 'debug'
                 }
             }
             task('j2objcBuildObjcRelease').configure {
-                dependsOn binaries.withType(NativeLibraryBinary).matching {
-                    it.buildable && it.buildType.name == 'release'
+                dependsOn binaries.withType(NativeLibraryBinary).matching { NativeLibraryBinary lib ->
+                    lib.buildable && lib.buildType.name == 'release'
                 }
             }
         }
@@ -307,8 +325,9 @@ class J2objcNativeCompilation {
 
     private List<Project> beforeProjects = []
     @PackageScope
-    def dependsOnJ2objcLib(Project beforeProject) {
-        beforeProjects.add(beforeProject)
+    void dependsOnJ2objcLib(Project beforeProject) {
+        boolean added = beforeProjects.add(beforeProject)
+        assert added
     }
 }
 

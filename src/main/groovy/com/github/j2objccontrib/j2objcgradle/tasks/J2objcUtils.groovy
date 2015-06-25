@@ -61,11 +61,11 @@ class J2objcUtils {
 
     static String sourcepathJava(Project proj) {
         String[] javaRoots = []
-        srcDirs(proj, 'main', 'java').srcDirs.each {
-            javaRoots += it.path
+        srcDirs(proj, 'main', 'java').srcDirs.each { File file ->
+            javaRoots += file.path
         }
-        srcDirs(proj, 'test', 'java').srcDirs.each {
-            javaRoots += it.path
+        srcDirs(proj, 'test', 'java').srcDirs.each { File file ->
+            javaRoots += file.path
         }
         return javaRoots.join(':')
     }

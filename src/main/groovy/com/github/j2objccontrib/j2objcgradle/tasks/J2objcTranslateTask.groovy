@@ -16,6 +16,7 @@
 
 package com.github.j2objccontrib.j2objcgradle.tasks
 
+import org.gradle.api.Action
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.Input
@@ -24,6 +25,7 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
+import org.gradle.api.tasks.incremental.InputFileDetails
 
 /**
  * Translation task for Java to Objective-C using j2objc tool.
@@ -122,30 +124,34 @@ class J2objcTranslateTask extends DefaultTask {
         } else {
             boolean nonSourceFileChanged = false
             srcFilesChanged = project.files()
-            // TODO: figure out the explicit type for change
-            inputs.outOfDate { change ->
-                // We must filter by srcFiles, since all possible input files are @InputFiles to this task.
-                if (originalSrcFiles.contains(change.file)) {
-                    logger.debug "New or Updated file: " + change.file
-                    srcFilesChanged += project.files(change.file)
-                } else {
-                    nonSourceFileChanged = true
-                    logger.debug "New or Updated non-source file: " + change.file
+            inputs.outOfDate(new Action<InputFileDetails>() {
+                @Override
+                public void execute(InputFileDetails details) {
+                    // We must filter by srcFiles, since all possible input files are @InputFiles to this task.
+                    if (originalSrcFiles.contains(details.file)) {
+                        logger.debug "New or Updated file: " + details.file
+                        srcFilesChanged += project.files(details.file)
+                    } else {
+                        nonSourceFileChanged = true
+                        logger.debug "New or Updated non-source file: " + details.file
+                    }
                 }
-            }
+            })
             List<String> removedFileNames = new ArrayList<>()
-            // TODO: figure out the explicit type for change
-            inputs.removed { change ->
-                // We must filter by srcFiles, since all possible input files are @InputFiles to this task.
-                if (originalSrcFiles.contains(change.file)) {
-                    logger.debug "Removed file: " + change.file.name
-                    String nameWithoutExt = change.file.name.toString().replaceFirst("\\..*", "")
-                    removedFileNames += nameWithoutExt
-                } else {
-                    nonSourceFileChanged = true
-                    logger.debug "Removed non-source file: " + change.file
+            inputs.removed(new Action<InputFileDetails>() {
+                @Override
+                public void execute(InputFileDetails details) {
+                    // We must filter by srcFiles, since all possible input files are @InputFiles to this task.
+                    if (originalSrcFiles.contains(details.file)) {
+                        logger.debug "Removed file: " + details.file.name
+                        String nameWithoutExt = details.file.name.toString().replaceFirst("\\..*", "")
+                        removedFileNames += nameWithoutExt
+                    } else {
+                        nonSourceFileChanged = true
+                        logger.debug "Removed non-source file: " + details.file
+                    }
                 }
-            }
+            })
             logger.debug "Removed files: " + removedFileNames.size()
 
             logger.debug "New or Updated files: " + srcFilesChanged.getFiles().size()
@@ -243,7 +249,7 @@ class J2objcTranslateTask extends DefaultTask {
 
                 args translateArgs
 
-                srcFilesChanged.each {File file ->
+                srcFilesChanged.each { File file ->
                     args file.path
                 }
                 standardOutput output
