@@ -24,7 +24,6 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
-import org.gradle.api.tasks.incremental.InputFileDetails
 
 /**
  * Translation task for Java to Objective-C using j2objc tool.
@@ -123,7 +122,8 @@ class J2objcTranslateTask extends DefaultTask {
         } else {
             boolean nonSourceFileChanged = false
             srcFilesChanged = project.files()
-            inputs.outOfDate { InputFileDetails change ->
+            // TODO: figure out the explicit type for change
+            inputs.outOfDate { change ->
                 // We must filter by srcFiles, since all possible input files are @InputFiles to this task.
                 if (originalSrcFiles.contains(change.file)) {
                     logger.debug "New or Updated file: " + change.file
@@ -134,11 +134,12 @@ class J2objcTranslateTask extends DefaultTask {
                 }
             }
             List<String> removedFileNames = new ArrayList<>()
-            inputs.removed { InputFileDetails change ->
+            // TODO: figure out the explicit type for change
+            inputs.removed { change ->
                 // We must filter by srcFiles, since all possible input files are @InputFiles to this task.
                 if (originalSrcFiles.contains(change.file)) {
                     logger.debug "Removed file: " + change.file.name
-                    String nameWithoutExt = file.name.toString().replaceFirst("\\..*", "")
+                    String nameWithoutExt = change.file.name.toString().replaceFirst("\\..*", "")
                     removedFileNames += nameWithoutExt
                 } else {
                     nonSourceFileChanged = true

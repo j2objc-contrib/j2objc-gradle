@@ -31,7 +31,7 @@ import org.gradle.nativeplatform.toolchain.Clang
  */
 class J2objcNativeCompilation {
 
-    static final ALL_SUPPORTED_ARCHS = ['ios_arm64', 'ios_armv7', 'ios_armv7s', 'ios_i386', 'ios_x86_64']
+    static final String[] ALL_SUPPORTED_ARCHS = ['ios_arm64', 'ios_armv7', 'ios_armv7s', 'ios_i386', 'ios_x86_64']
 
     private final Project project
 
@@ -289,7 +289,7 @@ class J2objcNativeCompilation {
                 }
             }
 
-            // Marker tasks to build all objective-c libraries.
+            // Marker tasks to build all Objective-C libraries.
             // See Gradle User Guide: 54.14.5. Building all possible variants
             // https://docs.gradle.org/current/userguide/nativeBinaries.html#N161B3
             task('j2objcBuildObjcDebug').configure {

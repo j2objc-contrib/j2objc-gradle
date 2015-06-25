@@ -16,6 +16,7 @@
 
 package com.github.j2objccontrib.j2objcgradle
 
+import com.google.common.annotations.VisibleForTesting
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.tasks.util.PatternSet
@@ -33,7 +34,7 @@ class J2objcPluginExtension {
         this.project = project
 
         // The J2objcNativeCompilation effectively provides further extensions
-        // to the Project, by configuring the 'objective-c' native build plugin.
+        // to the Project, by configuring the 'Objective-C' native build plugin.
         // We don't want to expose the instance to clients of the 'j2objc' plugin,
         // but we also need to configure this object via methods on J2objcPluginExtension.
         nativeCompilation = new J2objcNativeCompilation(project)
@@ -67,22 +68,46 @@ class J2objcPluginExtension {
     String destLibDir = null
 
     /**
-     * Only generated source files, e.g. from dagger annotations.
+     * Generated source files directories, e.g. from dagger annotations.
      * <p/>
-     * The script will ignore changes in this directory so they must
+     * The plugin will ignore changes in this directory so they must
      * be limited to files generated solely from files within your
      * main and/or test sourceSets.
      */
-    String[] generatedSourceDirs = []
-    // TODO: void generatedSourceDirs(String... generatedSourceDirs) {
+    List<String> generatedSourceDirs = new ArrayList<>()
+    /**
+     * Add generated source files directories, e.g. from dagger annotations.
+     * <p/>
+     * The plugin will ignore changes in this directory so they must
+     * be limited to files generated solely from files within your
+     * main and/or test sourceSets.
+     *
+     * @param generatedSourceDirs adds generated source directories for j2objc translate
+     */
+    void generatedSourceDirs(String... args) {
+        appendArgs(this.generatedSourceDirs, 'generatedSourceDirs', args)
+    }
 
 
     // CYCLEFINDER
     /**
-     * Add command line arguments to cycle_finder command.
+     * Command line arguments for j2objc cycle_finder.
+     * <p/>
+     * A list of all possible arguments can be found here:
+     * http://j2objc.org/docs/cycle_finder.html
      */
-    final List<String> cycleFinderArgs = new ArrayList<>()
-    // TODO: void cycleFinderArgs(String... cycleFinderArgs) {
+    List<String> cycleFinderArgs = new ArrayList<>()
+    /**
+     * Add command line arguments for j2objc cycle_finder.
+     * <p/>
+     * A list of all possible arguments can be found here:
+     * http://j2objc.org/docs/cycle_finder.html
+     *
+     * @param cycleFinderArgs add args for 'cycle_finder' tool
+     */
+    void cycleFinderArgs(String... args) {
+        appendArgs(this.cycleFinderArgs, 'cycleFinderArgs', args)
+    }
     /**
      * Expected number of cycles, defaults to all those found in JRE.
      * <p/>
@@ -93,32 +118,39 @@ class J2objcPluginExtension {
 
 
     // TRANSLATE
-    final List<String> translateArgs = new ArrayList<>()
+    /**
+     * Command line arguments for j2objc translate.
+     * <p/>
+     * A list of all possible arguments can be found here:
+     * http://j2objc.org/docs/j2objc.html
+     */
+    List<String> translateArgs = new ArrayList<>()
     /**
      * Add command line arguments for j2objc translate.
      * <p/>
      * A list of all possible arguments can be found here:
-     * https://github.com/google/j2objc/blob/master/translator/src/main/resources/com/google/devtools/j2objc/J2ObjC.properties
+     * http://j2objc.org/docs/j2objc.html
      *
-     * @param translateArgs args for the translate task
+     * @param translateArgs add args for the 'j2objc' tool
      */
-    // Provides a subset of "args" interface from project.exec as implemented by ExecHandleBuilder:
-    // https://github.com/gradle/gradle/blob/master/subprojects/core/src/main/groovy/org/gradle/process/internal/ExecHandleBuilder.java
-    // Allows the following:
-    // j2objcConfig {
-    //     translateArgs '--no-package-directories', '--prefixes', 'prefixes.properties'
-    // }
-    void translateArgs(String... translateArgs) {
-        if (translateArgs == null) {
-            throw new IllegalArgumentException("args == null!");
-        }
-        this.translateArgs.addAll(Arrays.asList(translateArgs));
+    void translateArgs(String... args) {
+        appendArgs(this.translateArgs, 'translateArgs', args)
     }
+
     /**
-     * -classpath library additions from ${projectDir}/lib/, e.g.: "json-20140107.jar", "somelib.jar"
+     *  Libraries from ${projectDir}/lib/, e.g.: "json-20140107.jar", "somelib.jar".
+     *  This will be added to j2objc as a '-classpath' argument.
      */
-    String[] translateClassPaths = []
-    // TODO: void translateClassPaths(String... translateClassPaths) {
+    List<String> translateClassPaths = new ArrayList<>()
+    /**
+     *  Add libraries from ${projectDir}/lib/, e.g.: "json-20140107.jar", "somelib.jar".
+     *  This will be added to j2objc as a '-classpath' argument.
+     *
+     *  @param add libraries for -classpath argument
+     */
+    void translateClassPaths(String... args) {
+        appendArgs(this.translateClassPaths, 'translateClassPaths', args)
+    }
 
 
     // Do not use groovydoc, this option should remain undocumented.
@@ -132,10 +164,10 @@ class J2objcPluginExtension {
     /**
      * Additional libraries that are part of the j2objc distribution.
      */
-    // TODO: just import everything in the j2objc/lib/ directory?
     // J2objc default libraries, from $J2OBJC_HOME/lib/...
-    // TODO: void translateJ2objcLibs(String... translateJ2objcLibs) {
-    String[] translateJ2objcLibs = [
+    // TODO: auto add libraries based on java dependencies, warn on version differences
+    List<String> translateJ2objcLibs = [
+            // Comments indicate difference compared to standard libraries...
             // Memory annotations, e.g. @Weak, @AutoreleasePool
             "j2objc_annotations.jar",
             // Libraries that have CycleFinder fixes, e.g. @Weak and code removal
@@ -258,19 +290,31 @@ class J2objcPluginExtension {
      * <p/>
      * Removing an architecture here will cause that architecture not to be built
      * and corresponding gradle tasks to not be created.
+     * <p/>
+     * <pre>
+     * supportedArchs = ['ios_arm64']  // Only build libraries for 64-bit iOS devices
+     * </pre>
      *
      * @see J2objcNativeCompilation#ALL_SUPPORTED_ARCHS
      */
-    // TODO: void supportedArchs(String... supportedArchs) {
-    String[] supportedArchs = J2objcNativeCompilation.ALL_SUPPORTED_ARCHS.clone()
+    // Public to allow assignment of array of targets as shown in example
+    List<String> supportedArchs = J2objcNativeCompilation.ALL_SUPPORTED_ARCHS.clone()
 
 
     // TEST
     /**
-     * Adds command line arguments for test executable.
+     * Command line arguments for j2objcTest task.
      */
-    final List<String> testArgs = new ArrayList<>()
-    // TODO: void testArgs(String... testArgs) {
+    List<String> testArgs = new ArrayList<>()
+    /**
+     * Add command line arguments for j2objcTest task.
+     *
+     * @param args add args for the 'j2objcTest' task
+     */
+    void testArgs(String... args) {
+        appendArgs(this.testArgs, 'testArgs', args)
+    }
+
     /**
      * j2objcTest will fail if it runs less than the expected number of tests; set to 0 to disable.
      * <p/>
@@ -315,27 +359,58 @@ class J2objcPluginExtension {
 
     // Native build customization.
     /**
-     * Directories of objective-c source to compile in addition to the
+     * Directories of Objective-C source to compile in addition to the
      * translated source.
      */
-    // TODO: void extraObjcSrcDirs(String... extraObjcSrcDirs) {
+    // Native build accepts empty array but throws exception on empty List<String>
+    // "srcDirs j2objcConfig.extraObjcSrcDirs" line in J2objcNativeCompilation
     String[] extraObjcSrcDirs = []
     /**
-     * Additional arguments to pass to the objective-c compiler.
+     * Add directories of Objective-C source to compile in addition to the
+     * translated source.
+     *
+     * @param dirs add directories for Objective-C source to be compiled
      */
-    // TODO: void extraObjcCompilerArgs(String... extraObjcCompilerArgs) {
+    void extraObjcSrcDirs(String... args) {
+        for (String arg in args) {
+            extraObjcSrcDirs += arg
+        }
+    }
+    /**
+     * Additional arguments to pass to the native compiler.
+     */
+    // Native build accepts empty array but throws exception on empty List<String>
     String[] extraObjcCompilerArgs = []
+    /**
+     * Add arguments to pass to the native compiler.
+     *
+     * @param dirs add arguments to pass to the native compiler.
+     */
+    void extraObjcCompilerArgs(String... args) {
+        for (String arg in args) {
+            extraObjcCompilerArgs += arg
+        }
+    }
     /**
      * Additional arguments to pass to the native linker.
      */
-    // TODO: void extraLinkerArgs(String... extraLinkerArgs) {
+    // Native build accepts empty array but throws exception on empty List<String>
     String[] extraLinkerArgs = []
+    /**
+     * Add arguments to pass to the native linker.
+     *
+     * @param dirs add arguments to pass to the native linker.
+     */
+    void extraLinkerArgs(String... args) {
+        for (String arg in args) {
+            extraLinkerArgs += arg
+        }
+    }
 
     // XCODE
     /**
      * Directory of the target Xcode project.
      */
-    // TODO(bruno): figure out what this should be "${projectDir}/Xcode"
     String xcodeProjectDir = null
     /**
      * Xcode target the generated files should be linked to.
@@ -351,11 +426,34 @@ class J2objcPluginExtension {
     // after initial creation, we can remove this, and have methods on this object
     // mutate the existing native model { } block.  See:
     // https://discuss.gradle.org/t/problem-with-model-block-when-switching-from-2-2-1-to-2-4/9937
+    @VisibleForTesting
     void finalConfigure() {
         nativeCompilation.apply(project.file("${project.buildDir}/j2objcSrcGen"))
         finalConfigured = true
     }
     boolean isFinalConfigured() {
         return finalConfigured
+    }
+
+    // Provides a subset of "args" interface from project.exec as implemented by ExecHandleBuilder:
+    // https://github.com/gradle/gradle/blob/master/subprojects/core/src/main/groovy/org/gradle/process/internal/ExecHandleBuilder.java
+    // Allows the following:
+    // j2objcConfig {
+    //     translateArgs '--no-package-directories', '--prefixes', 'prefixes.properties'
+    // }
+    @VisibleForTesting
+    static void appendArgs(List<String> listArgs, String nameArgs, String... args) {
+        if (args == null) {
+            throw new IllegalArgumentException("args == null!");
+        }
+        for (String arg in args) {
+            if (arg.contains(' ')) {
+                String rewrittenArgs = "'" + arg.split(' ').join("', '") + "'"
+                throw new IllegalArgumentException(
+                        "'$arg' should not contain spaces and be written out as distinct entries:\n" +
+                        "$nameArgs $rewrittenArgs")
+            }
+        }
+        listArgs.addAll(Arrays.asList(args));
     }
 }
