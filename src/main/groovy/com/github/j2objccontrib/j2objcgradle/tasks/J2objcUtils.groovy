@@ -20,7 +20,6 @@ import groovy.util.logging.Slf4j
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
-import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.tasks.SourceSet
 import java.util.regex.Matcher
 
@@ -214,16 +213,16 @@ class J2objcUtils {
         Matcher matcher = (str =~ regex)
         if (!matcher.find()) {
             throw new IllegalArgumentException(
-                    "${str}\n" +
+                    "$str\n" +
                     "\n" +
-                    "Regex couldn't match number in output: ${regex}")
+                    "Regex couldn't match number in output: $regex")
         } else {
             String value = matcher[0][1]
             if (!value.isInteger()) {
                 throw new IllegalArgumentException(
-                        "${str}\n" +
+                        "$str\n" +
                         "\n" +
-                        "Regex didn't find number in output: ${regex}, value: ${value}")
+                        "Regex didn't find number in output: $regex, value: $value")
             }
             return value.toInteger()
         }

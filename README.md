@@ -120,14 +120,39 @@ disable the `j2objcTest` task, do the following:
 This task is disabled by default as it requires greater sophistication to use. It runs the
 `cycle_finder` tool in the J2ObjC release to detect memory cycles in your application.
 Objects that are part of a memory cycle on iOS won't be deleted as it doesn't support
-garbage collection. The tool will give you configuration feedback when you use it.
-To enable it:
+garbage collection.
+
+The basic setup will implicitly check for 40 memory cycles - this is the expected number
+of erroneous matches with `jre_emul` library for j2objc version 0.9.6.1. This may cause
+issues if this number changes with new versions of j2objc libraries.
 
     j2objcCycleFinder {
         enabled = true
     }
 
-For more details: http://j2objc.org/docs/Cycle-Finder-Tool.html
+##### Cycle Finder Advanced Setup
+
+This uses a specially annotated version of the `jre_emul` source that marks all the
+erroneously matched cycles such that they can be ignored. It requires downloading
+and building the J2ObjC source:
+
+1. Download the j2objc source to a directory (hereafter J2OJBC_REPO):<br>
+    https://github.com/google/j2objc
+2. Within the J2OJBC_REPO, run:<br>
+    `(cd jre_emul && make java_sources_manifest)`
+3. Configure j2objcConfig in build.gradle so CycleFinder uses the annotated J2ObjC source
+and whitelist. Note how this give expected cycles of zero.
+```
+j2objcConfig {
+    cycleFinderArgs '--whitelist', 'J2OBJC_REPO/jre_emul/cycle_whitelist.txt'
+    cycleFinderArgs '--sourcefilelist', 'J2OBJC_REPO/jre_emul/build_result/java_sources.mf'
+    cycleFinderExpectedCycles 0
+}
+```
+
+For more details:
+- http://j2objc.org/docs/Cycle-Finder-Tool.html
+- https://groups.google.com/forum/#!msg/j2objc-discuss/2fozbf6-liM/R83v7ffX5NMJ
 
 
 ### Plugin Development
