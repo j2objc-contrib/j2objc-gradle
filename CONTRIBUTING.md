@@ -166,12 +166,24 @@ on issues or pull requests, you can ignore this section.
 
 We'd like to maintain proper versioning history for the plugin.  This requires
 a little bit of coordination between in-code versions, GitHub tags, and
-published versions on plugins.gradle.org.  The steps are:
+published versions on plugins.gradle.org.  All branches and tags are on the
+`j2objc-contrib/j2objc-gradle` repository, not any forks.  The steps are:
 
-1.  As a separate commit, bump the version number in `build.gradle`. Use
-https://semver.org to guide which slot in the version number should be bumped.
-File a PR, and merge that PR into master.
-2.  Tag the master merge commit where that PR is merged as for example `v0.2.3-alpha` and push that
-tag to the j2objc-contrib/j2objc-gradle repository.
-3.  Do a clean build and then publish the new version
+1.  Determine the version number.  Use https://semver.org to guide which
+slot in the version number should be bumped.  We'll call this `vX`.
+2.  From `master`, create a branch `release_vX` and check it out.
+3.  Optional: If any critical bugfixes are deemed neccessary, merge those
+commits into this release branch.
+4.  As a separate commit, bump the version number in `build.gradle`. 
+File a PR, and merge that PR into the release branch.
+5.  Tag the merge commit where that PR is merged into `release_vX` as `vX` and push that
+tag to the repository.  It is important that the commit where the
+merge occurred into the release branch is tagged - not the commit that bumped the version number, but
+also not the commit that merges the release branch into master (see below).
+6.  Do a clean build and then publish the new version
 to https://plugins.gradle.org (`./gradlew clean build publishPlugins`).
+7.  Merge the release branch back into master.
+8.  Delete the release branch from the repository.  If for some reason a hotfix
+is later needed, start at step 1, but instead of creating a new branch from the tip
+of `master`, instead create the release branch from the commit tagged in step 5.  Do
+not reuse the old release branch.
