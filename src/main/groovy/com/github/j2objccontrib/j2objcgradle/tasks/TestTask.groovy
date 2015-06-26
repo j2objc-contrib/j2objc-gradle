@@ -30,7 +30,7 @@ import java.util.regex.Matcher
 /**
  *
  */
-class J2objcTestTask extends DefaultTask {
+class TestTask extends DefaultTask {
 
     // *Test.java files and TestRunner binary
     @InputFile
@@ -40,7 +40,7 @@ class J2objcTestTask extends DefaultTask {
     FileCollection getTestSrcFiles() {
         // Note that neither testPattern nor translatePattern need to be @Input methods because they are solely
         // inputs to this method, which is already an input via @InputFiles.
-        FileCollection allFiles = J2objcUtils.srcDirs(project, 'test', 'java')
+        FileCollection allFiles = Utils.srcDirs(project, 'test', 'java')
 
         if (project.j2objcConfig.translatePattern != null) {
             allFiles = allFiles.matching(project.j2objcConfig.translatePattern)
@@ -74,7 +74,7 @@ class J2objcTestTask extends DefaultTask {
 
         // list of test names: ['com.example.dir.ClassOneTest', 'com.example.dir.ClassTwoTest']
         // depends on "--prefixes dir/prefixes.properties" in translateArgs
-        Properties packagePrefixes = J2objcUtils.packagePrefixes(project, translateArgs)
+        Properties packagePrefixes = Utils.packagePrefixes(project, translateArgs)
         List<String> testNames = getTestNames(project, getTestSrcFiles(), packagePrefixes)
 
         ByteArrayOutputStream output = new ByteArrayOutputStream()
@@ -131,7 +131,7 @@ class J2objcTestTask extends DefaultTask {
         reportFile.write(outputStr)
         logger.debug "Test Output: ${reportFile.path}"
 
-        int testCount = J2objcUtils.matchNumberRegex(outputStr, /OK \((\d+) tests\)/)
+        int testCount = Utils.matchNumberRegex(outputStr, /OK \((\d+) tests\)/)
         String message =
                 "\n" +
                 "j2objcConfig {\n" +

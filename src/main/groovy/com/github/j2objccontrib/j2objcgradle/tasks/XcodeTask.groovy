@@ -36,7 +36,7 @@ import org.gradle.api.tasks.incremental.IncrementalTaskInputs
  * If you haven't create a pod file yet you have to run `pod init` in your
  * project folder before you run this task.
  */
-class J2objcXcodeTask extends DefaultTask {
+class XcodeTask extends DefaultTask {
 
     // Generated ObjC source files
     @InputDirectory
@@ -61,7 +61,7 @@ class J2objcXcodeTask extends DefaultTask {
 
     // j2objcConfig dependencies for UP-TO-DATE checks
     @Input
-    String getJ2ObjCHome() { return J2objcUtils.j2objcHome(project) }
+    String getJ2ObjCHome() { return Utils.j2objcHome(project) }
 
     @Input @Optional
     String getXcodeProjectDir() { return project.j2objcConfig.xcodeProjectDir }
@@ -81,7 +81,7 @@ class J2objcXcodeTask extends DefaultTask {
         String j2objcResourceDirPath = "${project.buildDir}/${j2objcResourceDirName}"
         project.delete j2objcResourceDirPath
         project.copy {
-            J2objcUtils.srcDirs(project, 'main', 'resources').srcDirs.each {
+            Utils.srcDirs(project, 'main', 'resources').srcDirs.each {
                 from it
             }
             into j2objcResourceDirPath

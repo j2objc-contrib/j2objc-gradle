@@ -29,7 +29,7 @@ import java.util.regex.Matcher
 // Without access to the project, logging is performed using the
 // static 'log' variable added during decoration with this annotation.
 @Slf4j
-class J2objcUtils {
+class Utils {
     // TODO: ideally bundle j2objc binaries with plugin jar and load at runtime with
     // TODO: ClassLoader.getResourceAsStream(), extract, chmod and then execute
 

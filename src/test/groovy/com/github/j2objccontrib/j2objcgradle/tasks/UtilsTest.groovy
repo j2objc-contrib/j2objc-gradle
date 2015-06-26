@@ -24,9 +24,9 @@ import org.junit.Before
 import org.junit.Test;
 
 /**
- * J2objcUtils tests.
+ * Utils tests.
  */
-public class J2objcUtilsTest {
+public class UtilsTest {
 
     private Project proj
 
@@ -39,12 +39,12 @@ public class J2objcUtilsTest {
     public void testIsWindows() {
         // TODO: also test for correctness
         // For now it only tests that the call runs successfully
-        J2objcUtils.isWindows()
+        Utils.isWindows()
     }
 
     @Test(expected = InvalidUserDataException.class)
     public void testThrowIfNoJavaPlugin_NoJavaPlugin() {
-        J2objcUtils.throwIfNoJavaPlugin(proj)
+        Utils.throwIfNoJavaPlugin(proj)
     }
 
     // TODO: testThrowIfNoJavaPlugin_JavaPluginExists
@@ -64,7 +64,7 @@ public class J2objcUtilsTest {
 
         List<String> translateArgs = new ArrayList<String>()
         translateArgs.add("--prefixes ${prefixesProp.absolutePath}")
-        Properties properties = J2objcUtils.packagePrefixes(proj, translateArgs)
+        Properties properties = Utils.packagePrefixes(proj, translateArgs)
 
         Properties expected = new Properties()
         expected.setProperty('com.example.parent', 'ParentPrefixesFile')
@@ -87,7 +87,7 @@ public class J2objcUtilsTest {
         // prefix overwrites prefixes.properties
         translateArgs.add('--prefix com.example.parent.subdir=SubdirPrefixArg')
 
-        Properties properties = J2objcUtils.packagePrefixes(proj, translateArgs)
+        Properties properties = Utils.packagePrefixes(proj, translateArgs)
 
         Properties expected = new Properties()
         expected.setProperty('com.example.parent', 'ParentPrefixesFile')
@@ -100,21 +100,21 @@ public class J2objcUtilsTest {
     @Test
     public void testFilenameCollisionCheck_NoCollisition() {
         FileCollection files = proj.files('DiffOne.java', 'DiffTwo.java')
-        J2objcUtils.filenameCollisionCheck(files)
+        Utils.filenameCollisionCheck(files)
     }
 
     @Test(expected = InvalidUserDataException.class)
     public void testFilenameCollisionCheck_Collision() {
         // Same filename but located in different paths
         FileCollection files = proj.files('dirOne/Same.java', 'dirTwo/Same.java')
-        J2objcUtils.filenameCollisionCheck(files)
+        Utils.filenameCollisionCheck(files)
     }
 
     // TODO: testAddJavaFiles()
 
     @Test
     public void testAbsolutePathOrEmpty() {
-        String path = J2objcUtils.absolutePathOrEmpty(proj, new ArrayList<String>(['One/', 'Two/']))
+        String path = Utils.absolutePathOrEmpty(proj, new ArrayList<String>(['One/', 'Two/']))
 
         String absPath = proj.rootDir.absolutePath
         assert path == ":$absPath/One:$absPath/Two".toString()
@@ -122,14 +122,14 @@ public class J2objcUtilsTest {
 
     @Test
     public void testAbsolutePathOrEmpty_Empty() {
-        String path = J2objcUtils.absolutePathOrEmpty(proj, new ArrayList<String>())
+        String path = Utils.absolutePathOrEmpty(proj, new ArrayList<String>())
 
         assert path == ''
     }
 
     @Test
     public void testGetClassPathArg() {
-        String classPathArg = J2objcUtils.getClassPathArg(
+        String classPathArg = Utils.getClassPathArg(
                 proj, "/J2OBJC_HOME",
                 new ArrayList<String>(['LibOne', 'LibTwo']),
                 new ArrayList<String>(['J2LibOne', 'J2LibTwo']))
@@ -142,17 +142,17 @@ public class J2objcUtilsTest {
 
     @Test
     public void testMatchNumberRegex() {
-        int count = J2objcUtils.matchNumberRegex("15 CYCLES FOUND", /(\d+) CYCLES FOUND/)
+        int count = Utils.matchNumberRegex("15 CYCLES FOUND", /(\d+) CYCLES FOUND/)
         assert count == 15
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testMatchNumberRegex_NoMatch() {
-        int count = J2objcUtils.matchNumberRegex("AA CYCLES FOUND", /(\d+) CYCLES FOUND/)
+        int count = Utils.matchNumberRegex("AA CYCLES FOUND", /(\d+) CYCLES FOUND/)
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testMatchNumberRegex_NotNumber() {
-        int count = J2objcUtils.matchNumberRegex("AA CYCLES FOUND", /(.*) CYCLES FOUND/)
+        int count = Utils.matchNumberRegex("AA CYCLES FOUND", /(.*) CYCLES FOUND/)
     }
 }

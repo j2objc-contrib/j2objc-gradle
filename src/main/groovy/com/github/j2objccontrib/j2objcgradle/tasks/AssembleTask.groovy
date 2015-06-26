@@ -28,7 +28,7 @@ import org.gradle.api.file.ConfigurableFileCollection
  * Assemble task copies generated source and libaries to assembly directories for
  * use by an iOS application.
  */
-class J2objcAssembleTask extends DefaultTask {
+class AssembleTask extends DefaultTask {
 
     // Generated ObjC source files
     @InputDirectory

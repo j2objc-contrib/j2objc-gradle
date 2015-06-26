@@ -16,7 +16,7 @@
 
 package com.github.j2objccontrib.j2objcgradle.tasks
 
-import com.github.j2objccontrib.j2objcgradle.J2objcPluginExtension
+import com.github.j2objccontrib.j2objcgradle.PluginConfigExtension
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
@@ -24,11 +24,11 @@ import org.junit.Before
 import org.junit.Test;
 
 /**
- * J2objcUtils tests.
+ * Utils tests.
  */
 // Double quotes are used throughout this file to avoid escaping single quotes
 // which are common in Podfiles, used extensively within these tests
-public class J2objcXcodeTaskTest {
+public class XcodeTaskTest {
 
     // TODO: use this within future tests
     private Project proj
@@ -40,14 +40,14 @@ public class J2objcXcodeTaskTest {
 
     @Test
     public void getPodFile_Valid() {
-        J2objcPluginExtension j2objcConfig =
-                proj.extensions.create('j2objcConfig', J2objcPluginExtension, proj)
+        PluginConfigExtension j2objcConfig =
+                proj.extensions.create('j2objcConfig', PluginConfigExtension, proj)
         j2objcConfig.xcodeProjectDir = '../ios'
         j2objcConfig.xcodeTarget = 'IosApp'
 
         // Cast required as return type of create(...) is Task
-        J2objcXcodeTask j2objcXcode =
-                (J2objcXcodeTask) proj.tasks.create(name: 'j2objcXcode', type: J2objcXcodeTask) {}
+        XcodeTask j2objcXcode =
+                (XcodeTask) proj.tasks.create(name: 'j2objcXcode', type: XcodeTask) {}
         j2objcXcode.verifyXcodeArgs()
         File podFile = j2objcXcode.getPodFile()
 
@@ -58,14 +58,14 @@ public class J2objcXcodeTaskTest {
     // Test that null xcode arguments cause the expected exception
     @Test(expected = InvalidUserDataException.class)
     public void getPodFile_Invalid() {
-        J2objcPluginExtension j2objcConfig =
-                proj.extensions.create('j2objcConfig', J2objcPluginExtension, proj)
+        PluginConfigExtension j2objcConfig =
+                proj.extensions.create('j2objcConfig', PluginConfigExtension, proj)
         assert j2objcConfig.xcodeProjectDir == null
         assert j2objcConfig.xcodeTarget == null
 
         // Cast required as return type of create(...) is Task
-        J2objcXcodeTask j2objcXcode =
-                (J2objcXcodeTask) proj.tasks.create(name: 'j2objcXcode', type: J2objcXcodeTask) {}
+        XcodeTask j2objcXcode =
+                (XcodeTask) proj.tasks.create(name: 'j2objcXcode', type: XcodeTask) {}
         // Test for fixing issue #226
         j2objcXcode.getPodFile()
     }
@@ -80,7 +80,7 @@ public class J2objcXcodeTaskTest {
                 "target 'IosApp' do\n" +
                 "end")
 
-        J2objcXcodeTask.writeUpdatedPodFileIfNeeded(
+        XcodeTask.writeUpdatedPodFileIfNeeded(
                 PodFile, 'IosApp', 'j2objc-shared',
                 '/Users/USERNAME/dev/workspace/shared/build')
 
@@ -101,7 +101,7 @@ public class J2objcXcodeTaskTest {
                 "pod 'j2objc-shared', :path => '/Users/USERNAME/dev/workspace/shared/build'",
                 "end"]
 
-        List<String> newPodFileLines = J2objcXcodeTask.getPodFileLinesIfChanged(
+        List<String> newPodFileLines = XcodeTask.getPodFileLinesIfChanged(
                 podFileLines, 'IosApp', 'j2objc-shared',
                 '/Users/USERNAME/dev/workspace/shared/build')
 
@@ -115,7 +115,7 @@ public class J2objcXcodeTaskTest {
                 "",
                 "end"]
 
-        List<String> newPodFileLines = J2objcXcodeTask.getPodFileLinesIfChanged(
+        List<String> newPodFileLines = XcodeTask.getPodFileLinesIfChanged(
                 podFileLines, 'IosApp', 'j2objc-shared',
                 '/Users/USERNAME/dev/workspace/shared/build')
 
@@ -136,7 +136,7 @@ public class J2objcXcodeTaskTest {
                 "pod 'j2objc-shared', :path => '/Users/WRONG/dev/workspace/shared/build'",
                 "end"]
 
-        List<String> newPodFileLines = J2objcXcodeTask.getPodFileLinesIfChanged(
+        List<String> newPodFileLines = XcodeTask.getPodFileLinesIfChanged(
                 podFileLines, 'IosApp', 'j2objc-shared',
                 '/Users/USERNAME/dev/workspace/shared/build')
 
@@ -160,7 +160,7 @@ public class J2objcXcodeTaskTest {
                 "pod 'pod1', :path => 'IGNORE'",
                 "end"]
 
-        List<String> newPodFileLines = J2objcXcodeTask.getPodFileLinesIfChanged(
+        List<String> newPodFileLines = XcodeTask.getPodFileLinesIfChanged(
                 podFileLines, 'IosApp', 'j2objc-shared',
                 '/Users/USERNAME/dev/workspace/shared/build')
 
@@ -197,7 +197,7 @@ public class J2objcXcodeTaskTest {
                 "pod 'pod3', :path => 'IGNORE'",
                 "end"]
 
-        List<String> newPodFileLines = J2objcXcodeTask.getPodFileLinesIfChanged(
+        List<String> newPodFileLines = XcodeTask.getPodFileLinesIfChanged(
                 podFileLines, 'DifferentTargetName', 'j2objc-different-name',
                 '/Users/USERNAME/dev/workspace/shared/build')
 
@@ -227,7 +227,7 @@ public class J2objcXcodeTaskTest {
                 "pod 'j2objc-shared', :path => '/Users/USERNAME/dev/workspace/shared/build'",
                 "end"]
 
-        J2objcXcodeTask.getPodFileLinesIfChanged(
+        XcodeTask.getPodFileLinesIfChanged(
                 podFileLines, 'XCODE_TARGET_NOT_FOUND', 'j2objc-shared',
                 '/Users/USERNAME/dev/workspace/shared/build')
     }
