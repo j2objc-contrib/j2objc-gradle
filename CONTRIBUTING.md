@@ -170,13 +170,13 @@ published versions on plugins.gradle.org.  All branches and tags are on the
 `j2objc-contrib/j2objc-gradle` repository, not any forks.  The steps are:
 
 1.  Determine the version number.  Use https://semver.org to guide which
-slot in the version number should be bumped.  We'll call this `vX`.
-2.  From `master`, create a branch `release_vX` and check it out.
+slot in the version number should be bumped.  We'll call this `vX.Y.Z`.
+2.  From `master`, create a branch `release_vX.Y.Z` and check it out.
 3.  Optional: If any critical bugfixes are deemed neccessary, merge those
 commits into this release branch.
 4.  As a separate commit, bump the version number in `build.gradle`. 
 File a PR, and merge that PR into the release branch.
-5.  Tag the merge commit where that PR is merged into `release_vX` as `vX` and push that
+5.  Tag the merge commit where that PR is merged into `release_vX.Y.Z` as `vX.Y.Z` and push that
 tag to the repository.  It is important that the commit where the
 merge occurred into the release branch is tagged - not the commit that bumped the version number, but
 also not the commit that merges the release branch into master (see below).
