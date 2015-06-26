@@ -36,42 +36,42 @@ Further Customizations:
 
 * Function calls should use parentheses:
 ```
-logging.captureStandardOutput(LogLevel.INFO)  // approved
-logging.captureStandardOutput LogLevel.INFO   // avoid
+logging.captureStandardOutput(LogLevel.INFO)  // CORRECT
+logging.captureStandardOutput LogLevel.INFO   // WRONG
 ```
 * Configure calls do not use parentheses:
 ```
 project.exec {
-    executable 'j2objc'              // approved
-    args '-sourcepath', sourcepath   // approved
+    executable 'j2objc'              // CORRECT
+    args '-sourcepath', sourcepath   // CORRECT
 
-    executable('j2objc')             // avoid
-    args('-sourcepath', sourcepath)  // avoid
+    executable('j2objc')             // WRONG
+    args('-sourcepath', sourcepath)  // WRONG
 }
 ```
 * Explicit Types instead of 'def':
 ```
-String message = 'a message'  // approved
-def message = 'a message'     // avoid
+String message = 'a message'  // CORRECT
+def message = 'a message'     // WRONG
 
 // This also applies for '->' iterators:
-translateArgs.each { String arg ->  // approved
-translateArgs.each { arg ->         // avoid
+translateArgs.each { String arg ->  // CORRECT
+translateArgs.each { arg ->         // WRONG
 ```
 * GString curly braces only for methods or object members:
 ```
-String message = "the count is $count"           // approved
-String message = "the count is ${object.count}"  // approved
-String message = "the count is ${method()}"      // approved
+String message = "the count is $count"           // CORRECT
+String message = "the count is ${object.count}"  // CORRECT
+String message = "the count is ${method()}"      // CORRECT
 
-String message = "the count is ${count}"         // avoid
-String message = "the count is $method()"        // avoid
+String message = "the count is ${count}"         // WRONG
+String message = "the count is $method()"        // WRONG
 String message = "the count is $object.count"    // incorrect as it only prints "$object"
 ```
 * Single quotes for non-GString, i.e. no string interpolation:
 ```
-String message = 'the count is negative'  // approved
-String message = "the count is negative"  // avoid - only needed for $var interpolation
+String message = 'the count is negative'  // CORRECT
+String message = "the count is negative"  // WRONG - only needed for $var interpolation
 ```
 
 
