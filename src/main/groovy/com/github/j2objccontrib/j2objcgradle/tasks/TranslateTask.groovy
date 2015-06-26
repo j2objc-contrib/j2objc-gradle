@@ -21,7 +21,6 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
@@ -42,9 +41,9 @@ class TranslateTask extends DefaultTask {
         // Note that neither additionalSrcFiles nor translatePattern need
         // to be @Inputs because they are solely inputs to this method, which
         // is already an input.
-        FileCollection allFiles = Utils.srcDirs(project, 'main', 'java')
-        allFiles = allFiles.plus(Utils.srcDirs(project, 'test', 'java'))
-
+        FileCollection allFiles = project.files()
+        allFiles += Utils.srcSet(project, 'main', 'java')
+        allFiles += Utils.srcSet(project, 'test', 'java')
         if (project.j2objcConfig.translatePattern != null) {
             allFiles = allFiles.matching(project.j2objcConfig.translatePattern)
         }
@@ -58,18 +57,11 @@ class TranslateTask extends DefaultTask {
     @InputFiles
     FileCollection getAllInputFiles() {
         FileCollection allFiles = getSrcFiles()
-        if (getTranslateSourcepaths()) {
-            List<String> translateSourcepathPaths = getTranslateSourcepaths().split(':') as List<String>
-            translateSourcepathPaths.each { String sourcePath ->
-                allFiles = allFiles.plus(project.files(sourcePath))
-            }
-        }
-        getGeneratedSourceDirs().each { String sourceDir ->
-            allFiles = allFiles.plus(project.files(sourceDir))
-        }
-        getTranslateClassPaths().each { String classPath ->
-            allFiles = allFiles.plus(project.files(classPath))
-        }
+        allFiles += project.files(getTranslateClasspaths())
+        allFiles += project.files(getTranslateSourcepaths())
+        allFiles += project.files(getGeneratedSourceDirs())
+        // Only care about changes in the generatedSourceDirs paths and not the contents
+        // It assumes that any changes in generated code comes from change in non-generated code
         return allFiles
     }
 
@@ -85,20 +77,21 @@ class TranslateTask extends DefaultTask {
     @Input
     List<String> getTranslateArgs() { return project.j2objcConfig.translateArgs }
 
-    @Input @Optional
-    String getTranslateSourcepaths() { return project.j2objcConfig.translateSourcepaths }
+    @Input
+    List<String> getTranslateClasspaths() { return project.j2objcConfig.translateClasspaths }
 
     @Input
-    boolean getFilenameCollisionCheck() { return project.j2objcConfig.filenameCollisionCheck }
+    List<String> getTranslateSourcepaths() { return project.j2objcConfig.translateSourcepaths }
 
     @Input
     List<String> getGeneratedSourceDirs() { return project.j2objcConfig.generatedSourceDirs }
 
     @Input
-    List<String> getTranslateClassPaths() { return project.j2objcConfig.translateClassPaths }
+    List<String> getTranslateJ2objcLibs() { return project.j2objcConfig.translateJ2objcLibs }
 
     @Input
-    List<String> getTranslateJ2objcLibs() { return project.j2objcConfig.translateJ2objcLibs }
+    boolean getFilenameCollisionCheck() { return project.j2objcConfig.filenameCollisionCheck }
+
 
     @TaskAction
     void translate(IncrementalTaskInputs inputs) {
@@ -206,6 +199,10 @@ class TranslateTask extends DefaultTask {
             }
         }
 
+        if (getFilenameCollisionCheck()) {
+            Utils.filenameCollisionCheck(getSrcFiles())
+        }
+
         String j2objcExecutable = "${getJ2objcHome()}/j2objc"
         List<String> windowsOnlyArgs = new ArrayList<String>()
         if (Utils.isWindows()) {
@@ -214,41 +211,31 @@ class TranslateTask extends DefaultTask {
             windowsOnlyArgs.add("${getJ2objcHome()}/lib/j2objc.jar")
         }
 
-        String sourcepath = Utils.sourcepathJava(project)
+        FileCollection sourcepathDirs = project.files()
+        sourcepathDirs += project.files(Utils.srcSet(project, 'main', 'java').getSrcDirs())
+        sourcepathDirs += project.files(Utils.srcSet(project, 'test', 'java').getSrcDirs())
+        sourcepathDirs += project.files(getTranslateSourcepaths())
+        sourcepathDirs += project.files(getGeneratedSourceDirs())
+        String sourcepathArg = Utils.joinedPathArg(sourcepathDirs)
 
-        // Additional Sourcepaths, e.g. source jars
-        if (getTranslateSourcepaths()) {
-            logger.debug("Add to sourcepath: ${getTranslateSourcepaths()}")
-            sourcepath += ":${getTranslateSourcepaths()}"
-        }
-
-        // Generated Files
-        sourcepath += Utils.absolutePathOrEmpty(project, getGeneratedSourceDirs())
-
-        // TODO perform file collision check with already translated files in the srcGenDir
-        if (getFilenameCollisionCheck()) {
-            Utils.filenameCollisionCheck(getSrcFiles())
-        }
-
-        String classPathArg = Utils.getClassPathArg(
-                project, getJ2objcHome(), getTranslateClassPaths(), getTranslateJ2objcLibs())
-
-        classPathArg += ":${project.buildDir}/classes"
+        FileCollection classpathFiles = project.files()
+        classpathFiles += project.files(getTranslateClasspaths())
+        classpathFiles += project.files(Utils.j2objcLibs(getJ2objcHome(), getTranslateJ2objcLibs()))
+        // TODO: comment explaining ${project.buildDir}/classes
+        String classpathArg = Utils.joinedPathArg(classpathFiles) + ":${project.buildDir}/classes"
 
         ByteArrayOutputStream output = new ByteArrayOutputStream()
         try {
             project.exec {
                 executable j2objcExecutable
-                windowsOnlyArgs.each { String windowsArg ->
+                windowsOnlyArgs.each { String windowsOnlyArg ->
                     args windowsOnlyArg
                 }
 
                 // Arguments
                 args "-d", srcGenDir
-                args "-sourcepath", sourcepath
-                if (classPathArg.size() > 0) {
-                    args "-classpath", classPathArg
-                }
+                args "-sourcepath", sourcepathArg
+                args "-classpath", classpathArg
                 translateArgs.each { String translateArg ->
                     args translateArg
                 }

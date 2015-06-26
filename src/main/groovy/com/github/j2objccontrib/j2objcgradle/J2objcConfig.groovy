@@ -84,8 +84,8 @@ class J2objcConfig {
      *
      * @param generatedSourceDirs adds generated source directories for j2objc translate
      */
-    void generatedSourceDirs(String... args) {
-        appendArgs(this.generatedSourceDirs, 'generatedSourceDirs', args)
+    void generatedSourceDirs(String... generatedSourceDirs) {
+        appendArgs(this.generatedSourceDirs, 'generatedSourceDirs', generatedSourceDirs)
     }
 
 
@@ -105,8 +105,8 @@ class J2objcConfig {
      *
      * @param cycleFinderArgs add args for 'cycle_finder' tool
      */
-    void cycleFinderArgs(String... args) {
-        appendArgs(this.cycleFinderArgs, 'cycleFinderArgs', args)
+    void cycleFinderArgs(String... cycleFinderArgs) {
+        appendArgs(this.cycleFinderArgs, 'cycleFinderArgs', cycleFinderArgs)
     }
     /**
      * Expected number of cycles, defaults to all those found in JRE.
@@ -133,23 +133,36 @@ class J2objcConfig {
      *
      * @param translateArgs add args for the 'j2objc' tool
      */
-    void translateArgs(String... args) {
-        appendArgs(this.translateArgs, 'translateArgs', args)
+    void translateArgs(String... translateArgs) {
+        appendArgs(this.translateArgs, 'translateArgs', translateArgs)
     }
 
     /**
-     *  Libraries from ${projectDir}/lib/, e.g.: "json-20140107.jar", "somelib.jar".
+     *  Local jars for translation e.g.: "lib/json-20140107.jar", "lib/somelib.jar".
      *  This will be added to j2objc as a '-classpath' argument.
      */
-    List<String> translateClassPaths = new ArrayList<>()
+    List<String> translateClasspaths = new ArrayList<>()
     /**
-     *  Add libraries from ${projectDir}/lib/, e.g.: "json-20140107.jar", "somelib.jar".
+     *  Local jars for translation e.g.: "lib/json-20140107.jar", "lib/somelib.jar".
      *  This will be added to j2objc as a '-classpath' argument.
      *
-     *  @param add libraries for -classpath argument
+     *  @param translateClasspaths add libraries for -classpath argument
      */
-    void translateClassPaths(String... args) {
-        appendArgs(this.translateClassPaths, 'translateClassPaths', args)
+    void translateClasspaths(String... translateClasspaths) {
+        appendArgs(this.translateClasspaths, 'translateClasspaths', translateClasspaths)
+    }
+
+    /**
+     * Source jars for translation e.g.: "lib/json-20140107-sources.jar"
+     */
+    List<String> translateSourcepaths = new ArrayList<>()
+    /**
+     * Source jars for translation e.g.: "lib/json-20140107-sources.jar"
+     *
+     *  @param translateSourcepaths args add source jar for translation
+     */
+    void translateSourcepaths(String... translateSourcepaths) {
+        appendArgs(this.translateSourcepaths, 'translateSourcepaths', translateSourcepaths)
     }
 
 
@@ -157,7 +170,7 @@ class J2objcConfig {
     // WARNING: Do not use this unless you know what you are doing.
     // If true, incremental builds will be supported even if --build-closure is included in
     // translateArgs. This may break the build in unexpected ways if you change the dependencies
-    // (e.g. adding new files or changing translateClassPaths). When you change the dependencies and
+    // (e.g. adding new files or changing translateClasspaths). When you change the dependencies and
     // the build breaks, you need to do a clean build.
     boolean UNSAFE_incrementalBuildClosure = false
 
@@ -225,11 +238,6 @@ class J2objcConfig {
     }
 
     /**
-     * Additional sourcepaths to translate.
-     */
-    String translateSourcepaths = null
-
-    /**
      * @see #dependsOnJ2objcLib(org.gradle.api.Project)
      */
     // TODO: Do this automatically based on project dependencies.
@@ -248,7 +256,7 @@ class J2objcConfig {
      * It is safe to use this in conjunction with --build-closure.
      * <p/>
      * Do not also include beforeProject's java source or jar in the
-     * translateSourcepaths or translateClassPaths, respectively.  Calling this method
+     * translateSourcepaths or translateClasspaths, respectively.  Calling this method
      * is preferable and sufficient.
      */
     // TODO: Do this automatically based on project dependencies.
@@ -314,10 +322,10 @@ class J2objcConfig {
     /**
      * Add command line arguments for j2objcTest task.
      *
-     * @param args add args for the 'j2objcTest' task
+     * @param testArgs add args for the 'j2objcTest' task
      */
-    void testArgs(String... args) {
-        appendArgs(this.testArgs, 'testArgs', args)
+    void testArgs(String... testArgs) {
+        appendArgs(this.testArgs, 'testArgs', testArgs)
     }
 
     /**
@@ -374,9 +382,9 @@ class J2objcConfig {
      * Add directories of Objective-C source to compile in addition to the
      * translated source.
      *
-     * @param dirs add directories for Objective-C source to be compiled
+     * @param extraObjcSrcDirs add directories for Objective-C source to be compiled
      */
-    void extraObjcSrcDirs(String... args) {
+    void extraObjcSrcDirs(String... extraObjcSrcDirs) {
         for (String arg in args) {
             extraObjcSrcDirs += arg
         }
@@ -389,9 +397,9 @@ class J2objcConfig {
     /**
      * Add arguments to pass to the native compiler.
      *
-     * @param dirs add arguments to pass to the native compiler.
+     * @param extraObjcCompilerArgs add arguments to pass to the native compiler.
      */
-    void extraObjcCompilerArgs(String... args) {
+    void extraObjcCompilerArgs(String... extraObjcCompilerArgs) {
         for (String arg in args) {
             extraObjcCompilerArgs += arg
         }
@@ -404,9 +412,9 @@ class J2objcConfig {
     /**
      * Add arguments to pass to the native linker.
      *
-     * @param dirs add arguments to pass to the native linker.
+     * @param extraLinkerArgs add arguments to pass to the native linker.
      */
-    void extraLinkerArgs(String... args) {
+    void extraLinkerArgs(String... extraLinkerArgs) {
         for (String arg in args) {
             extraLinkerArgs += arg
         }
