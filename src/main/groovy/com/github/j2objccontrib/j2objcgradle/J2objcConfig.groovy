@@ -25,18 +25,18 @@ import org.gradle.util.ConfigureUtil
 /**
  * Further configuration uses the following fields, setting them in j2objcConfig within build.gradle
  */
-class PluginConfigExtension {
+class J2objcConfig {
 
     final protected Project project
 
-    PluginConfigExtension(Project project) {
+    J2objcConfig(Project project) {
         assert project != null
         this.project = project
 
         // The NativeCompilation effectively provides further extensions
         // to the Project, by configuring the 'Objective-C' native build plugin.
         // We don't want to expose the instance to clients of the 'j2objc' plugin,
-        // but we also need to configure this object via methods on PluginConfigExtension.
+        // but we also need to configure this object via methods on J2objcConfig.
         nativeCompilation = new NativeCompilation(project)
 
         // Provide defaults for assembly output locations.

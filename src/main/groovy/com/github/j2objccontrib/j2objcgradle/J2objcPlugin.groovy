@@ -40,7 +40,7 @@ class J2objcPlugin implements Plugin<Project> {
     void apply(Project project) {
         // This avoids a lot of "project." prefixes, such as "project.tasks.create"
         project.with {
-            extensions.create('j2objcConfig', PluginConfigExtension, project)
+            extensions.create('j2objcConfig', J2objcConfig, project)
 
             afterEvaluate { Project evaluatedProject ->
 
@@ -76,7 +76,7 @@ class J2objcPlugin implements Plugin<Project> {
             }
 
             // This is an intermediate directory only.  Clients should use only directories
-            // specified in j2objcConfig (or associated defaults in PluginConfigExtension).
+            // specified in j2objcConfig (or associated defaults in J2objcConfig).
             File j2objcSrcGenDir = file("${buildDir}/j2objcSrcGen")
 
             // Produces a modest amount of output

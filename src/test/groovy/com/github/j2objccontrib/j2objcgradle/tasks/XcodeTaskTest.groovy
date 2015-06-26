@@ -16,7 +16,7 @@
 
 package com.github.j2objccontrib.j2objcgradle.tasks
 
-import com.github.j2objccontrib.j2objcgradle.PluginConfigExtension
+import com.github.j2objccontrib.j2objcgradle.J2objcConfig
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
@@ -40,8 +40,8 @@ public class XcodeTaskTest {
 
     @Test
     public void getPodFile_Valid() {
-        PluginConfigExtension j2objcConfig =
-                proj.extensions.create('j2objcConfig', PluginConfigExtension, proj)
+        J2objcConfig j2objcConfig =
+                proj.extensions.create('j2objcConfig', J2objcConfig, proj)
         j2objcConfig.xcodeProjectDir = '../ios'
         j2objcConfig.xcodeTarget = 'IosApp'
 
@@ -58,8 +58,8 @@ public class XcodeTaskTest {
     // Test that null xcode arguments cause the expected exception
     @Test(expected = InvalidUserDataException.class)
     public void getPodFile_Invalid() {
-        PluginConfigExtension j2objcConfig =
-                proj.extensions.create('j2objcConfig', PluginConfigExtension, proj)
+        J2objcConfig j2objcConfig =
+                proj.extensions.create('j2objcConfig', J2objcConfig, proj)
         assert j2objcConfig.xcodeProjectDir == null
         assert j2objcConfig.xcodeTarget == null
 
