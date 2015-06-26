@@ -67,7 +67,7 @@ j2objcConfig {
 
 ### How do I call finalConfigure()?
 
-You must always call finalConfigure at the end of `j2objcConfig {...}` within your project's
+You must always call `finalConfigure()` at the end of `j2objcConfig {...}` within your project's
 `build.gradle` file. You need to include an otherwise empty j2objcConfig { } block with this
 call even if you do not need to customize any other `j2objConfig` option.
 
