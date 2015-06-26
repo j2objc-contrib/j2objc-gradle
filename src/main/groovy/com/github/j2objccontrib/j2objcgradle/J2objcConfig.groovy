@@ -273,7 +273,7 @@ class J2objcConfig {
 
             logger.debug "$project:j2objcTranslate must use ${beforeProject.jar.archivePath}"
             j2objcConfig {
-                translateClassPaths += beforeProject.jar.archivePath
+                translateClassPaths += beforeProject.jar.archivePath.absolutePath
             }
         }
 
