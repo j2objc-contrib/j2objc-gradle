@@ -16,13 +16,13 @@
 
 package com.github.j2objccontrib.j2objcgradle
 
-import com.github.j2objccontrib.j2objcgradle.tasks.J2objcAssembleTask
-import com.github.j2objccontrib.j2objcgradle.tasks.J2objcCycleFinderTask
-import com.github.j2objccontrib.j2objcgradle.tasks.J2objcPackLibrariesTask
-import com.github.j2objccontrib.j2objcgradle.tasks.J2objcTestTask
-import com.github.j2objccontrib.j2objcgradle.tasks.J2objcTranslateTask
-import com.github.j2objccontrib.j2objcgradle.tasks.J2objcUtils
-import com.github.j2objccontrib.j2objcgradle.tasks.J2objcXcodeTask
+import com.github.j2objccontrib.j2objcgradle.tasks.AssembleTask
+import com.github.j2objccontrib.j2objcgradle.tasks.CycleFinderTask
+import com.github.j2objccontrib.j2objcgradle.tasks.PackLibrariesTask
+import com.github.j2objccontrib.j2objcgradle.tasks.TestTask
+import com.github.j2objccontrib.j2objcgradle.tasks.TranslateTask
+import com.github.j2objccontrib.j2objcgradle.tasks.Utils
+import com.github.j2objccontrib.j2objcgradle.tasks.XcodeTask
 import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Plugin
@@ -40,15 +40,15 @@ class J2objcPlugin implements Plugin<Project> {
     void apply(Project project) {
         // This avoids a lot of "project." prefixes, such as "project.tasks.create"
         project.with {
-            extensions.create('j2objcConfig', J2objcPluginExtension, project)
+            extensions.create('j2objcConfig', J2objcConfig, project)
 
             afterEvaluate { Project evaluatedProject ->
 
                 // Validate minimally required parameters.
                 // j2objcHome() will throw the appropriate exception internally.
-                assert J2objcUtils.j2objcHome(evaluatedProject)
+                assert Utils.j2objcHome(evaluatedProject)
 
-                J2objcUtils.throwIfNoJavaPlugin(evaluatedProject)
+                Utils.throwIfNoJavaPlugin(evaluatedProject)
 
                 if (!evaluatedProject.j2objcConfig.isFinalConfigured()) {
                     String message = "You must call finalConfigure() in j2objcConfig, ex:\n" +
@@ -76,7 +76,7 @@ class J2objcPlugin implements Plugin<Project> {
             }
 
             // This is an intermediate directory only.  Clients should use only directories
-            // specified in j2objcConfig (or associated defaults in J2objcPluginExtension).
+            // specified in j2objcConfig (or associated defaults in J2objcConfig).
             File j2objcSrcGenDir = file("${buildDir}/j2objcSrcGen")
 
             // Produces a modest amount of output
@@ -94,7 +94,7 @@ class J2objcPlugin implements Plugin<Project> {
             // TODO: consider enabling by default if it's possible to make it easier to use.
             // To enable the j2objcCycleFinder task, add the following to build.gradle:
             // j2objcCycleFinder { enabled = true }
-            tasks.create(name: 'j2objcCycleFinder', type: J2objcCycleFinderTask,
+            tasks.create(name: 'j2objcCycleFinder', type: CycleFinderTask,
                     dependsOn: 'j2objcPreBuild') {
                 group 'build'
                 description "Run the cycle_finder tool on all Java source files"
@@ -104,7 +104,7 @@ class J2objcPlugin implements Plugin<Project> {
             // TODO @Bruno "build/source/apt" must be project.j2objcConfig.generatedSourceDirs no idea how to set it
             // there
             // Dependency may be added in project.plugins.withType for Java or Android plugin
-            tasks.create(name: 'j2objcTranslate', type: J2objcTranslateTask,
+            tasks.create(name: 'j2objcTranslate', type: TranslateTask,
                     dependsOn: 'j2objcCycleFinder') {
                 group 'build'
                 description "Translates all the java source files in to Objective-C using j2objc"
@@ -118,7 +118,7 @@ class J2objcPlugin implements Plugin<Project> {
 
             // Note the 'debugTestJ2objcExecutable' task is dynamically created by the Objective-C plugin applied
             // on the above line.  It is specified by the testJ2objc native component.
-            tasks.create(name: 'j2objcTest', type: J2objcTestTask,
+            tasks.create(name: 'j2objcTest', type: TestTask,
                     dependsOn: ['test', 'debugTestJ2objcExecutable']) {
                 group 'verification'
                 // This transitively depends on the 'test' task from the java plugin
@@ -130,21 +130,21 @@ class J2objcPlugin implements Plugin<Project> {
             lateDependsOn(project, 'check', 'j2objcTest')
 
 
-            tasks.create(name: 'j2objcPackLibrariesDebug', type: J2objcPackLibrariesTask,
+            tasks.create(name: 'j2objcPackLibrariesDebug', type: PackLibrariesTask,
                     dependsOn: 'j2objcBuildObjcDebug') {
                 group 'build'
                 description 'Packs multiple architectures into a single debug static library'
                 buildType = 'Debug'
             }
 
-            tasks.create(name: 'j2objcPackLibrariesRelease', type: J2objcPackLibrariesTask,
+            tasks.create(name: 'j2objcPackLibrariesRelease', type: PackLibrariesTask,
                     dependsOn: 'j2objcBuildObjcRelease') {
                 group 'build'
                 description 'Packs multiple architectures into a single release static library'
                 buildType = 'Release'
             }
 
-            tasks.create(name: 'j2objcAssemble', type: J2objcAssembleTask,
+            tasks.create(name: 'j2objcAssemble', type: AssembleTask,
                     dependsOn: ['j2objcPackLibrariesDebug', 'j2objcPackLibrariesRelease', 'j2objcTranslate']) {
                 group 'build'
                 description 'Copies final generated source and libraries to assembly directories'
@@ -155,7 +155,7 @@ class J2objcPlugin implements Plugin<Project> {
             lateDependsOn(project, 'assemble', 'j2objcAssemble')
 
             // TODO: Where shall we fit this task in the plugin lifecycle?
-            tasks.create(name: 'j2objcXcode', type: J2objcXcodeTask,
+            tasks.create(name: 'j2objcXcode', type: XcodeTask,
                     dependsOn: 'j2objcAssemble') {
                 // This is not in the build group because you do not need to do it on every build.
                 description 'Depends on j2objc translation, create a Pod file link it to Xcode project'

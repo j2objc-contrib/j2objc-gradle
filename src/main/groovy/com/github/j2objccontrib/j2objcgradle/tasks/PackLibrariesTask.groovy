@@ -27,7 +27,7 @@ import org.gradle.api.file.ConfigurableFileCollection
  * Uses 'lipo' binary to combine multiple architecture flavors of a library into a
  * single 'fat' library.
  */
-class J2objcPackLibrariesTask extends DefaultTask {
+class PackLibrariesTask extends DefaultTask {
 
     // Generated ObjC binaries
     @InputFiles

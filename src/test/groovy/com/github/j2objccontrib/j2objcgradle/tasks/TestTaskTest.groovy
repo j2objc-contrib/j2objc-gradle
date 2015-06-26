@@ -23,9 +23,9 @@ import org.junit.Before
 import org.junit.Test
 
 /**
- * J2objcTestTask tests.
+ * TestTask tests.
  */
-public class J2objcTestTaskTest {
+public class TestTaskTest {
 
     private Project proj
 
@@ -44,7 +44,7 @@ public class J2objcTestTaskTest {
                 "${proj.rootDir}/src/test/java/com/example/other/OtherClass.java"])
         Properties noPackagePrefixes = new Properties()
 
-        List<String> testNames = J2objcTestTask.getTestNames(proj, srcFiles, noPackagePrefixes)
+        List<String> testNames = TestTask.getTestNames(proj, srcFiles, noPackagePrefixes)
 
         List<String> expectedTestNames = [
                 "com.example.parent.ParentClass",
@@ -69,7 +69,7 @@ public class J2objcTestTaskTest {
                 "${proj.rootDir}/src/test/java/com/example/other/OtherClass.java",
                 "${proj.rootDir}/src/test/java/com/example/noprefix/NoPrefixClass.java"])
 
-        List<String> testNames = J2objcTestTask.getTestNames(proj, srcFiles, packagePrefixes)
+        List<String> testNames = TestTask.getTestNames(proj, srcFiles, packagePrefixes)
 
         List<String> expectedTestNames = [
                 "PrntPrefixParentOneClass",

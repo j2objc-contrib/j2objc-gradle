@@ -25,19 +25,19 @@ import org.gradle.util.ConfigureUtil
 /**
  * Further configuration uses the following fields, setting them in j2objcConfig within build.gradle
  */
-class J2objcPluginExtension {
+class J2objcConfig {
 
     final protected Project project
 
-    J2objcPluginExtension(Project project) {
+    J2objcConfig(Project project) {
         assert project != null
         this.project = project
 
-        // The J2objcNativeCompilation effectively provides further extensions
+        // The NativeCompilation effectively provides further extensions
         // to the Project, by configuring the 'Objective-C' native build plugin.
         // We don't want to expose the instance to clients of the 'j2objc' plugin,
-        // but we also need to configure this object via methods on J2objcPluginExtension.
-        nativeCompilation = new J2objcNativeCompilation(project)
+        // but we also need to configure this object via methods on J2objcConfig.
+        nativeCompilation = new NativeCompilation(project)
 
         // Provide defaults for assembly output locations.
         destSrcDir = "${project.buildDir}/j2objcOutputs/src/main/objc"
@@ -232,7 +232,7 @@ class J2objcPluginExtension {
         dependsOnJ2objcLib(project.project(beforeProjectName))
     }
 
-    protected J2objcNativeCompilation nativeCompilation
+    protected NativeCompilation nativeCompilation
     /**
      * Uses the generated headers and compiled j2objc libraries of the given project when
      * compiling this project.
@@ -295,10 +295,10 @@ class J2objcPluginExtension {
      * supportedArchs = ['ios_arm64']  // Only build libraries for 64-bit iOS devices
      * </pre>
      *
-     * @see J2objcNativeCompilation#ALL_SUPPORTED_ARCHS
+     * @see NativeCompilation#ALL_SUPPORTED_ARCHS
      */
     // Public to allow assignment of array of targets as shown in example
-    List<String> supportedArchs = J2objcNativeCompilation.ALL_SUPPORTED_ARCHS.clone()
+    List<String> supportedArchs = NativeCompilation.ALL_SUPPORTED_ARCHS.clone()
 
 
     // TEST
@@ -363,7 +363,7 @@ class J2objcPluginExtension {
      * translated source.
      */
     // Native build accepts empty array but throws exception on empty List<String>
-    // "srcDirs j2objcConfig.extraObjcSrcDirs" line in J2objcNativeCompilation
+    // "srcDirs j2objcConfig.extraObjcSrcDirs" line in NativeCompilation
     String[] extraObjcSrcDirs = []
     /**
      * Add directories of Objective-C source to compile in addition to the

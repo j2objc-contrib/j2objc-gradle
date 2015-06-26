@@ -23,9 +23,9 @@ import org.junit.Before
 import org.junit.Test;
 
 /**
- * J2objcPluginExtension tests.
+ * J2objcConfig tests.
  */
-public class J2objcPluginExtensionTest {
+public class J2objcConfigTest {
 
     private Project proj
 
@@ -36,7 +36,7 @@ public class J2objcPluginExtensionTest {
 
     @Test
     public void testConstructor() {
-        J2objcPluginExtension ext = new J2objcPluginExtension(proj)
+        J2objcConfig ext = new J2objcConfig(proj)
 
         assert ext.destSrcDir == proj.buildDir.absolutePath + '/j2objcOutputs/src/main/objc'
         assert ext.destSrcDirTest == proj.buildDir.absolutePath + '/j2objcOutputs/src/test/objc'
@@ -45,7 +45,7 @@ public class J2objcPluginExtensionTest {
 
     @Test
     public void testFinalConfigure() {
-        J2objcPluginExtension ext = new J2objcPluginExtension(proj)
+        J2objcConfig ext = new J2objcConfig(proj)
 
         assert !ext.finalConfigured
         ext.finalConfigure()
@@ -54,7 +54,7 @@ public class J2objcPluginExtensionTest {
 
     @Test
     public void testCycleFinderArgs_SimpleConfig() {
-        J2objcPluginExtension ext = new J2objcPluginExtension(proj)
+        J2objcConfig ext = new J2objcConfig(proj)
 
         ext.cycleFinderArgs.add('')
 
@@ -63,7 +63,7 @@ public class J2objcPluginExtensionTest {
 
     @Test
     public void testTranslateArgs() {
-        J2objcPluginExtension ext = new J2objcPluginExtension(proj)
+        J2objcConfig ext = new J2objcConfig(proj)
 
         // To test similarly to how it would be configured:
         // j2objcConfig {
@@ -84,7 +84,7 @@ public class J2objcPluginExtensionTest {
     @Test
     public void testconfigureArgs() {
         List<String> args = new ArrayList()
-        J2objcPluginExtension.appendArgs(args, 'testArgs', '-arg1', '-arg2')
+        J2objcConfig.appendArgs(args, 'testArgs', '-arg1', '-arg2')
 
         List<String> expected = Arrays.asList('-arg1', '-arg2')
         assert expected == args
@@ -93,12 +93,12 @@ public class J2objcPluginExtensionTest {
     @Test(expected = IllegalArgumentException.class)
     public void testconfigureArgs_Null() {
         List<String> args = new ArrayList()
-        J2objcPluginExtension.appendArgs(args, 'testArgs', null)
+        J2objcConfig.appendArgs(args, 'testArgs', null)
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testconfigureArgs_Spaces() {
         List<String> args = new ArrayList()
-        J2objcPluginExtension.appendArgs(args, 'testArgs', '-arg1 -arg2')
+        J2objcConfig.appendArgs(args, 'testArgs', '-arg1 -arg2')
     }
 }

@@ -30,7 +30,7 @@ import org.gradle.api.tasks.incremental.InputFileDetails
 /**
  * Translation task for Java to Objective-C using j2objc tool.
  */
-class J2objcTranslateTask extends DefaultTask {
+class TranslateTask extends DefaultTask {
 
     // Source files outside of the Java sourceSets of main and test.
     FileCollection additionalSrcFiles
@@ -41,8 +41,8 @@ class J2objcTranslateTask extends DefaultTask {
         // Note that neither additionalSrcFiles nor translatePattern need
         // to be @Inputs because they are solely inputs to this method, which
         // is already an input.
-        FileCollection allFiles = J2objcUtils.srcDirs(project, 'main', 'java')
-        allFiles = allFiles.plus(J2objcUtils.srcDirs(project, 'test', 'java'))
+        FileCollection allFiles = Utils.srcDirs(project, 'main', 'java')
+        allFiles = allFiles.plus(Utils.srcDirs(project, 'test', 'java'))
 
         if (project.j2objcConfig.translatePattern != null) {
             allFiles = allFiles.matching(project.j2objcConfig.translatePattern)
@@ -79,7 +79,7 @@ class J2objcTranslateTask extends DefaultTask {
 
     // j2objcConfig dependencies for UP-TO-DATE checks
     @Input
-    String getJ2ObjCHome() { return J2objcUtils.j2objcHome(project) }
+    String getJ2ObjCHome() { return Utils.j2objcHome(project) }
 
     @Input
     List<String> getTranslateArgs() { return project.j2objcConfig.translateArgs }
@@ -207,13 +207,13 @@ class J2objcTranslateTask extends DefaultTask {
 
         String j2objcExecutable = "${getJ2ObjCHome()}/j2objc"
         List<String> windowsOnlyArgs = new ArrayList<String>()
-        if (J2objcUtils.isWindows()) {
+        if (Utils.isWindows()) {
             j2objcExecutable = 'java'
             windowsOnlyArgs.add('-jar')
             windowsOnlyArgs.add("${getJ2ObjCHome()}/lib/j2objc.jar")
         }
 
-        String sourcepath = J2objcUtils.sourcepathJava(project)
+        String sourcepath = Utils.sourcepathJava(project)
 
         // Additional Sourcepaths, e.g. source jars
         if (getTranslateSourcepaths()) {
@@ -222,14 +222,14 @@ class J2objcTranslateTask extends DefaultTask {
         }
 
         // Generated Files
-        sourcepath += J2objcUtils.absolutePathOrEmpty(project, getGeneratedSourceDirs())
+        sourcepath += Utils.absolutePathOrEmpty(project, getGeneratedSourceDirs())
 
         // TODO perform file collision check with already translated files in the srcGenDir
         if (getFilenameCollisionCheck()) {
-            J2objcUtils.filenameCollisionCheck(getSrcFiles())
+            Utils.filenameCollisionCheck(getSrcFiles())
         }
 
-        String classPathArg = J2objcUtils.getClassPathArg(
+        String classPathArg = Utils.getClassPathArg(
                 project, getJ2ObjCHome(), getTranslateClassPaths(), getTranslateJ2objcLibs())
 
         classPathArg += ":${project.buildDir}/classes"
@@ -264,7 +264,7 @@ class J2objcTranslateTask extends DefaultTask {
             // We do not separate standardOutput and errorOutput in the exec
             // task, because the interleaved output is helpful for context.
             logger.error 'Error during translation:'
-            logger.error J2objcUtils.filterJ2objcOutputForErrorLines(outputStr)
+            logger.error Utils.filterJ2objcOutputForErrorLines(outputStr)
             // Gradle will helpfully tell the user to use --debug for more
             // output when the build fails.
             throw exception

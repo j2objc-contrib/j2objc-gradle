@@ -16,7 +16,7 @@
 
 package com.github.j2objccontrib.j2objcgradle
 
-import com.github.j2objccontrib.j2objcgradle.tasks.J2objcUtils
+import com.github.j2objccontrib.j2objcgradle.tasks.Utils
 import groovy.transform.PackageScope
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
@@ -29,13 +29,13 @@ import org.gradle.nativeplatform.toolchain.Clang
 /**
  * Compilation of libraries for debug/release and architectures listed below.
  */
-class J2objcNativeCompilation {
+class NativeCompilation {
 
     static final String[] ALL_SUPPORTED_ARCHS = ['ios_arm64', 'ios_armv7', 'ios_armv7s', 'ios_i386', 'ios_x86_64']
 
     private final Project project
 
-    J2objcNativeCompilation(Project project) {
+    NativeCompilation(Project project) {
         this.project = project
     }
 
@@ -273,7 +273,7 @@ class J2objcNativeCompilation {
             binaries.all {
                 // Only want to modify the Objective-C toolchain, not the JDK one.
                 if (toolChain in Clang) {
-                    String j2objcPath = J2objcUtils.j2objcHome(project)
+                    String j2objcPath = Utils.j2objcHome(project)
 
                     // If you want to override the arguments passed to the compiler and linker,
                     // you must configure the binaries in your own build.gradle.
