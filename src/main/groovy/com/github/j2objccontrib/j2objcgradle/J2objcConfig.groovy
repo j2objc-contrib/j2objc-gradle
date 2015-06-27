@@ -259,10 +259,10 @@ class J2objcConfig {
                 throw new InvalidUserDataException(message)
             }
 
-            // Build the java/objc libraries and the objc headers of
+            // Build and test the java/objc libraries and the objc headers of
             // the other project first.
             j2objcPreBuild.dependsOn {
-                beforeProject.tasks.getByName('j2objcAssemble')
+                beforeProject.tasks.getByName('j2objcBuild')
             }
             // Since we assert the presence of the J2objcPlugin above,
             // we are guaranteed that the java plugin, which creates the jar task,
