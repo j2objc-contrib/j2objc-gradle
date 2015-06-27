@@ -80,3 +80,28 @@ call even if you do not need to customize any other `j2objConfig` option.
 ### Error: implicit declaration of function 'JreRelease' is invalid in C99 [-Werror,-Wimplicit-function-declaration] JreRelease(this$0_)
 
 See: [How do I enable ARC for my Objective-C classes?](#how-do-i-enable-arc-for-my-objective-c-classes?)
+
+
+### Advanced Cycle Finder Setup
+
+This uses a specially annotated version of the `jre_emul` source that marks all the
+erroneously matched cycles such that they can be ignored. It requires downloading
+and building the J2ObjC source:
+
+1. Download the j2objc source to a directory (hereafter J2OJBC_REPO):<br>
+    https://github.com/google/j2objc
+2. Within the J2OJBC_REPO, run:<br>
+    `(cd jre_emul && make java_sources_manifest)`
+3. Configure j2objcConfig in build.gradle so CycleFinder uses the annotated J2ObjC source
+and whitelist. Note how this gives and expected cycles of zero.
+```
+j2objcConfig {
+    cycleFinderArgs '--whitelist', 'J2OBJC_REPO/jre_emul/cycle_whitelist.txt'
+    cycleFinderArgs '--sourcefilelist', 'J2OBJC_REPO/jre_emul/build_result/java_sources.mf'
+    cycleFinderExpectedCycles 0
+}
+```
+
+For more details:
+- http://j2objc.org/docs/Cycle-Finder-Tool.html
+- https://groups.google.com/forum/#!msg/j2objc-discuss/2fozbf6-liM/R83v7ffX5NMJ
