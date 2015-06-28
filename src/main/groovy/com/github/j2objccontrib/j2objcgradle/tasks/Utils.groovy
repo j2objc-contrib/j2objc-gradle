@@ -42,7 +42,6 @@ class Utils {
             String message =
                     "j2objc plugin didn't find the 'java' plugin in the '${proj.name}' project.\n" +
                     "This is a requirement for using j2objc. Please see usage information at:\n" +
-                    "\n" +
                     "https://github.com/j2objc-contrib/j2objc-gradle/#usage"
             throw new InvalidUserDataException(message)
         }
@@ -70,8 +69,8 @@ class Utils {
         return javaRoots.join(':')
     }
 
-    // MUST be used only in @Input getJ2ObjCHome() methods to ensure UP-TO-DATE checks are correct
-    // @Input getJ2ObjCHome() method can be used freely inside the task action
+    // MUST be used only in @Input getJ2objcHome() methods to ensure UP-TO-DATE checks are correct
+    // @Input getJ2objcHome() method can be used freely inside the task action
     static String j2objcHome(Project proj) {
         File localPropertiesFile = new File(proj.rootDir, 'local.properties')
         String result = null
@@ -213,16 +212,16 @@ class Utils {
         Matcher matcher = (str =~ regex)
         if (!matcher.find()) {
             throw new IllegalArgumentException(
+                    "Content:\n" +
                     "$str\n" +
-                    "\n" +
-                    "Regex couldn't match number in output: $regex")
+                    "Regex couldn't match number: $regex")
         } else {
             String value = matcher[0][1]
             if (!value.isInteger()) {
                 throw new IllegalArgumentException(
+                        "Content:\n" +
                         "$str\n" +
-                        "\n" +
-                        "Regex didn't find number in output: $regex, value: $value")
+                        "Regex couldn't match number: $regex")
             }
             return value.toInteger()
         }

@@ -98,7 +98,7 @@ These are the main tasks for the plugin:
     j2objcXcode             - Configure Xcode to link to static library and header files
 
 Note that you can use the Gradle shorthand of "$ gradlew jA" to do the j2objcAssemble task.
-The other shorthand expressions are `jC`, `jTr`, `jA`, `jTe`, `jB` and `jX`.
+The other shorthand expressions are `jCF`, `jTr`, `jA`, `jTe`, `jB`  and `jX`.
 
 
 #### Task Enable and Disable
