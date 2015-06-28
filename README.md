@@ -136,7 +136,7 @@ issues if this number changes with future versions of j2objc libraries.
         enabled = true
     }
 
-Also see FAQ's [Advanced Cycle Finder Setup][FAQ.md#Advanced-Cycle-Finder-Setup].
+Also see FAQ's [Advanced Cycle Finder Setup](FAQ.md#Advanced-Cycle-Finder-Setup).
 
 
 ### Plugin Development
