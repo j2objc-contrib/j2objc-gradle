@@ -61,7 +61,7 @@ class XcodeTask extends DefaultTask {
 
     // j2objcConfig dependencies for UP-TO-DATE checks
     @Input
-    String getJ2ObjCHome() { return Utils.j2objcHome(project) }
+    String getJ2objcHome() { return Utils.j2objcHome(project) }
 
     @Input @Optional
     String getXcodeProjectDir() { return project.j2objcConfig.xcodeProjectDir }
@@ -106,8 +106,8 @@ class XcodeTask extends DefaultTask {
                 "s.requires_arc = true\n" +
                 "s.preserve_paths = '${srcGenDirRelativeToBuildDir}**/*.a'\n" +
                 "s.libraries = 'ObjC', 'guava', 'javax_inject', 'jre_emul', 'jsr305', 'z', 'icucore', '${project.name}-j2objc'\n" +
-                "s.xcconfig = { 'HEADER_SEARCH_PATHS' => '${getJ2ObjCHome()}/include', " +
-                "'LIBRARY_SEARCH_PATHS' => '${getJ2ObjCHome()}/lib ${project.buildDir}/j2objcOutputs/lib/iosDebug' }\n" +
+                "s.xcconfig = { 'HEADER_SEARCH_PATHS' => '${getJ2objcHome()}/include', " +
+                "'LIBRARY_SEARCH_PATHS' => '${getJ2objcHome()}/lib ${project.buildDir}/j2objcOutputs/lib/iosDebug' }\n" +
                 "end\n"
         logger.debug 'podspecFileContents creation...\n\n' + podspecFileContents
         File podspecFile = getPodspecFile()
