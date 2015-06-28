@@ -16,13 +16,16 @@
 
 package com.github.j2objccontrib.j2objcgradle.tasks
 
+import com.google.common.annotations.VisibleForTesting
 import org.gradle.api.DefaultTask
+import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+import org.gradle.process.internal.ExecException
 
 /**
  * CycleFinder task checks for memory cycles that can cause memory leaks
@@ -70,7 +73,7 @@ class CycleFinderTask extends DefaultTask {
     int getCycleFinderExpectedCycles() { return project.j2objcConfig.cycleFinderExpectedCycles }
 
     @Input
-    String getJ2ObjCHome() { return Utils.j2objcHome(project) }
+    String getJ2objcHome() { return Utils.j2objcHome(project) }
 
     @Input
     @Optional
@@ -94,13 +97,18 @@ class CycleFinderTask extends DefaultTask {
 
     @TaskAction
     void cycleFinder() {
+        cycleFinderWithExec(project)
+    }
 
-        String cycleFinderExec = "${getJ2ObjCHome()}/cycle_finder"
+    @VisibleForTesting
+    void cycleFinderWithExec(Project projectExec) {
+
+        String cycleFinderExec = "${getJ2objcHome()}/cycle_finder"
         List<String> windowsOnlyArgs = new ArrayList<String>()
         if (Utils.isWindows()) {
             cycleFinderExec = 'java'
             windowsOnlyArgs.add('-jar')
-            windowsOnlyArgs.add("${getJ2ObjCHome()}/lib/cycle_finder.jar")
+            windowsOnlyArgs.add("${getJ2objcHome()}/lib/cycle_finder.jar")
         }
 
         String sourcepath = Utils.sourcepathJava(project)
@@ -121,22 +129,27 @@ class CycleFinderTask extends DefaultTask {
         }
 
         String classPathArg = Utils.getClassPathArg(
-                project, getJ2ObjCHome(), getTranslateClassPaths(), getTranslateJ2objcLibs())
+                project, getJ2objcHome(), getTranslateClassPaths(), getTranslateJ2objcLibs())
 
         ByteArrayOutputStream output = new ByteArrayOutputStream()
         try {
-            project.exec {
+            // Might be injected project, otherwise project.exec {...}
+            projectExec.exec {
                 executable cycleFinderExec
+                windowsOnlyArgs.each { String windowsOnlyArg ->
+                    args windowsOnlyArg
+                }
 
-                args windowsOnlyArgs
+                // Arguments
                 args "-sourcepath", sourcepath
-
                 if (classPathArg.size() > 0) {
                     args "-classpath", classPathArg
                 }
+                getCycleFinderArgs().each { String cycleFinderArg ->
+                    args cycleFinderArg
+                }
 
-                args getCycleFinderArgs()
-
+                // File Inputs
                 fullSrcFiles.each { File file ->
                     args file.path
                 }
@@ -148,7 +161,9 @@ class CycleFinderTask extends DefaultTask {
             logger.debug "CycleFinder found 0 cycles"
             assert 0 == getCycleFinderExpectedCycles()
 
-        } catch (Exception exception) {
+
+        } catch (ExecException exception) {
+            // Expected exception for non-zero exit of process
 
             String outputStr = output.toString()
             // matchNumberRegex throws exception if regex isn't found
@@ -156,7 +171,7 @@ class CycleFinderTask extends DefaultTask {
             if (cyclesFound != getCycleFinderExpectedCycles()) {
                 logger.error outputStr
                 String message =
-                        "Unexpected number of cycles founder:\n" +
+                        "Unexpected number of cycles found:\n" +
                         "Expected Cycles:  ${getCycleFinderExpectedCycles()}\n" +
                         "Actual Cycles:    $cyclesFound\n" +
                         "\n" +
@@ -165,7 +180,7 @@ class CycleFinderTask extends DefaultTask {
                         "j2objcConfig {\n" +
                         "    cycleFinderExpectedCycles $cyclesFound\n" +
                         "}\n"
-                throw new Exception(message)
+                throw new IllegalArgumentException(message)
             }
             // Suppress exception when cycles found == cycleFinderExpectedCycles
         }

@@ -142,6 +142,15 @@ class J2objcPlugin implements Plugin<Project> {
             }
             lateDependsOn(project, 'assemble', 'j2objcAssemble')
 
+            // If users need to depend on this project to build other j2objc projects, they can use this
+            // marker task.
+            tasks.create(name: 'j2objcBuild', type: DefaultTask,
+                    dependsOn: ['j2objcAssemble', 'j2objcTest']) {
+                group 'build'
+                description "Marker task for all tasks that take part in regular j2objc builds"
+            }
+            lateDependsOn(project, 'build', 'j2objcBuild')
+
             // TODO: Where shall we fit this task in the plugin lifecycle?
             tasks.create(name: 'j2objcXcode', type: XcodeTask,
                     dependsOn: 'j2objcAssemble') {

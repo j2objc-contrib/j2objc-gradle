@@ -16,8 +16,10 @@
 
 package com.github.j2objccontrib.j2objcgradle.tasks
 
+import com.google.common.annotations.VisibleForTesting
 import org.gradle.api.Action
 import org.gradle.api.DefaultTask
+import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
@@ -26,6 +28,7 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 import org.gradle.api.tasks.incremental.InputFileDetails
+import org.gradle.process.internal.ExecException
 
 /**
  * Translation task for Java to Objective-C using j2objc tool.
@@ -79,7 +82,7 @@ class TranslateTask extends DefaultTask {
 
     // j2objcConfig dependencies for UP-TO-DATE checks
     @Input
-    String getJ2ObjCHome() { return Utils.j2objcHome(project) }
+    String getJ2objcHome() { return Utils.j2objcHome(project) }
 
     @Input
     List<String> getTranslateArgs() { return project.j2objcConfig.translateArgs }
@@ -101,6 +104,11 @@ class TranslateTask extends DefaultTask {
 
     @TaskAction
     void translate(IncrementalTaskInputs inputs) {
+        translateWithExec(project, inputs)
+    }
+
+    @VisibleForTesting
+    void translateWithExec(Project projectExec, IncrementalTaskInputs inputs) {
         List<String> translateArgs = getTranslateArgs()
         // Don't evaluate this expensive property multiple times.
         FileCollection originalSrcFiles = getSrcFiles()
@@ -205,12 +213,12 @@ class TranslateTask extends DefaultTask {
             }
         }
 
-        String j2objcExecutable = "${getJ2ObjCHome()}/j2objc"
+        String j2objcExecutable = "${getJ2objcHome()}/j2objc"
         List<String> windowsOnlyArgs = new ArrayList<String>()
         if (Utils.isWindows()) {
             j2objcExecutable = 'java'
             windowsOnlyArgs.add('-jar')
-            windowsOnlyArgs.add("${getJ2ObjCHome()}/lib/j2objc.jar")
+            windowsOnlyArgs.add("${getJ2objcHome()}/lib/j2objc.jar")
         }
 
         String sourcepath = Utils.sourcepathJava(project)
@@ -230,33 +238,38 @@ class TranslateTask extends DefaultTask {
         }
 
         String classPathArg = Utils.getClassPathArg(
-                project, getJ2ObjCHome(), getTranslateClassPaths(), getTranslateJ2objcLibs())
+                project, getJ2objcHome(), getTranslateClassPaths(), getTranslateJ2objcLibs())
 
         classPathArg += ":${project.buildDir}/classes"
 
         ByteArrayOutputStream output = new ByteArrayOutputStream()
         try {
-            project.exec {
+            projectExec.exec {
                 executable j2objcExecutable
+                windowsOnlyArgs.each { String windowsArg ->
+                    args windowsOnlyArg
+                }
 
-                args windowsOnlyArgs
+                // Arguments
                 args "-d", srcGenDir
                 args "-sourcepath", sourcepath
-
                 if (classPathArg.size() > 0) {
                     args "-classpath", classPathArg
                 }
+                translateArgs.each { String translateArg ->
+                    args translateArg
+                }
 
-                args translateArgs
-
+                // File Inputs
                 srcFilesChanged.each { File file ->
                     args file.path
                 }
+
                 standardOutput output
                 errorOutput output
             }
 
-        } catch (Exception exception) {
+        } catch (ExecException exception) {
             String outputStr = output.toString()
             logger.debug 'Translation output:'
             logger.debug outputStr
