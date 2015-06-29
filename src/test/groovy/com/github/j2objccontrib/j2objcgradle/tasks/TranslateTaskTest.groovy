@@ -22,13 +22,12 @@ import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 import org.gradle.api.tasks.incremental.InputFileDetails
-import org.gradle.process.internal.ExecException
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
 import org.junit.Test
 
 /**
- * TestTask tests.
+ * TranslateTask tests.
  */
 public class TranslateTaskTest {
 
@@ -52,7 +51,7 @@ public class TranslateTaskTest {
     // TODO: perhaps even better, point the project towards an existing example
 
     @Test
-    public void translateWithExec_BasicArguments() {
+    public void translate_BasicArguments() {
 
         J2objcConfig j2objcConfig = proj.extensions.create('j2objcConfig', J2objcConfig, proj)
 
@@ -72,22 +71,15 @@ public class TranslateTaskTest {
 
         IncrementalTaskInputs incrementalTaskInputs = new IncrementalTaskInputs() {
             @Override
-            boolean isIncremental() {
-                return false
-            }
-
+            boolean isIncremental() { return false }
             @Override
-            void outOfDate(Action<? super InputFileDetails> outOfDateAction) {
-            }
-
+            void outOfDate(Action<? super InputFileDetails> outOfDateAction) { }
             @Override
-            void removed(Action<? super InputFileDetails> removedAction) {
-            }
+            void removed(Action<? super InputFileDetails> removedAction) { }
         }
 
-        j2objcTranslate.translateWithExec(mockProjectExec.projectProxyInstance(), incrementalTaskInputs)
+        j2objcTranslate.translate(incrementalTaskInputs)
 
         mockProjectExec.verify()
     }
-
 }
