@@ -18,36 +18,26 @@ this project is named `'shared'`. It must be buildable using Gradle's standard `
 It may start as an empty project and allows you to gradually shift over code from an existing
 Android application. See the section below on [Folder Structure](#folder-structure).
 
-**Note: the `plugins { id 'com.github.j2objccontrib.j2objcgradle' }` syntax does
-not yet work for the j2objc plugin. You must use the old buildscript style shown below.
-Tracked issue: https://github.com/j2objc-contrib/j2objc-gradle/issues/130**
+This is how to configure the build.gradle in your java only project. Please follow the link to
+find the latest version number of the plugin:
 
     // File: shared/build.gradle
-    buildscript {
-        repositories {
-            maven {
-                url "https://plugins.gradle.org/m2/"
-            }
-        }
-        dependencies {
-            // Current Version: https://plugins.gradle.org/plugin/com.github.j2objccontrib.j2objcgradle
-            classpath "gradle.plugin.com.github.j2objccontrib.j2objcgradle:j2objc-gradle:X.Y.Z-alpha"
-        }
+    plugins {
+        id 'java'
+        // Modify with latest version:
+        // https://plugins.gradle.org/plugin/com.github.j2objccontrib.j2objcgradle
+        id 'com.github.j2objccontrib.j2objcgradle' version 'X.Y.Z-alpha'
     }
-
-    // The 'java' plugin must be applied before the 'j2objc' plugin
-    apply plugin: 'java'
-    apply plugin: 'com.github.j2objccontrib.j2objcgradle'
 
     // Plugin settings:
     j2objcConfig {
         xcodeProjectDir "${projectDir}/../ios"   // Xcode workspace directory
         xcodeTarget "IosApp"                     // Xcode application target name
     
-        // Help information on other settings:
+        // Other Settings:
         // https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcConfig.groovy#L25
         
-        // You must include this call (at the end of j2objcConfig) regardless of settings
+        // You must include this call at the end of j2objcConfig, regardless of settings
         finalConfigure()
     }
 
@@ -103,8 +93,8 @@ These are the main tasks for the plugin:
     j2objcBuild             - Builds and tests all j2objc outputs.
     j2objcXcode             - Configure Xcode to link to static library and header files
 
-Note that you can use the Gradle shorthand of "$ gradlew jA" to do the j2objcAssemble task.
-The other shorthand expressions are `jCF`, `jTr`, `jA`, `jTe`, `jB`  and `jX`.
+Note that you can use the Gradle shorthand of `$ gradlew jA` to do the `j2objcAssemble` task.
+The other shorthand expressions are `jCF, jTr, jA, jTe, jB and jX`.
 
 
 #### Task Enable and Disable
@@ -138,35 +128,6 @@ issues if this number changes with future versions of j2objc libraries.
     }
 
 Also see FAQ's [Advanced Cycle Finder Setup](FAQ.md#Advanced-Cycle-Finder-Setup).
-
-
-### Plugin Development
-
-For plugin contributors, you should build the plugin from this repository's root:
-
-    ./gradlew build
-
-This will create a .jar containing the plugin at projectDir/build/libs/j2objc-gradle-X.Y.Z-alpha.jar
-
-In order to test your modification to the plugin using your own project, use the following build script in your
-java project's build.gradle:
-
-    buildscript {
-        dependencies {
-            // Update using "version = X.Y.Z-alpha" defined in build.gradle
-            classpath files('/PATH_TO_J2OBJC_PLUGIN/j2objc-gradle/build/libs/j2objc-gradle-X.Y.Z-alpha.jar')
-        }
-    }
-
-    apply plugin: 'java'
-    apply plugin: 'com.github.j2objccontrib.j2objcgradle'
-
-    // j2objcConfig...
-
-Note that when rapidly developing and testing changes to the plugin by building your own project,
-avoid using the Gradle daemon as issues sometimes arise with the daemon using an old version
-of the plugin jar.  You can stop an existing daemon with `./gradlew --stop` and avoid the daemon
-on a particular build with the `--no-daemon` argument to gradlew.
 
 
 ### Contributing
