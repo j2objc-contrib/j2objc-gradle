@@ -17,6 +17,7 @@
 package com.github.j2objccontrib.j2objcgradle.tasks
 
 import com.github.j2objccontrib.j2objcgradle.J2objcConfig
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.process.internal.ExecException
@@ -27,7 +28,7 @@ import org.junit.Test
 /**
  * CycleFinderTask tests.
  */
-public class CycleFinderTaskTest {
+class CycleFinderTaskTest {
 
     private Project proj
     private String j2objcHome
@@ -54,7 +55,7 @@ public class CycleFinderTaskTest {
     // TODO: perhaps even better, point the project towards an existing example
 
     @Test
-    public void cycleFinder_Simple_NoFiles_Success() {
+    void cycleFinder_Simple_NoFiles_Success() {
         J2objcConfig j2objcConfig = proj.extensions.create('j2objcConfig', J2objcConfig, proj)
         assert 40 == j2objcConfig.cycleFinderExpectedCycles
 
@@ -79,8 +80,7 @@ public class CycleFinderTaskTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void cycleFinder_Simple_NoFiles_Failure() {
-
+    void cycleFinder_Simple_NoFiles_Failure() {
         J2objcConfig j2objcConfig = proj.extensions.create('j2objcConfig', J2objcConfig, proj)
         assert 40 == j2objcConfig.cycleFinderExpectedCycles
 
@@ -110,8 +110,7 @@ public class CycleFinderTaskTest {
     }
 
     @Test
-    public void cycleFinder_Advanced_NoFiles_Success() {
-
+    void cycleFinder_Advanced_NoFiles_Success() {
         J2objcConfig j2objcConfig = proj.extensions.create('j2objcConfig', J2objcConfig, proj)
         j2objcConfig.translateArgs('--no-package-directories')
         j2objcConfig.cycleFinderExpectedCycles = 0
@@ -138,8 +137,7 @@ public class CycleFinderTaskTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void cycleFinder_Advanced_NoFiles_Failure() {
-
+    void cycleFinder_Advanced_NoFiles_Failure() {
         J2objcConfig j2objcConfig = proj.extensions.create('j2objcConfig', J2objcConfig, proj)
         j2objcConfig.translateArgs('--no-package-directories')
         j2objcConfig.cycleFinderExpectedCycles = 0

@@ -109,7 +109,7 @@ class XcodeTask extends DefaultTask {
                 "s.xcconfig = { 'HEADER_SEARCH_PATHS' => '${getJ2objcHome()}/include', " +
                 "'LIBRARY_SEARCH_PATHS' => '${getJ2objcHome()}/lib ${project.buildDir}/j2objcOutputs/lib/iosDebug' }\n" +
                 "end\n"
-        logger.debug 'podspecFileContents creation...\n\n' + podspecFileContents
+        logger.debug('podspecFileContents creation...\n\n' + podspecFileContents)
         File podspecFile = getPodspecFile()
         podspecFile.write(podspecFileContents)
 
@@ -129,7 +129,7 @@ class XcodeTask extends DefaultTask {
                     "    sudo gem install cocoapods"
             throw new InvalidUserDataException(message)
         } else {
-            logger.debug "Pod exists at path: ${getXcodeProjectDir()}"
+            logger.debug("Pod exists at path: ${getXcodeProjectDir()}")
             // TODO: should use relative path, see if that's possible
             writeUpdatedPodFileIfNeeded(podFile, getXcodeTarget(), getPodName(), project.buildDir.path)
 
@@ -144,7 +144,7 @@ class XcodeTask extends DefaultTask {
                     errorOutput output
                 }
             } catch (Exception exception) {
-                logger.error output.toString()
+                logger.error(output.toString())
 
                 if (exception.getMessage().find(
                         "A problem occurred starting process 'command 'pod install''")) {
@@ -158,8 +158,8 @@ class XcodeTask extends DefaultTask {
                 // unrecognized errors are rethrown:
                 throw exception
             }
-            logger.debug 'Pod install output:'
-            logger.debug output.toString()
+            logger.debug('Pod install output:')
+            logger.debug(output.toString())
         }
     }
 
@@ -248,7 +248,7 @@ class XcodeTask extends DefaultTask {
         }
 
         if (!podNameWritten) {
-            throw new IllegalArgumentException(
+            throw new InvalidUserDataException(
                     "Unable to modify PodFile, likely unable to find target $xcodeTarget.")
         }
 

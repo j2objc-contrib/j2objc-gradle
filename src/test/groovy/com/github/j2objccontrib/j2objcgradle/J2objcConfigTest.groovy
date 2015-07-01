@@ -16,6 +16,7 @@
 
 package com.github.j2objccontrib.j2objcgradle
 
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.util.ConfigureUtil
@@ -25,7 +26,7 @@ import org.junit.Test;
 /**
  * J2objcConfig tests.
  */
-public class J2objcConfigTest {
+class J2objcConfigTest {
 
     private Project proj
 
@@ -35,7 +36,7 @@ public class J2objcConfigTest {
     }
 
     @Test
-    public void testConstructor() {
+    void testConstructor() {
         J2objcConfig ext = new J2objcConfig(proj)
 
         assert ext.destSrcDir == proj.buildDir.absolutePath + '/j2objcOutputs/src/main/objc'
@@ -44,7 +45,7 @@ public class J2objcConfigTest {
     }
 
     @Test
-    public void testFinalConfigure() {
+    void testFinalConfigure() {
         J2objcConfig ext = new J2objcConfig(proj)
 
         assert !ext.finalConfigured
@@ -53,7 +54,7 @@ public class J2objcConfigTest {
     }
 
     @Test
-    public void testCycleFinderArgs_SimpleConfig() {
+    void testCycleFinderArgs_SimpleConfig() {
         J2objcConfig ext = new J2objcConfig(proj)
 
         ext.cycleFinderArgs.add('')
@@ -62,7 +63,7 @@ public class J2objcConfigTest {
     }
 
     @Test
-    public void testTranslateArgs() {
+    void testTranslateArgs() {
         J2objcConfig ext = new J2objcConfig(proj)
 
         // To test similarly to how it would be configured:
@@ -82,7 +83,7 @@ public class J2objcConfigTest {
     }
 
     @Test
-    public void testconfigureArgs() {
+    void testconfigureArgs() {
         List<String> args = new ArrayList()
         J2objcConfig.appendArgs(args, 'testArgs', '-arg1', '-arg2')
 
@@ -90,14 +91,14 @@ public class J2objcConfigTest {
         assert expected == args
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testconfigureArgs_Null() {
+    @Test(expected = InvalidUserDataException.class)
+    void testconfigureArgs_Null() {
         List<String> args = new ArrayList()
         J2objcConfig.appendArgs(args, 'testArgs', null)
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testconfigureArgs_Spaces() {
+    @Test(expected = InvalidUserDataException.class)
+    void testconfigureArgs_Spaces() {
         List<String> args = new ArrayList()
         J2objcConfig.appendArgs(args, 'testArgs', '-arg1 -arg2')
     }

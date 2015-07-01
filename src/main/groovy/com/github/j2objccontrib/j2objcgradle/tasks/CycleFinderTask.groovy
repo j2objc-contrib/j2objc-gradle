@@ -17,6 +17,7 @@
 package com.github.j2objccontrib.j2objcgradle.tasks
 
 import org.gradle.api.DefaultTask
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
@@ -114,7 +115,7 @@ class CycleFinderTask extends DefaultTask {
 
         // Additional Sourcepaths, e.g. source jars
         if (getTranslateSourcepaths()) {
-            logger.debug "Add to sourcepath: ${getTranslateSourcepaths()}"
+            logger.debug("Add to sourcepath: ${getTranslateSourcepaths()}")
             sourcepath += ":${getTranslateSourcepaths()}"
         }
 
@@ -147,7 +148,7 @@ class CycleFinderTask extends DefaultTask {
                 standardOutput output;
             }
 
-            logger.debug "CycleFinder found 0 cycles"
+            logger.debug("CycleFinder found 0 cycles")
             assert 0 == getCycleFinderExpectedCycles()
 
         } catch (ExecException exception) {
@@ -157,7 +158,7 @@ class CycleFinderTask extends DefaultTask {
             // matchNumberRegex throws exception if regex isn't found
             int cyclesFound = Utils.matchNumberRegex(outputStr, /(\d+) CYCLES FOUND/)
             if (cyclesFound != getCycleFinderExpectedCycles()) {
-                logger.error outputStr
+                logger.error(outputStr)
                 String message =
                         "Unexpected number of cycles found:\n" +
                         "Expected Cycles:  ${getCycleFinderExpectedCycles()}\n" +
@@ -168,12 +169,12 @@ class CycleFinderTask extends DefaultTask {
                         "j2objcConfig {\n" +
                         "    cycleFinderExpectedCycles $cyclesFound\n" +
                         "}\n"
-                throw new IllegalArgumentException(message)
+                throw new InvalidUserDataException(message)
             }
             // Suppress exception when cycles found == cycleFinderExpectedCycles
         }
 
         reportFile.write(output.toString())
-        logger.debug "CycleFinder Output: ${reportFile.path}"
+        logger.debug("CycleFinder Output: ${reportFile.path}")
     }
 }

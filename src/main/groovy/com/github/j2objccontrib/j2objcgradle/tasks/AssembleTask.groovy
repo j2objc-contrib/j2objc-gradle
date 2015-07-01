@@ -85,7 +85,7 @@ class AssembleTask extends DefaultTask {
             throw new InvalidUserDataException(message)
         }
         // TODO: better if this was a sync operation as it does deletes automatically
-        logger.debug "Deleting $name to fill with generated objc files... " + destDir.path
+        logger.debug("Deleting $name to fill with generated objc files... " + destDir.path)
         project.delete destDir
     }
 

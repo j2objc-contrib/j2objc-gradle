@@ -29,7 +29,7 @@ import org.junit.Test
 /**
  * TranslateTask tests.
  */
-public class TranslateTaskTest {
+class TranslateTaskTest {
 
     private Project proj
     private String j2objcHome
@@ -51,8 +51,7 @@ public class TranslateTaskTest {
     // TODO: perhaps even better, point the project towards an existing example
 
     @Test
-    public void translate_BasicArguments() {
-
+    void translate_BasicArguments() {
         J2objcConfig j2objcConfig = proj.extensions.create('j2objcConfig', J2objcConfig, proj)
 
         TranslateTask j2objcTranslate = (TranslateTask) proj.tasks.create(

@@ -276,7 +276,7 @@ class J2objcConfig {
                 beforeProject.tasks.getByName('jar')
             }
 
-            logger.debug "$project:j2objcTranslate must use ${beforeProject.jar.archivePath}"
+            logger.debug("$project:j2objcTranslate must use ${beforeProject.jar.archivePath}")
             j2objcConfig {
                 translateClassPaths += beforeProject.jar.archivePath.absolutePath
             }
@@ -449,12 +449,12 @@ class J2objcConfig {
     @VisibleForTesting
     static void appendArgs(List<String> listArgs, String nameArgs, String... args) {
         if (args == null) {
-            throw new IllegalArgumentException("args == null!");
+            throw new InvalidUserDataException("args == null!");
         }
         for (String arg in args) {
             if (arg.contains(' ')) {
                 String rewrittenArgs = "'" + arg.split(' ').join("', '") + "'"
-                throw new IllegalArgumentException(
+                throw new InvalidUserDataException(
                         "'$arg' should not contain spaces and be written out as distinct entries:\n" +
                         "$nameArgs $rewrittenArgs")
             }
