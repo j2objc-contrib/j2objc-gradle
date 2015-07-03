@@ -163,6 +163,11 @@ class J2objcConfig {
 
     /**
      * Additional libraries that are part of the j2objc distribution.
+     * <p/>
+     * For example:
+     * <pre>
+     * translateJ2objcLibs = ["j2objc_junit.jar", "jre_emul.jar"]
+     * </pre>
      */
     // J2objc default libraries, from $J2OBJC_HOME/lib/...
     // TODO: auto add libraries based on java dependencies, warn on version differences
