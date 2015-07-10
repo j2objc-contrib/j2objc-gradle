@@ -18,28 +18,21 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
-import org.gradle.api.file.ConfigurableFileCollection
 
 /**
- * Assemble task copies generated source and libaries to assembly directories for
+ * Assemble task copies generated source to assembly directories for
  * use by an iOS application.
  */
-class AssembleTask extends DefaultTask {
+class AssembleSourceTask extends DefaultTask {
 
     // Generated ObjC source files
     @InputDirectory
     File srcGenDir
-
-    // Generated ObjC binaries
-    @InputDirectory
-    File libDir
-
-    @InputDirectory
-    File packedLibDir
 
     @OutputDirectory
     File getDestSrcDir() {
@@ -51,11 +44,6 @@ class AssembleTask extends DefaultTask {
         return project.file(destSrcDirTestPath)
     }
 
-    @OutputDirectory
-    File getDestLibDir() {
-        return project.file(destLibDirPath)
-    }
-
     // j2objcConfig dependencies for UP-TO-DATE checks
 
     // We keep these strings as @Input properties in addition to the @OutputDirectory methods above because,
@@ -65,9 +53,6 @@ class AssembleTask extends DefaultTask {
 
     @Input
     String getDestSrcDirTestPath() { return project.j2objcConfig.destSrcDirTest }
-
-    @Input
-    String getDestLibDirPath() { return project.j2objcConfig.destLibDir }
 
 
     private void clearDestSrcDirWithChecks(File destDir, String name) {
@@ -116,16 +101,6 @@ class AssembleTask extends DefaultTask {
             // Only copy the test code
             include "**/*Test.h"
             include "**/*Test.m"
-        }
-
-        // We don't need to clear out the library path, our libraries can co-exist
-        // with other libraries if the user wishes them to.
-        project.copy {
-            includeEmptyDirs = true
-            from libDir
-            from packedLibDir
-            into destLibDir
-            include "**/*.a"
         }
     }
 }

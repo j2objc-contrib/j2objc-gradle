@@ -57,6 +57,39 @@ class UtilsTest {
     }
 
     @Test
+    public void testGetLocalProperty_FileNotPresent() {
+        String value = Utils.getLocalProperty(proj, 'debug.enabled')
+        assert value == null
+
+        value = Utils.getLocalProperty(proj, 'debug.enabled', 'true')
+        assert value == 'true'
+    }
+
+    @Test
+    public void testGetLocalProperty_KeyNotPresent() {
+        File localProperties = proj.file('local.properties')
+        localProperties.write('j2objc.release.enabled=false\n')
+
+        String value = Utils.getLocalProperty(proj, 'debug.enabled')
+        assert value == null
+
+        value = Utils.getLocalProperty(proj, 'debug.enabled', 'false')
+        assert value == 'false'
+    }
+
+    @Test
+    public void testGetLocalProperty_KeyPresent() {
+        File localProperties = proj.file('local.properties')
+        localProperties.write('j2objc.debug.enabled=false\n')
+
+        String value = Utils.getLocalProperty(proj, 'debug.enabled')
+        assert value == 'false'
+
+        value = Utils.getLocalProperty(proj, 'debug.enabled', 'true')
+        assert value == 'false'
+    }
+
+    @Test
     public void testJ2objcHome_LocalProperties() {
         // Write j2objc path to local.properties file within the project
         String j2objcHomeWritten = File.createTempDir('J2OBJC_HOME', '').path
