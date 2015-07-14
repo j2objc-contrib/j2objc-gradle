@@ -48,6 +48,7 @@ class Utils {
     }
 
     // Retrieves the configured source directories from the Java plugin SourceSets.
+    // This includes the files for all Java source within these directories.
     static FileCollection srcDirs(Project proj, String sourceSetName, String fileType) {
         throwIfNoJavaPlugin(proj)
 
@@ -58,6 +59,7 @@ class Utils {
         return sourceSet.getProperty(fileType)
     }
 
+    // Used for -sourcepath, e.g. 'src/main/java:src/test/java:...'
     static String sourcepathJava(Project proj) {
         String[] javaRoots = []
         srcDirs(proj, 'main', 'java').srcDirs.each { File file ->

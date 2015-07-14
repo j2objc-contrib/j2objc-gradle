@@ -17,6 +17,7 @@
 package com.github.j2objccontrib.j2objcgradle.tasks
 
 import groovy.mock.interceptor.MockFor
+import groovy.util.logging.Slf4j
 import org.gradle.api.Project
 import org.gradle.util.ConfigureUtil
 
@@ -29,6 +30,7 @@ import org.gradle.util.ConfigureUtil
  * 3) Write to stdout and stderr as specified
  * 4) Throws an error, e.g. for non-zero exits from the command
  */
+@Slf4j
 public class MockProjectExec {
 
     private Project project
@@ -43,6 +45,57 @@ public class MockProjectExec {
     MockProjectExec(Project project, String j2objcHome) {
         this.project = project
         this.j2objcHome = j2objcHome
+
+        // TODO: find a more elegant way to do this that doesn't require intercepting all methods
+        // http://stackoverflow.com/questions/31129003/mock-gradle-project-exec-using-metaprogramming
+        // Would prefer to mock a single method, e.g. project.metaClass.exec {...}
+        // However this doesn't work due to a Groovy bug: https://issues.apache.org/jira/browse/GROOVY-3493
+
+        // This intercepts all methods, stubbing out exec and passing through all other invokes
+        project.metaClass.invokeMethod = { String name, Object[] args ->
+            if (name == 'exec') {
+                // Call the proxy object so that it can track verifications
+                projectProxyInstance().exec((Closure) args.first())
+            } else {
+                // This calls the delegate without causing infinite recursion
+                // http://stackoverflow.com/a/10126006/1509221
+                MetaMethod metaMethod = delegate.class.metaClass.getMetaMethod(name, args)
+                debugLogInvokeMethod(name, args, metaMethod)
+
+                // TODO: is there a way to do this automatically, e.g. coerceArgumentsToClasses?
+                if (name == 'files') {
+                    // Coerce the arguments to match the signature of Project.files(Object... paths)
+                    assert 0 == args.size() || 1 == args.size()
+                    if (args.size() == 0 ||  // files()
+                        args.first() == null) {  // files(null)
+                        return metaMethod?.invoke(delegate, [[] as Object[]] as Object[])
+                    } else {
+                        // files(ArrayList) possibly, so cast ArrayList to Object[]
+                        return metaMethod?.invoke(delegate, [(Object[]) args.first()] as Object[])
+                    }
+                } else {
+                    return metaMethod?.invoke(delegate, args)
+                }
+            }
+        }
+    }
+
+    // Debug logging for invokeMethod calls parameters
+    private static void debugLogInvokeMethod(String name, Object[] args, MetaMethod metaMethod) {
+        String call = "call: $name, ${args.class}"
+        if (args.size() > 0) {
+            if (args.first() == null) {
+                call += ", null, ${args}, ${args.first()}"
+            } else {
+                call += ", ${args.first().class}, ${args}, ${args.first()}"
+            }
+        } else {
+            call += ", ${args}"
+        }
+        log.debug(call)
+        log.debug("method: ${metaMethod.isValidExactMethod(args)}, " +
+                  "${metaMethod.isValidMethod(args)}, " +
+                  "$metaMethod")
     }
 
     Project projectProxyInstance() {
@@ -121,7 +174,7 @@ public class MockProjectExec {
         }
 
         public String toString() {
-            return executable + ' ' + args.join(' ')
+            return "$executable ${args.join(' ')}"
         }
     }
 }

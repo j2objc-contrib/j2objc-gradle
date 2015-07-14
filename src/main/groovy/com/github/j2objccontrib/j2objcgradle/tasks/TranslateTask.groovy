@@ -16,10 +16,8 @@
 
 package com.github.j2objccontrib.j2objcgradle.tasks
 
-import com.google.common.annotations.VisibleForTesting
 import org.gradle.api.Action
 import org.gradle.api.DefaultTask
-import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
@@ -104,11 +102,6 @@ class TranslateTask extends DefaultTask {
 
     @TaskAction
     void translate(IncrementalTaskInputs inputs) {
-        translateWithExec(project, inputs)
-    }
-
-    @VisibleForTesting
-    void translateWithExec(Project projectExec, IncrementalTaskInputs inputs) {
         List<String> translateArgs = getTranslateArgs()
         // Don't evaluate this expensive property multiple times.
         FileCollection originalSrcFiles = getSrcFiles()
@@ -244,7 +237,7 @@ class TranslateTask extends DefaultTask {
 
         ByteArrayOutputStream output = new ByteArrayOutputStream()
         try {
-            projectExec.exec {
+            project.exec {
                 executable j2objcExecutable
                 windowsOnlyArgs.each { String windowsArg ->
                     args windowsOnlyArg

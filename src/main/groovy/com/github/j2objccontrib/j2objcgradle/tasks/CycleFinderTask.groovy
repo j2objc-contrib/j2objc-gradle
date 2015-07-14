@@ -16,9 +16,7 @@
 
 package com.github.j2objccontrib.j2objcgradle.tasks
 
-import com.google.common.annotations.VisibleForTesting
 import org.gradle.api.DefaultTask
-import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
@@ -64,7 +62,6 @@ class CycleFinderTask extends DefaultTask {
         return allFiles
     }
 
-    // CycleFinder output - Gradle requires output for UP-TO-DATE checks
     @OutputFile
     File reportFile = project.file("${project.buildDir}/reports/${name}.out")
 
@@ -75,8 +72,7 @@ class CycleFinderTask extends DefaultTask {
     @Input
     String getJ2objcHome() { return Utils.j2objcHome(project) }
 
-    @Input
-    @Optional
+    @Input @Optional
     List<String> getCycleFinderArgs() { return project.j2objcConfig.cycleFinderArgs }
 
     @Input @Optional
@@ -97,12 +93,6 @@ class CycleFinderTask extends DefaultTask {
 
     @TaskAction
     void cycleFinder() {
-        cycleFinderWithExec(project)
-    }
-
-    @VisibleForTesting
-    void cycleFinderWithExec(Project projectExec) {
-
         String cycleFinderExec = "${getJ2objcHome()}/cycle_finder"
         List<String> windowsOnlyArgs = new ArrayList<String>()
         if (Utils.isWindows()) {
@@ -133,8 +123,7 @@ class CycleFinderTask extends DefaultTask {
 
         ByteArrayOutputStream output = new ByteArrayOutputStream()
         try {
-            // Might be injected project, otherwise project.exec {...}
-            projectExec.exec {
+            project.exec {
                 executable cycleFinderExec
                 windowsOnlyArgs.each { String windowsOnlyArg ->
                     args windowsOnlyArg
@@ -160,7 +149,6 @@ class CycleFinderTask extends DefaultTask {
 
             logger.debug "CycleFinder found 0 cycles"
             assert 0 == getCycleFinderExpectedCycles()
-
 
         } catch (ExecException exception) {
             // Expected exception for non-zero exit of process
