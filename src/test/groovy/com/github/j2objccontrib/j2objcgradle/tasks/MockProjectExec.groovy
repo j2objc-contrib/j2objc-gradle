@@ -104,12 +104,12 @@ class MockProjectExec {
         return ( Project ) proxyInstance
     }
 
-    void demandExec(
+    void demandExecAndReturn(
             List<String> expectedCommandLine) {
-        demandExec(expectedCommandLine, null, null, null)
+        demandExecAndReturn(expectedCommandLine, null, null, null)
     }
 
-    void demandExec(
+    void demandExecAndReturn(
             List<String> expectedCommandLine,
             String errorOutputToWrite,
             String standardOutputToWrite,

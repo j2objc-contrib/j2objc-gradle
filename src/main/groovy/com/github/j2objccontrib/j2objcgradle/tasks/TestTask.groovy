@@ -40,7 +40,7 @@ class TestTask extends DefaultTask {
     FileCollection getTestSrcFiles() {
         // Note that neither testPattern nor translatePattern need to be @Input methods because they are solely
         // inputs to this method, which is already an input via @InputFiles.
-        FileCollection allFiles = Utils.srcDirs(project, 'test', 'java')
+        FileCollection allFiles = Utils.srcSet(project, 'test', 'java')
 
         if (project.j2objcConfig.translatePattern != null) {
             allFiles = allFiles.matching(project.j2objcConfig.translatePattern)

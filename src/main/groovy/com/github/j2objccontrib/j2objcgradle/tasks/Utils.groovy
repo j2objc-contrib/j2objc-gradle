@@ -20,6 +20,7 @@ import groovy.util.logging.Slf4j
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
+import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.tasks.SourceSet
 import java.util.regex.Matcher
 
@@ -45,30 +46,6 @@ class Utils {
                     "https://github.com/j2objc-contrib/j2objc-gradle/#usage"
             throw new InvalidUserDataException(message)
         }
-    }
-
-    // Retrieves the configured source directories from the Java plugin SourceSets.
-    // This includes the files for all Java source within these directories.
-    static FileCollection srcDirs(Project proj, String sourceSetName, String fileType) {
-        throwIfNoJavaPlugin(proj)
-
-        assert fileType == 'java' || fileType == 'resources'
-        assert sourceSetName == 'main' || sourceSetName == 'test'
-        SourceSet sourceSet = proj.sourceSets.findByName(sourceSetName)
-        // For standard fileTypes 'java' and 'resources,' per contract this cannot be null.
-        return sourceSet.getProperty(fileType)
-    }
-
-    // Used for -sourcepath, e.g. 'src/main/java:src/test/java:...'
-    static String sourcepathJava(Project proj) {
-        String[] javaRoots = []
-        srcDirs(proj, 'main', 'java').srcDirs.each { File file ->
-            javaRoots += file.path
-        }
-        srcDirs(proj, 'test', 'java').srcDirs.each { File file ->
-            javaRoots += file.path
-        }
-        return javaRoots.join(':')
     }
 
     // MUST be used only in @Input getJ2objcHome() methods to ensure UP-TO-DATE checks are correct
@@ -166,43 +143,44 @@ class Utils {
         }
     }
 
-    // add Java files to a FileCollection
-    static FileCollection addJavaFiles(Project proj, FileCollection files, List<String> generatedSourceDirs) {
-        if (generatedSourceDirs.size() > 0) {
-            generatedSourceDirs.each { String sourceDir ->
-                log.debug "include generatedSourceDir: " + sourceDir
-                FileCollection buildSrcFiles = proj.files(proj.fileTree(dir: sourceDir, includes: ["**/*.java"]))
-                files += buildSrcFiles
-            }
+    // Retrieves the configured source directories from the Java plugin SourceSets.
+    // This includes the files for all Java source within these directories.
+    static SourceDirectorySet srcSet(Project proj, String sourceSetName, String fileType) {
+        throwIfNoJavaPlugin(proj)
+
+        assert fileType == 'java' || fileType == 'resources'
+        assert sourceSetName == 'main' || sourceSetName == 'test'
+        SourceSet sourceSet = proj.sourceSets.findByName(sourceSetName)
+        // For standard fileTypes 'java' and 'resources,' per contract this cannot be null.
+        SourceDirectorySet srcDirSet = sourceSet.getProperty(fileType)
+        return srcDirSet
+    }
+
+    // Add list of java path to a FileCollection as a FileTree
+    static FileCollection javaTrees(Project proj, List<String> treePaths) {
+        FileCollection files = proj.files()
+        treePaths.each { String treePath ->
+            log.debug "javaTree: $treePath"
+            files = files.plus(
+                    proj.files(proj.fileTree(dir: treePath, includes: ["**/*.java"])))
         }
         return files
     }
 
-    static String absolutePathOrEmpty(Project proj, List<String> relativePaths) {
-        if (relativePaths.isEmpty()) {
-            return ''
-        } else {
-            // TODO: see if it works to return ':' for empty relativePaths
-            return ':' + relativePaths.collect({ proj.file(it).path }).join(':')
+    static List<String> j2objcLibs(String j2objcHome,
+                                   List<String> libraries) {
+        return libraries.collect { String library ->
+            return "$j2objcHome/lib/$library"
         }
     }
 
-    // -classpath javac argument generation from set of libraries (includes j2objc default libraries)
-    // TODO: @InputFiles for libraries and j2objcLibs
-    static String getClassPathArg(Project proj,
-                               String j2objcHome,
-                               List<String> libraries,
-                               List<String> translateJ2objcLibs) {
-        String[] classPathList = []
-        // user defined libraries
-        libraries.each { String library ->
-            classPathList += proj.file(library).absolutePath
+    // Convert FileCollection to joined path arg, e.g. "src/Some.java:src/Another.java"
+    static String joinedPathArg(FileCollection files) {
+        String[] paths = []
+        files.each { File file ->
+            paths += file.path
         }
-        // j2objc default libraries
-        translateJ2objcLibs.each { String library ->
-            classPathList += j2objcHome + "/lib/" + library
-        }
-        return classPathList.join(':')
+        return paths.join(':')
     }
 
     static String filterJ2objcOutputForErrorLines(String processOutput) {

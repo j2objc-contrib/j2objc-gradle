@@ -60,7 +60,7 @@ class TranslateTaskTest {
         }
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
-        mockProjectExec.demandExec(
+        mockProjectExec.demandExecAndReturn(
                 [
                         '/J2OBJC_HOME/j2objc',
                         '-d', '/PROJECT_DIR/build/j2objcSrcGen',

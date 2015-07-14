@@ -19,6 +19,8 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
+import org.gradle.api.file.SourceDirectorySet
+import org.gradle.api.plugins.JavaPlugin
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
 import org.junit.Test;
@@ -47,13 +49,49 @@ class UtilsTest {
         Utils.throwIfNoJavaPlugin(proj)
     }
 
-    // TODO: testThrowIfNoJavaPlugin_JavaPluginExists
+    @Test
+    void testThrowIfNoJavaPlugin_JavaPlugin() {
+        proj.pluginManager.apply(JavaPlugin)
+        // Should not throw any exception
+        Utils.throwIfNoJavaPlugin(proj)
+    }
 
-    // TODO: testSrcDirs() - requires 'java' plugin
+    @Test
+    public void testJ2objcHome_LocalProperties() {
+        // Write j2objc path to local.properties file within the project
+        String j2objcHomeWritten = File.createTempDir('J2OBJC_HOME', '').path
+        File localProperties = proj.file('local.properties')
+        localProperties.write("j2objc.home=$j2objcHomeWritten\n")
 
-    // TODO: testSourcepathJava() - requires 'java' plugin
+        String j2objcHomeRead = Utils.j2objcHome(proj)
+        assert j2objcHomeWritten == j2objcHomeRead
+    }
 
-    // TODO: testJ2objcHome()
+    // TODO: testJ2objcHome_EnvironmentVariable
+
+    @Test
+    public void testSrcSet_NoSrcFiles() {
+        // To avoid triggering Utils.throwIfNoJavaPlugin()
+        proj.pluginManager.apply(JavaPlugin)
+        SourceDirectorySet srcSet = Utils.srcSet(proj, 'main', 'java')
+
+        assert 0 == srcSet.size()
+    }
+
+    // TODO: testSrcSet_SomeSrcFiles()
+
+    @Test
+    public void testSrcSet_GetSrcDirs() {
+        proj.pluginManager.apply(JavaPlugin)
+        SourceDirectorySet srcSet = Utils.srcSet(proj, 'main', 'java')
+        String[] srcDirsPaths = srcSet.getSrcDirs().collect { File file ->
+            return file.path
+        }
+
+        String[] expected = ["${proj.projectDir}/src/main/java"]
+
+        assert Arrays.equals(expected, srcDirsPaths)
+    }
 
     @Test
     void testPrefixProperties_FileOnly() {
@@ -110,32 +148,22 @@ class UtilsTest {
         Utils.filenameCollisionCheck(files)
     }
 
-    // TODO: testAddJavaFiles()
+    // TODO testAddJavaTrees() - needs nested folder of java source files for fileTree(...) operation
 
     @Test
-    void testAbsolutePathOrEmpty() {
-        String path = Utils.absolutePathOrEmpty(proj, new ArrayList<String>(['One/', 'Two/']))
-
-        String absPath = proj.rootDir.absolutePath
-        assert path == ":$absPath/One:$absPath/Two".toString()
+    void testJ2objcLibs() {
+        List<String> j2objcLibPaths = Utils.j2objcLibs('/J2OBJC_HOME', ['J2LibOne', 'J2LibTwo'])
+        List<String> expected = ['/J2OBJC_HOME/lib/J2LibOne', '/J2OBJC_HOME/lib/J2LibTwo']
+        assert expected == j2objcLibPaths
     }
 
     @Test
-    void testAbsolutePathOrEmpty_Empty() {
-        String path = Utils.absolutePathOrEmpty(proj, new ArrayList<String>())
+    public void testJoinedPathArg() {
+        FileCollection fileCollection = proj.files("file1", "file2", "/absoluteFile")
+        String joinedPathArg = Utils.joinedPathArg(fileCollection)
 
-        assert path == ''
-    }
-
-    @Test
-    void testGetClassPathArg() {
-        String classPathArg = Utils.getClassPathArg(
-                proj, "/J2OBJC_HOME",
-                new ArrayList<String>(['LibOne', 'LibTwo']),
-                new ArrayList<String>(['J2LibOne', 'J2LibTwo']))
-
-        String absPath = proj.rootDir.absolutePath
-        assert classPathArg == "$absPath/LibOne:$absPath/LibTwo:/J2OBJC_HOME/lib/J2LibOne:/J2OBJC_HOME/lib/J2LibTwo".toString()
+        String expected = "${proj.projectDir}/file1:${proj.projectDir}/file2:/absoluteFile"
+        assert expected == joinedPathArg
     }
 
     // TODO: testFilterJ2objcOutputForErrorLines()

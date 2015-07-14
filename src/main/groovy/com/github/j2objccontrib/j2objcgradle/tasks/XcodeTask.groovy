@@ -81,7 +81,7 @@ class XcodeTask extends DefaultTask {
         String j2objcResourceDirPath = "${project.buildDir}/${j2objcResourceDirName}"
         project.delete j2objcResourceDirPath
         project.copy {
-            Utils.srcDirs(project, 'main', 'resources').srcDirs.each {
+            Utils.srcSet(project, 'main', 'resources').srcDirs.each {
                 from it
             }
             into j2objcResourceDirPath
