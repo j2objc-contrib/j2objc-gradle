@@ -25,7 +25,7 @@ import org.junit.Test
 /**
  * TestTask tests.
  */
-public class TestTaskTest {
+class TestTaskTest {
 
     private Project proj
 
@@ -35,7 +35,7 @@ public class TestTaskTest {
     }
 
     @Test
-    public void testGetTestNames_Simple() {
+    void testGetTestNames_Simple() {
 
         // These are nonsense paths for files that don't exist
         FileCollection srcFiles = proj.files([
@@ -55,7 +55,7 @@ public class TestTaskTest {
     }
 
     @Test
-    public void testGetTestNames_PackagePrefixes() {
+    void testGetTestNames_PackagePrefixes() {
         Properties packagePrefixes = new Properties()
         packagePrefixes.setProperty('com.example.parent', 'PrntPrefix')
         packagePrefixes.setProperty('com.example.parent.subdir', 'SubPrefix')

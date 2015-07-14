@@ -26,7 +26,7 @@ import org.junit.Test;
 /**
  * Utils tests.
  */
-public class UtilsTest {
+class UtilsTest {
 
     private Project proj
 
@@ -36,14 +36,14 @@ public class UtilsTest {
     }
 
     @Test
-    public void testIsWindows() {
+    void testIsWindows() {
         // TODO: also test for correctness
         // For now it only tests that the call runs successfully
         Utils.isWindows()
     }
 
     @Test(expected = InvalidUserDataException.class)
-    public void testThrowIfNoJavaPlugin_NoJavaPlugin() {
+    void testThrowIfNoJavaPlugin_NoJavaPlugin() {
         Utils.throwIfNoJavaPlugin(proj)
     }
 
@@ -56,7 +56,7 @@ public class UtilsTest {
     // TODO: testJ2objcHome()
 
     @Test
-    public void testPrefixProperties_FileOnly() {
+    void testPrefixProperties_FileOnly() {
         // TODO: fix to use this.getClass().getResource(...) once Android Studio issue fixed
         // https://code.google.com/p/android/issues/detail?id=75991
         File prefixesProp = new File(
@@ -75,7 +75,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void testPrefixProperties_FileAndArgs() {
+    void testPrefixProperties_FileAndArgs() {
         // TODO: repeat as above
         File prefixesProp = new File(
                 'src/test/resources/com/github/j2objccontrib/j2objcgradle/tasks/prefixes.properties')
@@ -98,13 +98,13 @@ public class UtilsTest {
     }
 
     @Test
-    public void testFilenameCollisionCheck_NoCollisition() {
+    void testFilenameCollisionCheck_NoCollisition() {
         FileCollection files = proj.files('DiffOne.java', 'DiffTwo.java')
         Utils.filenameCollisionCheck(files)
     }
 
     @Test(expected = InvalidUserDataException.class)
-    public void testFilenameCollisionCheck_Collision() {
+    void testFilenameCollisionCheck_Collision() {
         // Same filename but located in different paths
         FileCollection files = proj.files('dirOne/Same.java', 'dirTwo/Same.java')
         Utils.filenameCollisionCheck(files)
@@ -113,7 +113,7 @@ public class UtilsTest {
     // TODO: testAddJavaFiles()
 
     @Test
-    public void testAbsolutePathOrEmpty() {
+    void testAbsolutePathOrEmpty() {
         String path = Utils.absolutePathOrEmpty(proj, new ArrayList<String>(['One/', 'Two/']))
 
         String absPath = proj.rootDir.absolutePath
@@ -121,14 +121,14 @@ public class UtilsTest {
     }
 
     @Test
-    public void testAbsolutePathOrEmpty_Empty() {
+    void testAbsolutePathOrEmpty_Empty() {
         String path = Utils.absolutePathOrEmpty(proj, new ArrayList<String>())
 
         assert path == ''
     }
 
     @Test
-    public void testGetClassPathArg() {
+    void testGetClassPathArg() {
         String classPathArg = Utils.getClassPathArg(
                 proj, "/J2OBJC_HOME",
                 new ArrayList<String>(['LibOne', 'LibTwo']),
@@ -141,18 +141,18 @@ public class UtilsTest {
     // TODO: testFilterJ2objcOutputForErrorLines()
 
     @Test
-    public void testMatchNumberRegex() {
+    void testMatchNumberRegex() {
         int count = Utils.matchNumberRegex("15 CYCLES FOUND", /(\d+) CYCLES FOUND/)
         assert count == 15
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testMatchNumberRegex_NoMatch() {
+    @Test(expected = InvalidUserDataException.class)
+    void testMatchNumberRegex_NoMatch() {
         int count = Utils.matchNumberRegex("AA CYCLES FOUND", /(\d+) CYCLES FOUND/)
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testMatchNumberRegex_NotNumber() {
+    @Test(expected = InvalidUserDataException.class)
+    void testMatchNumberRegex_NotNumber() {
         int count = Utils.matchNumberRegex("AA CYCLES FOUND", /(.*) CYCLES FOUND/)
     }
 }

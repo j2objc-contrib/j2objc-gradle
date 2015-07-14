@@ -213,14 +213,14 @@ class Utils {
     static int matchNumberRegex(String str, String regex) {
         Matcher matcher = (str =~ regex)
         if (!matcher.find()) {
-            throw new IllegalArgumentException(
+            throw new InvalidUserDataException(
                     "Content:\n" +
                     "$str\n" +
                     "Regex couldn't match number: $regex")
         } else {
             String value = matcher[0][1]
             if (!value.isInteger()) {
-                throw new IllegalArgumentException(
+                throw new InvalidUserDataException(
                         "Content:\n" +
                         "$str\n" +
                         "Regex couldn't match number: $regex")

@@ -106,7 +106,7 @@ class TranslateTask extends DefaultTask {
         // Don't evaluate this expensive property multiple times.
         FileCollection originalSrcFiles = getSrcFiles()
 
-        logger.debug "All source files: " + originalSrcFiles.getFiles().size()
+        logger.debug("All source files: " + originalSrcFiles.getFiles().size())
 
         FileCollection srcFilesChanged
         if (('--build-closure' in translateArgs) && !project.j2objcConfig.UNSAFE_incrementalBuildClosure) {
@@ -127,37 +127,37 @@ class TranslateTask extends DefaultTask {
             srcFilesChanged = project.files()
             inputs.outOfDate(new Action<InputFileDetails>() {
                 @Override
-                public void execute(InputFileDetails details) {
+                void execute(InputFileDetails details) {
                     // We must filter by srcFiles, since all possible input files are @InputFiles to this task.
                     if (originalSrcFiles.contains(details.file)) {
-                        logger.debug "New or Updated file: " + details.file
+                        logger.debug("New or Updated file: " + details.file)
                         srcFilesChanged += project.files(details.file)
                     } else {
                         nonSourceFileChanged = true
-                        logger.debug "New or Updated non-source file: " + details.file
+                        logger.debug("New or Updated non-source file: " + details.file)
                     }
                 }
             })
             List<String> removedFileNames = new ArrayList<>()
             inputs.removed(new Action<InputFileDetails>() {
                 @Override
-                public void execute(InputFileDetails details) {
+                void execute(InputFileDetails details) {
                     // We must filter by srcFiles, since all possible input files are @InputFiles to this task.
                     if (originalSrcFiles.contains(details.file)) {
-                        logger.debug "Removed file: " + details.file.name
+                        logger.debug("Removed file: " + details.file.name)
                         String nameWithoutExt = details.file.name.toString().replaceFirst("\\..*", "")
                         removedFileNames += nameWithoutExt
                     } else {
                         nonSourceFileChanged = true
-                        logger.debug "Removed non-source file: " + details.file
+                        logger.debug("Removed non-source file: " + details.file)
                     }
                 }
             })
-            logger.debug "Removed files: " + removedFileNames.size()
+            logger.debug("Removed files: " + removedFileNames.size())
 
-            logger.debug "New or Updated files: " + srcFilesChanged.getFiles().size()
+            logger.debug("New or Updated files: " + srcFilesChanged.getFiles().size())
             FileCollection unchangedSrcFiles = originalSrcFiles - srcFilesChanged
-            logger.debug "Unchanged files: " + unchangedSrcFiles.getFiles().size()
+            logger.debug("Unchanged files: " + unchangedSrcFiles.getFiles().size())
 
             if (!nonSourceFileChanged) {
                 // All changes were within srcFiles (i.e. in a Java source-set).
@@ -218,7 +218,7 @@ class TranslateTask extends DefaultTask {
 
         // Additional Sourcepaths, e.g. source jars
         if (getTranslateSourcepaths()) {
-            logger.debug "Add to sourcepath: ${getTranslateSourcepaths()}"
+            logger.debug("Add to sourcepath: ${getTranslateSourcepaths()}")
             sourcepath += ":${getTranslateSourcepaths()}"
         }
 
@@ -264,19 +264,19 @@ class TranslateTask extends DefaultTask {
 
         } catch (ExecException exception) {
             String outputStr = output.toString()
-            logger.debug 'Translation output:'
-            logger.debug outputStr
+            logger.debug('Translation output:')
+            logger.debug(outputStr)
             // Put to stderr only the lines at fault.
             // We do not separate standardOutput and errorOutput in the exec
             // task, because the interleaved output is helpful for context.
-            logger.error 'Error during translation:'
-            logger.error Utils.filterJ2objcOutputForErrorLines(outputStr)
+            logger.error('Error during translation:')
+            logger.error(Utils.filterJ2objcOutputForErrorLines(outputStr))
             // Gradle will helpfully tell the user to use --debug for more
             // output when the build fails.
             throw exception
         }
 
-        logger.debug 'Translation output:'
-        logger.debug output.toString()
+        logger.debug('Translation output:')
+        logger.debug(output.toString())
     }
 }

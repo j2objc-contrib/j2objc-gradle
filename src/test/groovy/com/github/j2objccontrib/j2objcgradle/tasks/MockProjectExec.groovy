@@ -30,8 +30,9 @@ import org.gradle.util.ConfigureUtil
  * 3) Write to stdout and stderr as specified
  * 4) Throws an error, e.g. for non-zero exits from the command
  */
+
 @Slf4j
-public class MockProjectExec {
+class MockProjectExec {
 
     private Project project
     private String j2objcHome
@@ -154,26 +155,26 @@ public class MockProjectExec {
         OutputStream errorOutput;
         OutputStream standardOutput;
 
-        public void executable(Object executable) {
+        void executable(Object executable) {
             this.executable = (String) executable
         }
 
-        public void args(Object... args) {
+        void args(Object... args) {
             args.each { Object arg ->
                 String newArgStr = (String) arg
                 this.args.add(newArgStr)
             }
         }
 
-        public void errorOutput(OutputStream errorOutput) {
+        void errorOutput(OutputStream errorOutput) {
             this.errorOutput = errorOutput
         }
 
-        public void standardOutput(OutputStream standardOutput) {
+        void standardOutput(OutputStream standardOutput) {
             this.standardOutput = standardOutput
         }
 
-        public String toString() {
+        String toString() {
             return "$executable ${args.join(' ')}"
         }
     }
