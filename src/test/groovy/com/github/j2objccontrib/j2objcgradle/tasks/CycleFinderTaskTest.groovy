@@ -19,9 +19,7 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 import com.github.j2objccontrib.j2objcgradle.J2objcConfig
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
-import org.gradle.api.plugins.JavaPlugin
 import org.gradle.process.internal.ExecException
-import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
 import org.junit.Test
 
@@ -32,23 +30,11 @@ class CycleFinderTaskTest {
 
     private Project proj
     private String j2objcHome
+    private J2objcConfig j2objcConfig
 
     @Before
     void setUp() {
-        proj = ProjectBuilder.builder().build()
-
-        // For Utils.throwIfNoJavaPlugin()
-        proj.pluginManager.apply(JavaPlugin)
-
-        // For Utils.J2objcHome()
-        j2objcHome = File.createTempDir('J2OBJC_HOME', '').path
-        File localProperties = proj.file('local.properties')
-        localProperties.write("j2objc.home=$j2objcHome\n")
-
-        // For reportFile
-        proj.getBuildDir().mkdir()
-        File reportDir = new File("${proj.buildDir}/reports")
-        reportDir.mkdir()
+        (proj, j2objcHome, j2objcConfig) = TestingUtils.setupProject(true)
     }
 
     // TODO: add java source files to the test cases
@@ -56,7 +42,7 @@ class CycleFinderTaskTest {
 
     @Test
     void cycleFinder_Simple_NoFiles_Success() {
-        J2objcConfig j2objcConfig = proj.extensions.create('j2objcConfig', J2objcConfig, proj)
+        // Expected number of cycles when using simple method
         assert 40 == j2objcConfig.cycleFinderExpectedCycles
 
         CycleFinderTask j2objcCycleFinder = (CycleFinderTask) proj.tasks.create(
@@ -81,7 +67,6 @@ class CycleFinderTaskTest {
 
     @Test(expected = InvalidUserDataException.class)
     void cycleFinder_Simple_NoFiles_Failure() {
-        J2objcConfig j2objcConfig = proj.extensions.create('j2objcConfig', J2objcConfig, proj)
         assert 40 == j2objcConfig.cycleFinderExpectedCycles
 
         CycleFinderTask j2objcCycleFinder = (CycleFinderTask) proj.tasks.create(
@@ -111,7 +96,6 @@ class CycleFinderTaskTest {
 
     @Test
     void cycleFinder_Advanced_NoFiles_Success() {
-        J2objcConfig j2objcConfig = proj.extensions.create('j2objcConfig', J2objcConfig, proj)
         j2objcConfig.translateArgs('--no-package-directories')
         j2objcConfig.cycleFinderExpectedCycles = 0
         j2objcConfig.cycleFinderArgs('--whitelist', '/J2OBJC_REPO/jre_emul/cycle_whitelist.txt')
@@ -138,7 +122,6 @@ class CycleFinderTaskTest {
 
     @Test(expected = InvalidUserDataException.class)
     void cycleFinder_Advanced_NoFiles_Failure() {
-        J2objcConfig j2objcConfig = proj.extensions.create('j2objcConfig', J2objcConfig, proj)
         j2objcConfig.translateArgs('--no-package-directories')
         j2objcConfig.cycleFinderExpectedCycles = 0
         j2objcConfig.cycleFinderArgs('--whitelist', '/J2OBJC_REPO/jre_emul/cycle_whitelist.txt')

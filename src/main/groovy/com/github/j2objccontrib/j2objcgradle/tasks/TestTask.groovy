@@ -28,7 +28,7 @@ import org.gradle.api.tasks.TaskAction
 import java.util.regex.Matcher
 
 /**
- *
+ * Test task to run all unit tests and verify results.
  */
 class TestTask extends DefaultTask {
 
@@ -131,7 +131,8 @@ class TestTask extends DefaultTask {
         reportFile.write(outputStr)
         logger.debug("Test Output: ${reportFile.path}")
 
-        int testCount = Utils.matchNumberRegex(outputStr, /OK \((\d+) tests\)/)
+        // NOTE: last 's' is optional
+        int testCount = Utils.matchNumberRegex(outputStr, /OK \((\d+) tests?\)/)
         String message =
                 "\n" +
                 "j2objcConfig {\n" +

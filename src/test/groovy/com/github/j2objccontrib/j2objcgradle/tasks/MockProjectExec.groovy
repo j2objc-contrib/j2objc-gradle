@@ -111,8 +111,8 @@ class MockProjectExec {
 
     void demandExecAndReturn(
             List<String> expectedCommandLine,
-            String errorOutputToWrite,
-            String standardOutputToWrite,
+            String standardOutput,
+            String errorOutput,
             Exception exceptionToThrow) {
 
         mockForProj.demand.exec { Closure closure ->
@@ -129,12 +129,12 @@ class MockProjectExec {
             }
             assert expectedCommandLine == canonicalizedArgs
 
-            if (errorOutputToWrite) {
-                mockExec.errorOutput.write(errorOutputToWrite.getBytes('utf-8'))
+            if (errorOutput) {
+                mockExec.errorOutput.write(errorOutput.getBytes('utf-8'))
                 mockExec.errorOutput.flush()
             }
-            if (standardOutputToWrite) {
-                mockExec.standardOutput.write(standardOutputToWrite.getBytes('utf-8'))
+            if (standardOutput) {
+                mockExec.standardOutput.write(standardOutput.getBytes('utf-8'))
                 mockExec.standardOutput.flush()
             }
 
