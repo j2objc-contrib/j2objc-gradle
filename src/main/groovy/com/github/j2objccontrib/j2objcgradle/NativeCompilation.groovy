@@ -308,7 +308,8 @@ class NativeCompilation {
                     linker.args j2objcConfig.extraLinkerArgs
 
                     if (buildType == buildTypes.debug) {
-                        objcCompiler.args "-g"
+                        objcCompiler.args '-g'
+                        objcCompiler.args '-DDEBUG=1'
                     }
                 }
             }
