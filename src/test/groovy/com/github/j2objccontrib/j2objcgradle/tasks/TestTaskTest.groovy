@@ -16,10 +16,10 @@
 
 package com.github.j2objccontrib.j2objcgradle.tasks
 
+import com.github.j2objccontrib.j2objcgradle.J2objcConfig
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 import org.gradle.testfixtures.ProjectBuilder
-import org.junit.Before
 import org.junit.Test
 
 /**
@@ -27,17 +27,17 @@ import org.junit.Test
  */
 class TestTaskTest {
 
+    // Configured with setupTask()
     private Project proj
-
-    @Before
-    void setUp() {
-        proj = ProjectBuilder.builder().build()
-    }
+    private String j2objcHome
+    private J2objcConfig j2objcConfig
+    private TestTask j2objcTest
 
     @Test
     void testGetTestNames_Simple() {
 
         // These are nonsense paths for files that don't exist
+        proj = ProjectBuilder.builder().build()
         FileCollection srcFiles = proj.files([
                 "${proj.rootDir}/src/test/java/com/example/parent/ParentClass.java",
                 "${proj.rootDir}/src/test/java/com/example/parent/subdir/SubdirClass.java",
@@ -62,6 +62,7 @@ class TestTaskTest {
         packagePrefixes.setProperty('com.example.other', 'OthPrefix')
 
         // These are nonsense paths for files that don't exist
+        proj = ProjectBuilder.builder().build()
         FileCollection srcFiles = proj.files([
                 "${proj.rootDir}/src/test/java/com/example/parent/ParentOneClass.java",
                 "${proj.rootDir}/src/test/java/com/example/parent/ParentTwoClass.java",
@@ -81,4 +82,60 @@ class TestTaskTest {
 
         assert expectedTestNames == testNames
     }
+
+    private void setupTask() {
+        (proj, j2objcHome, j2objcConfig) = TestingUtils.setupProject(true)
+
+        j2objcTest = (TestTask) proj.tasks.create(name: 'j2objcTest', type: TestTask) {
+            testBinaryFile = proj.file("${proj.buildDir}/testJ2objc")
+        }
+    }
+
+    @Test
+    void test_NoTests() {
+        setupTask()
+
+        MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
+        mockProjectExec.demandExecAndReturn(
+                [
+                        "${proj.buildDir}/testJ2objc",
+                        "org.junit.runner.JUnitCore",
+                        "[]"
+                ],
+                // Fake test output
+                'IGNORE\nOK (2 tests)\nIGNORE',
+                // stderr
+                '',
+                null)
+
+        j2objcTest.test()
+
+        mockProjectExec.verify()
+    }
+
+    @Test
+    void test_OneTest() {
+        setupTask()
+
+        MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
+        mockProjectExec.demandExecAndReturn(
+                [
+                        "${proj.buildDir}/testJ2objc",
+                        "org.junit.runner.JUnitCore",
+                        "[]"
+                ],
+                // NOTE: 'test' instead of 'tests'
+                'OK (1 test)',
+                // stderr
+                '',
+                null)
+
+        j2objcTest.test()
+
+        mockProjectExec.verify()
+    }
+
+    // TODO: test_Simple() - with some unit tests
+
+    // TODO: test_Complex() - preferably using real project in src/test/resources
 }

@@ -19,10 +19,8 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 import com.github.j2objccontrib.j2objcgradle.J2objcConfig
 import org.gradle.api.Action
 import org.gradle.api.Project
-import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 import org.gradle.api.tasks.incremental.InputFileDetails
-import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
 import org.junit.Test
 
@@ -33,18 +31,11 @@ class TranslateTaskTest {
 
     private Project proj
     private String j2objcHome
+    private J2objcConfig j2objcConfig
 
     @Before
     void setUp() {
-        proj = ProjectBuilder.builder().build()
-
-        // For Utils.throwIfNoJavaPlugin()
-        proj.pluginManager.apply(JavaPlugin)
-
-        // For Utils.J2objcHome()
-        j2objcHome = File.createTempDir('J2OBJC_HOME', '').path
-        File localProperties = proj.file('local.properties')
-        localProperties.write("j2objc.home=$j2objcHome\n")
+        (proj, j2objcHome, j2objcConfig) = TestingUtils.setupProject(false)
     }
 
     // TODO: add java source files to the test cases
@@ -52,8 +43,6 @@ class TranslateTaskTest {
 
     @Test
     void translate_BasicArguments() {
-        J2objcConfig j2objcConfig = proj.extensions.create('j2objcConfig', J2objcConfig, proj)
-
         TranslateTask j2objcTranslate = (TranslateTask) proj.tasks.create(
                 name: 'j2objcTranslate', type: TranslateTask) {
             srcGenDir = proj.file("${proj.buildDir}/j2objcSrcGen")
