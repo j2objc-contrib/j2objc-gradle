@@ -25,6 +25,7 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 import org.gradle.api.tasks.incremental.InputFileDetails
+import org.gradle.process.internal.ExecException
 
 /**
  * Translation task for Java to Objective-C using j2objc tool.
@@ -207,7 +208,7 @@ class TranslateTask extends DefaultTask {
         if (Utils.isWindows()) {
             j2objcExecutable = 'java'
             windowsOnlyArgs.add('-jar')
-            windowsOnlyArgs.add("${getJ2ObjCHome()}/lib/j2objc.jar")
+            windowsOnlyArgs.add("${getJ2objcHome()}/lib/j2objc.jar")
         }
 
         FileCollection sourcepathDirs = project.files()
@@ -231,6 +232,7 @@ class TranslateTask extends DefaultTask {
                     args windowsOnlyArg
                 }
 
+                // Arguments
                 args "-d", srcGenDir
                 args "-sourcepath", sourcepathArg
                 args "-classpath", classpathArg
@@ -238,14 +240,16 @@ class TranslateTask extends DefaultTask {
                     args translateArg
                 }
 
+                // File Inputs
                 srcFilesChanged.each { File file ->
                     args file.path
                 }
+
                 standardOutput output
                 errorOutput output
             }
 
-        } catch (Exception exception) {
+        } catch (ExecException exception) {
             String outputStr = output.toString()
             logger.debug('Translation output:')
             logger.debug(outputStr)
