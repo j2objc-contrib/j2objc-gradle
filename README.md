@@ -111,6 +111,12 @@ disable the `j2objcTest` task, do the following:
         ...
     }
 
+If you are developing in a tight modify-compile-test loop and using only debug binaries, you
+may want to disable the release build temporarily by adding to your `local.properties` file:
+
+    j2objc.releaseEnabled=false
+
+This should cut the j2objc build time up to 50%.  You can also do this for `j2objc.debugEnabled`.
 
 #### j2objcCycleFinder
 

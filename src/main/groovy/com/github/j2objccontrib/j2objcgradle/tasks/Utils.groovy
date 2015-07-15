@@ -48,18 +48,23 @@ class Utils {
         }
     }
 
-    // MUST be used only in @Input getJ2objcHome() methods to ensure UP-TO-DATE checks are correct
-    // @Input getJ2objcHome() method can be used freely inside the task action
-    static String j2objcHome(Project proj) {
+    static String getLocalProperty(Project proj, String key, String defaultValue = null) {
         File localPropertiesFile = new File(proj.rootDir, 'local.properties')
-        String result = null
+        String result = defaultValue
         if (localPropertiesFile.exists()) {
             Properties localProperties = new Properties();
             localPropertiesFile.withInputStream {
                 localProperties.load it
             }
-            result = localProperties.getProperty('j2objc.home')
+            result = localProperties.getProperty('j2objc.' + key, defaultValue)
         }
+        return result
+    }
+
+    // MUST be used only in @Input getJ2objcHome() methods to ensure UP-TO-DATE checks are correct
+    // @Input getJ2objcHome() method can be used freely inside the task action
+    static String j2objcHome(Project proj) {
+        String result = getLocalProperty(proj, 'home')
         if (result == null) {
             result = System.getenv('J2OBJC_HOME')
         }

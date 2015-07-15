@@ -15,8 +15,8 @@
  */
 
 package com.github.j2objccontrib.j2objcgradle
-
-import com.github.j2objccontrib.j2objcgradle.tasks.AssembleTask
+import com.github.j2objccontrib.j2objcgradle.tasks.AssembleLibrariesTask
+import com.github.j2objccontrib.j2objcgradle.tasks.AssembleSourceTask
 import com.github.j2objccontrib.j2objcgradle.tasks.CycleFinderTask
 import com.github.j2objccontrib.j2objcgradle.tasks.PackLibrariesTask
 import com.github.j2objccontrib.j2objcgradle.tasks.TestTask
@@ -24,13 +24,10 @@ import com.github.j2objccontrib.j2objcgradle.tasks.TranslateTask
 import com.github.j2objccontrib.j2objcgradle.tasks.Utils
 import com.github.j2objccontrib.j2objcgradle.tasks.XcodeTask
 import org.gradle.api.DefaultTask
-import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.logging.LogLevel
-
-
 /*
  * Main plugin class for creation of extension object and all the tasks.
  */
@@ -104,14 +101,26 @@ class J2objcPlugin implements Plugin<Project> {
                 srcGenDir = j2objcSrcGenDir
             }
 
-            // Note the 'debugTestJ2objcExecutable' task is dynamically created by the Objective-C plugin applied
-            // on the above line.  It is specified by the testJ2objc native component.
-            tasks.create(name: 'j2objcTest', type: TestTask,
+            // Note the '(debug|release)TestJ2objcExecutable' tasks are dynamically created by the Objective-C plugin.
+            // It is specified by the testJ2objc native component in NativeCompilation.groovy.
+            tasks.create(name: 'j2objcTestDebug', type: TestTask,
                     dependsOn: ['test', 'debugTestJ2objcExecutable']) {
                 group 'verification'
                 // This transitively depends on the 'test' task from the java plugin
                 description 'Runs all tests in the generated Objective-C code'
                 testBinaryFile = file("${buildDir}/binaries/testJ2objcExecutable/debug/testJ2objc")
+            }
+            tasks.create(name: 'j2objcTestRelease', type: TestTask,
+                    dependsOn: ['test', 'releaseTestJ2objcExecutable']) {
+                group 'verification'
+                // This transitively depends on the 'test' task from the java plugin
+                description 'Runs all tests in the generated Objective-C code'
+                testBinaryFile = file("${buildDir}/binaries/testJ2objcExecutable/release/testJ2objc")
+            }
+            tasks.create(name: 'j2objcTest', type: DefaultTask,
+                    dependsOn: ['j2objcTestDebug', 'j2objcTestRelease']) {
+                group 'build'
+                description "Marker task for all test tasks that take part in regular j2objc builds"
             }
             // 'check' task is added by 'java' plugin, it depends on 'test' and
             // all the other verification tasks, now including 'j2objcTest'.
@@ -132,20 +141,49 @@ class J2objcPlugin implements Plugin<Project> {
                 buildType = 'Release'
             }
 
-            tasks.create(name: 'j2objcAssemble', type: AssembleTask,
-                    dependsOn: ['j2objcPackLibrariesDebug', 'j2objcPackLibrariesRelease', 'j2objcTranslate']) {
+            tasks.create(name: 'j2objcAssembleSource', type: AssembleSourceTask,
+                    dependsOn: ['j2objcTranslate']) {
                 group 'build'
-                description 'Copies final generated source and libraries to assembly directories'
+                description 'Copies final generated source to assembly directories'
                 srcGenDir = j2objcSrcGenDir
+            }
+            tasks.create(name: 'j2objcAssembleDebug', type: AssembleLibrariesTask,
+                    dependsOn: ['j2objcPackLibrariesDebug', 'j2objcAssembleSource']) {
+                group 'build'
+                description 'Copies final generated source and debug libraries to assembly directories'
+                buildType = 'Debug'
                 libDir = file("${buildDir}/binaries/${project.name}-j2objcStaticLibrary")
                 packedLibDir = file("${buildDir}/packedBinaries/${project.name}-j2objcStaticLibrary")
             }
+            tasks.create(name: 'j2objcAssembleRelease', type: AssembleLibrariesTask,
+                    dependsOn: ['j2objcPackLibrariesRelease', 'j2objcAssembleSource']) {
+                group 'build'
+                description 'Copies final generated source and release libraries to assembly directories'
+                buildType = 'Release'
+                libDir = file("${buildDir}/binaries/${project.name}-j2objcStaticLibrary")
+                packedLibDir = file("${buildDir}/packedBinaries/${project.name}-j2objcStaticLibrary")
+            }
+            tasks.create(name: 'j2objcAssemble', type: DefaultTask,
+                    dependsOn: ['j2objcAssembleDebug', 'j2objcAssembleRelease']) {
+                group 'build'
+                description "Marker task for all assembly tasks that take part in regular j2objc builds"
+            }
             lateDependsOn(project, 'assemble', 'j2objcAssemble')
 
+            tasks.create(name: 'j2objcBuildDebug', type: DefaultTask,
+                    dependsOn: ['j2objcAssembleDebug', 'j2objcTestDebug']) {
+                group 'build'
+                description "Marker task for all debug tasks that take part in regular j2objc builds"
+            }
+            tasks.create(name: 'j2objcBuildRelease', type: DefaultTask,
+                    dependsOn: ['j2objcAssembleRelease', 'j2objcTestRelease']) {
+                group 'build'
+                description "Marker task for all release tasks that take part in regular j2objc builds"
+            }
             // If users need to depend on this project to build other j2objc projects, they can use this
             // marker task.
             tasks.create(name: 'j2objcBuild', type: DefaultTask,
-                    dependsOn: ['j2objcAssemble', 'j2objcTest']) {
+                    dependsOn: ['j2objcBuildDebug', 'j2objcBuildRelease']) {
                 group 'build'
                 description "Marker task for all tasks that take part in regular j2objc builds"
             }

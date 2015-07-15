@@ -16,9 +16,11 @@
 
 package com.github.j2objccontrib.j2objcgradle
 
+import com.github.j2objccontrib.j2objcgradle.tasks.Utils
 import com.google.common.annotations.VisibleForTesting
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.api.tasks.util.PatternSet
 import org.gradle.util.ConfigureUtil
 
@@ -385,8 +387,8 @@ class J2objcConfig {
      * @param extraObjcSrcDirs add directories for Objective-C source to be compiled
      */
     void extraObjcSrcDirs(String... extraObjcSrcDirs) {
-        for (String arg in args) {
-            extraObjcSrcDirs += arg
+        for (String arg in extraObjcSrcDirs) {
+            this.extraObjcSrcDirs += arg
         }
     }
     /**
@@ -400,8 +402,8 @@ class J2objcConfig {
      * @param extraObjcCompilerArgs add arguments to pass to the native compiler.
      */
     void extraObjcCompilerArgs(String... extraObjcCompilerArgs) {
-        for (String arg in args) {
-            extraObjcCompilerArgs += arg
+        for (String arg in extraObjcCompilerArgs) {
+            this.extraObjcCompilerArgs += arg
         }
     }
     /**
@@ -415,8 +417,8 @@ class J2objcConfig {
      * @param extraLinkerArgs add arguments to pass to the native linker.
      */
     void extraLinkerArgs(String... extraLinkerArgs) {
-        for (String arg in args) {
-            extraLinkerArgs += arg
+        for (String arg in extraLinkerArgs) {
+            this.extraLinkerArgs += arg
         }
     }
 
@@ -460,6 +462,26 @@ class J2objcConfig {
     void finalConfigure() {
         nativeCompilation.apply(project.file("${project.buildDir}/j2objcSrcGen"))
         finalConfigured = true
+
+        // For convenience, disable all debug and/or release tasks if the user desires.
+        // Note all J2objcPlugin-created tasks are of the form `j2objc.*(Debug|Release)?`
+        // however Native plugin-created tasks (on our behalf) are of the form `.*((D|d)ebug|(R|r)elease).*(j|J)2objc.*'
+        // so these patterns find all such tasks.
+
+        // Disable only if explicitly present and not true.
+        boolean debugEnabled = Boolean.parseBoolean(Utils.getLocalProperty(project, 'debugEnabled', 'true'))
+        boolean releaseEnabled = Boolean.parseBoolean(Utils.getLocalProperty(project, 'releaseEnabled', 'true'))
+        project.tasks.all { Task task ->
+            String name = task.name
+            if (name.contains('j2objc') || name.contains('J2objc')) {
+                if (!debugEnabled && (name.contains('debug') || name.contains('Debug'))) {
+                    task.enabled = false
+                }
+                if (!releaseEnabled && (name.contains('release') || name.contains('Release'))) {
+                    task.enabled = false
+                }
+            }
+        }
     }
     boolean isFinalConfigured() {
         return finalConfigured
