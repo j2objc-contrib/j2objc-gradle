@@ -17,12 +17,13 @@
 package com.github.j2objccontrib.j2objcgradle.tasks
 
 import org.gradle.api.DefaultTask
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+import org.gradle.process.internal.ExecException
 
 /**
  * CycleFinder task checks for memory cycles that can cause memory leaks
@@ -34,8 +35,9 @@ class CycleFinderTask extends DefaultTask {
     FileCollection getSrcFiles() {
         // Note that translatePattern does not need to be an @Input because it is
         // solely an input to this method, which is already an input (via @InputFiles).
-        FileCollection allFiles = Utils.srcDirs(project, 'main', 'java')
-        allFiles = allFiles.plus(Utils.srcDirs(project, 'test', 'java'))
+        FileCollection allFiles = project.files()
+        allFiles += Utils.srcSet(project, 'main', 'java')
+        allFiles += Utils.srcSet(project, 'test', 'java')
         if (project.j2objcConfig.translatePattern != null) {
             allFiles = allFiles.matching(project.j2objcConfig.translatePattern)
         }
@@ -46,22 +48,14 @@ class CycleFinderTask extends DefaultTask {
     @InputFiles
     FileCollection getAllInputFiles() {
         FileCollection allFiles = getSrcFiles()
-        if (getTranslateSourcepaths()) {
-            List<String> translateSourcepathPaths = getTranslateSourcepaths().split(':') as List<String>
-            translateSourcepathPaths.each { String sourcePath ->
-                allFiles = allFiles.plus(project.files(sourcePath))
-            }
-        }
-        generatedSourceDirs.each { String sourceDir ->
-            allFiles = allFiles.plus(project.files(sourceDir))
-        }
-        translateClassPaths.each { String classPath ->
-            allFiles = allFiles.plus(project.files(classPath))
-        }
+        allFiles += project.files(getTranslateClasspaths())
+        allFiles += project.files(getTranslateSourcepaths())
+        allFiles += project.files(getGeneratedSourceDirs())
+        // Only care about changes in the generatedSourceDirs paths and not the contents
+        // Assumes that any changes in generated code causes change in non-generated @Input
         return allFiles
     }
 
-    // CycleFinder output - Gradle requires output for UP-TO-DATE checks
     @OutputFile
     File reportFile = project.file("${project.buildDir}/reports/${name}.out")
 
@@ -70,32 +64,30 @@ class CycleFinderTask extends DefaultTask {
     int getCycleFinderExpectedCycles() { return project.j2objcConfig.cycleFinderExpectedCycles }
 
     @Input
-    String getJ2ObjCHome() { return Utils.j2objcHome(project) }
+    String getJ2objcHome() { return Utils.j2objcHome(project) }
 
     @Input
-    @Optional
     List<String> getCycleFinderArgs() { return project.j2objcConfig.cycleFinderArgs }
 
-    @Input @Optional
-    String getTranslateSourcepaths() { return project.j2objcConfig.translateSourcepaths }
+    @Input
+    List<String> getTranslateClasspaths() { return project.j2objcConfig.translateClasspaths }
 
     @Input
-    boolean getFilenameCollisionCheck() { return project.j2objcConfig.filenameCollisionCheck }
+    List<String> getTranslateSourcepaths() { return project.j2objcConfig.translateSourcepaths }
 
     @Input
     List<String> getGeneratedSourceDirs() { return project.j2objcConfig.generatedSourceDirs }
 
     @Input
-    List<String> getTranslateClassPaths() { return project.j2objcConfig.translateClassPaths }
+    List<String> getTranslateJ2objcLibs() { return project.j2objcConfig.translateJ2objcLibs }
 
     @Input
-    List<String> getTranslateJ2objcLibs() { return project.j2objcConfig.translateJ2objcLibs }
+    boolean getFilenameCollisionCheck() { return project.j2objcConfig.filenameCollisionCheck }
 
 
     @TaskAction
     void cycleFinder() {
-
-        String cycleFinderExec = "${getJ2ObjCHome()}/cycle_finder"
+        String cycleFinderExec = "${getJ2objcHome()}/cycle_finder"
         List<String> windowsOnlyArgs = new ArrayList<String>()
         if (Utils.isWindows()) {
             cycleFinderExec = 'java'
@@ -103,39 +95,40 @@ class CycleFinderTask extends DefaultTask {
             windowsOnlyArgs.add("${getJ2ObjCHome()}/lib/cycle_finder.jar")
         }
 
-        String sourcepath = Utils.sourcepathJava(project)
-
-        // Generated Files
+        FileCollection fullSrcFiles = getSrcFiles()
+        // TODO: extract common methods of Translate and Cycle Finder
         // TODO: Need to understand why generated source dirs are treated differently by CycleFinder
         // vs. translate task.  Here they are directly passed to the binary, but in translate
         // they are only on the translate source path (meaning they will only be translated with --build-closure).
-        FileCollection fullSrcFiles = Utils.addJavaFiles(
-                project, getSrcFiles(), getGeneratedSourceDirs())
-        sourcepath += Utils.absolutePathOrEmpty(
-                project, getGeneratedSourceDirs())
 
-        // Additional Sourcepaths, e.g. source jars
-        if (getTranslateSourcepaths()) {
-            logger.debug "Add to sourcepath: ${getTranslateSourcepaths()}"
-            sourcepath += ":${getTranslateSourcepaths()}"
-        }
+        // Generated Files
+        // Assumes that any changes in generated code causes change in non-generated @Input
+        fullSrcFiles = fullSrcFiles.plus(Utils.javaTrees(project, getGeneratedSourceDirs()))
 
-        String classPathArg = Utils.getClassPathArg(
-                project, getJ2ObjCHome(), getTranslateClassPaths(), getTranslateJ2objcLibs())
+        FileCollection sourcepathDirs = project.files()
+        sourcepathDirs += project.files(Utils.srcSet(project, 'main', 'java').getSrcDirs())
+        sourcepathDirs += project.files(Utils.srcSet(project, 'test', 'java').getSrcDirs())
+        sourcepathDirs += project.files(getTranslateSourcepaths())
+        sourcepathDirs += project.files(getGeneratedSourceDirs())
+        String sourcepathArg = Utils.joinedPathArg(sourcepathDirs)
+
+        FileCollection classpathFiles = project.files()
+        classpathFiles += project.files(getTranslateClasspaths())
+        classpathFiles += project.files(Utils.j2objcLibs(getJ2objcHome(), getTranslateJ2objcLibs()))
+        // TODO: comment explaining ${project.buildDir}/classes
+        String classpathArg = Utils.joinedPathArg(classpathFiles) + ":${project.buildDir}/classes"
 
         ByteArrayOutputStream output = new ByteArrayOutputStream()
         try {
             project.exec {
                 executable cycleFinderExec
 
-                args windowsOnlyArgs
-                args "-sourcepath", sourcepath
-
-                if (classPathArg.size() > 0) {
-                    args "-classpath", classPathArg
+                // Arguments
+                args "-sourcepath", sourcepathArg
+                args "-classpath", classpathArg
+                getCycleFinderArgs().each { String cycleFinderArg ->
+                    args cycleFinderArg
                 }
-
-                args getCycleFinderArgs()
 
                 fullSrcFiles.each { File file ->
                     args file.path
@@ -145,16 +138,18 @@ class CycleFinderTask extends DefaultTask {
                 standardOutput output;
             }
 
-            logger.debug "CycleFinder found 0 cycles"
+            logger.debug("CycleFinder found 0 cycles")
             assert 0 == getCycleFinderExpectedCycles()
 
-        } catch (Exception exception) {
+        } catch (ExecException exception) {
+            // Expected exception for non-zero exit of process
 
+            // TODO show output for build failure instead of matchNumberRegex exception
             String outputStr = output.toString()
             // matchNumberRegex throws exception if regex isn't found
             int cyclesFound = Utils.matchNumberRegex(outputStr, /(\d+) CYCLES FOUND/)
             if (cyclesFound != getCycleFinderExpectedCycles()) {
-                logger.error outputStr
+                logger.error(outputStr)
                 String message =
                         "Unexpected number of cycles founder:\n" +
                         "Expected Cycles:  ${getCycleFinderExpectedCycles()}\n" +
@@ -165,12 +160,12 @@ class CycleFinderTask extends DefaultTask {
                         "j2objcConfig {\n" +
                         "    cycleFinderExpectedCycles $cyclesFound\n" +
                         "}\n"
-                throw new Exception(message)
+                throw new InvalidUserDataException(message)
             }
             // Suppress exception when cycles found == cycleFinderExpectedCycles
         }
 
         reportFile.write(output.toString())
-        logger.debug "CycleFinder Output: ${reportFile.path}"
+        logger.debug("CycleFinder Output: ${reportFile.path}")
     }
 }

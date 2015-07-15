@@ -74,11 +74,11 @@ class PackLibrariesTask extends DefaultTask {
 
         } catch (Exception exception) {
             String outputStr = output.toString()
-            logger.error "$name failed, output: "
-            logger.error outputStr
+            logger.error("$name failed, output:")
+            logger.error(outputStr)
             throw exception
         }
-        logger.debug "$name output: "
-        logger.debug output.toString()
+        logger.debug("$name output: ")
+        logger.debug(output.toString())
     }
 }

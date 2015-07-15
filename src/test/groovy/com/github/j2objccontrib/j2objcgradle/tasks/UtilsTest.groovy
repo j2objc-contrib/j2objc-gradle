@@ -19,6 +19,8 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
+import org.gradle.api.file.SourceDirectorySet
+import org.gradle.api.plugins.JavaPlugin
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
 import org.junit.Test;
@@ -26,7 +28,7 @@ import org.junit.Test;
 /**
  * Utils tests.
  */
-public class UtilsTest {
+class UtilsTest {
 
     private Project proj
 
@@ -36,27 +38,63 @@ public class UtilsTest {
     }
 
     @Test
-    public void testIsWindows() {
+    void testIsWindows() {
         // TODO: also test for correctness
         // For now it only tests that the call runs successfully
         Utils.isWindows()
     }
 
     @Test(expected = InvalidUserDataException.class)
-    public void testThrowIfNoJavaPlugin_NoJavaPlugin() {
+    void testThrowIfNoJavaPlugin_NoJavaPlugin() {
         Utils.throwIfNoJavaPlugin(proj)
     }
 
-    // TODO: testThrowIfNoJavaPlugin_JavaPluginExists
-
-    // TODO: testSrcDirs() - requires 'java' plugin
-
-    // TODO: testSourcepathJava() - requires 'java' plugin
-
-    // TODO: testJ2objcHome()
+    @Test
+    void testThrowIfNoJavaPlugin_JavaPlugin() {
+        proj.pluginManager.apply(JavaPlugin)
+        // Should not throw any exception
+        Utils.throwIfNoJavaPlugin(proj)
+    }
 
     @Test
-    public void testPrefixProperties_FileOnly() {
+    public void testJ2objcHome_LocalProperties() {
+        // Write j2objc path to local.properties file within the project
+        String j2objcHomeWritten = File.createTempDir('J2OBJC_HOME', '').path
+        File localProperties = proj.file('local.properties')
+        localProperties.write("j2objc.home=$j2objcHomeWritten\n")
+
+        String j2objcHomeRead = Utils.j2objcHome(proj)
+        assert j2objcHomeWritten == j2objcHomeRead
+    }
+
+    // TODO: testJ2objcHome_EnvironmentVariable
+
+    @Test
+    public void testSrcSet_NoSrcFiles() {
+        // To avoid triggering Utils.throwIfNoJavaPlugin()
+        proj.pluginManager.apply(JavaPlugin)
+        SourceDirectorySet srcSet = Utils.srcSet(proj, 'main', 'java')
+
+        assert 0 == srcSet.size()
+    }
+
+    // TODO: testSrcSet_SomeSrcFiles()
+
+    @Test
+    public void testSrcSet_GetSrcDirs() {
+        proj.pluginManager.apply(JavaPlugin)
+        SourceDirectorySet srcSet = Utils.srcSet(proj, 'main', 'java')
+        String[] srcDirsPaths = srcSet.getSrcDirs().collect { File file ->
+            return file.path
+        }
+
+        String[] expected = ["${proj.projectDir}/src/main/java"]
+
+        assert Arrays.equals(expected, srcDirsPaths)
+    }
+
+    @Test
+    void testPrefixProperties_FileOnly() {
         // TODO: fix to use this.getClass().getResource(...) once Android Studio issue fixed
         // https://code.google.com/p/android/issues/detail?id=75991
         File prefixesProp = new File(
@@ -75,7 +113,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void testPrefixProperties_FileAndArgs() {
+    void testPrefixProperties_FileAndArgs() {
         // TODO: repeat as above
         File prefixesProp = new File(
                 'src/test/resources/com/github/j2objccontrib/j2objcgradle/tasks/prefixes.properties')
@@ -98,61 +136,51 @@ public class UtilsTest {
     }
 
     @Test
-    public void testFilenameCollisionCheck_NoCollisition() {
+    void testFilenameCollisionCheck_NoCollisition() {
         FileCollection files = proj.files('DiffOne.java', 'DiffTwo.java')
         Utils.filenameCollisionCheck(files)
     }
 
     @Test(expected = InvalidUserDataException.class)
-    public void testFilenameCollisionCheck_Collision() {
+    void testFilenameCollisionCheck_Collision() {
         // Same filename but located in different paths
         FileCollection files = proj.files('dirOne/Same.java', 'dirTwo/Same.java')
         Utils.filenameCollisionCheck(files)
     }
 
-    // TODO: testAddJavaFiles()
+    // TODO testAddJavaTrees() - needs nested folder of java source files for fileTree(...) operation
 
     @Test
-    public void testAbsolutePathOrEmpty() {
-        String path = Utils.absolutePathOrEmpty(proj, new ArrayList<String>(['One/', 'Two/']))
-
-        String absPath = proj.rootDir.absolutePath
-        assert path == ":$absPath/One:$absPath/Two".toString()
+    void testJ2objcLibs() {
+        List<String> j2objcLibPaths = Utils.j2objcLibs('/J2OBJC_HOME', ['J2LibOne', 'J2LibTwo'])
+        List<String> expected = ['/J2OBJC_HOME/lib/J2LibOne', '/J2OBJC_HOME/lib/J2LibTwo']
+        assert expected == j2objcLibPaths
     }
 
     @Test
-    public void testAbsolutePathOrEmpty_Empty() {
-        String path = Utils.absolutePathOrEmpty(proj, new ArrayList<String>())
+    public void testJoinedPathArg() {
+        FileCollection fileCollection = proj.files("file1", "file2", "/absoluteFile")
+        String joinedPathArg = Utils.joinedPathArg(fileCollection)
 
-        assert path == ''
-    }
-
-    @Test
-    public void testGetClassPathArg() {
-        String classPathArg = Utils.getClassPathArg(
-                proj, "/J2OBJC_HOME",
-                new ArrayList<String>(['LibOne', 'LibTwo']),
-                new ArrayList<String>(['J2LibOne', 'J2LibTwo']))
-
-        String absPath = proj.rootDir.absolutePath
-        assert classPathArg == "$absPath/LibOne:$absPath/LibTwo:/J2OBJC_HOME/lib/J2LibOne:/J2OBJC_HOME/lib/J2LibTwo".toString()
+        String expected = "${proj.projectDir}/file1:${proj.projectDir}/file2:/absoluteFile"
+        assert expected == joinedPathArg
     }
 
     // TODO: testFilterJ2objcOutputForErrorLines()
 
     @Test
-    public void testMatchNumberRegex() {
+    void testMatchNumberRegex() {
         int count = Utils.matchNumberRegex("15 CYCLES FOUND", /(\d+) CYCLES FOUND/)
         assert count == 15
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testMatchNumberRegex_NoMatch() {
+    @Test(expected = InvalidUserDataException.class)
+    void testMatchNumberRegex_NoMatch() {
         int count = Utils.matchNumberRegex("AA CYCLES FOUND", /(\d+) CYCLES FOUND/)
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testMatchNumberRegex_NotNumber() {
+    @Test(expected = InvalidUserDataException.class)
+    void testMatchNumberRegex_NotNumber() {
         int count = Utils.matchNumberRegex("AA CYCLES FOUND", /(.*) CYCLES FOUND/)
     }
 }

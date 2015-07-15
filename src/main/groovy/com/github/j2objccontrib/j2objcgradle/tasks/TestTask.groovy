@@ -28,7 +28,7 @@ import org.gradle.api.tasks.TaskAction
 import java.util.regex.Matcher
 
 /**
- *
+ * Test task to run all unit tests and verify results.
  */
 class TestTask extends DefaultTask {
 
@@ -40,7 +40,7 @@ class TestTask extends DefaultTask {
     FileCollection getTestSrcFiles() {
         // Note that neither testPattern nor translatePattern need to be @Input methods because they are solely
         // inputs to this method, which is already an input via @InputFiles.
-        FileCollection allFiles = Utils.srcDirs(project, 'test', 'java')
+        FileCollection allFiles = Utils.srcSet(project, 'test', 'java')
 
         if (project.j2objcConfig.translatePattern != null) {
             allFiles = allFiles.matching(project.j2objcConfig.translatePattern)
@@ -70,7 +70,7 @@ class TestTask extends DefaultTask {
     void test() {
 
         String binary = testBinaryFile.path
-        logger.debug "Test Binary: $binary"
+        logger.debug("Test Binary: $binary")
 
         // list of test names: ['com.example.dir.ClassOneTest', 'com.example.dir.ClassTwoTest']
         // depends on "--prefixes dir/prefixes.properties" in translateArgs
@@ -93,8 +93,8 @@ class TestTask extends DefaultTask {
                 standardOutput output
             }
         } catch (Exception exception) {
-            logger.error "STDOUT and STDERR from failed j2objcTest task:"
-            logger.error output.toString()
+            logger.error("STDOUT and STDERR from failed j2objcTest task:")
+            logger.error(output.toString())
             String message =
                     "The j2objcTest task failed. Given that the java plugin 'test' task\n" +
                     "completed successfully, this shows an error specific to the j2objc build.\n" +
@@ -122,16 +122,17 @@ class TestTask extends DefaultTask {
                         "Look at the known crash issues to see what may be causing this:\n" +
                         "    https://github.com/google/j2objc/issues?q=is%3Aissue+crash+is%3Aopen+\n"
             }
-            logger.error message
+            logger.error(message)
             throw exception
         }
 
         // Test Output Report
         String outputStr = output.toString()
         reportFile.write(outputStr)
-        logger.debug "Test Output: ${reportFile.path}"
+        logger.debug("Test Output: ${reportFile.path}")
 
-        int testCount = Utils.matchNumberRegex(outputStr, /OK \((\d+) tests\)/)
+        // NOTE: last 's' is optional
+        int testCount = Utils.matchNumberRegex(outputStr, /OK \((\d+) tests?\)/)
         String message =
                 "\n" +
                 "j2objcConfig {\n" +
@@ -166,7 +167,7 @@ class TestTask extends DefaultTask {
                     "being accidentally missed in the future by modifying build.gradle\n" +
                     "J2ObjC build of project '${project.name}'\n" +
                     message
-            logger.debug message
+            logger.debug(message)
         }
     }
 

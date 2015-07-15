@@ -28,7 +28,7 @@ import org.junit.Test;
  */
 // Double quotes are used throughout this file to avoid escaping single quotes
 // which are common in Podfiles, used extensively within these tests
-public class XcodeTaskTest {
+class XcodeTaskTest {
 
     // TODO: use this within future tests
     private Project proj
@@ -39,7 +39,7 @@ public class XcodeTaskTest {
     }
 
     @Test
-    public void getPodFile_Valid() {
+    void getPodFile_Valid() {
         J2objcConfig j2objcConfig =
                 proj.extensions.create('j2objcConfig', J2objcConfig, proj)
         j2objcConfig.xcodeProjectDir = '../ios'
@@ -57,7 +57,7 @@ public class XcodeTaskTest {
 
     // Test that null xcode arguments cause the expected exception
     @Test(expected = InvalidUserDataException.class)
-    public void getPodFile_Invalid() {
+    void getPodFile_Invalid() {
         J2objcConfig j2objcConfig =
                 proj.extensions.create('j2objcConfig', J2objcConfig, proj)
         assert j2objcConfig.xcodeProjectDir == null
@@ -71,7 +71,7 @@ public class XcodeTaskTest {
     }
 
     @Test
-    public void testWriteUpdatedPodFileIfNeeded() {
+    void testWriteUpdatedPodFileIfNeeded() {
 
         // Write temp file that's deleted on exit
         File PodFile = File.createTempFile("Podfile","")
@@ -95,7 +95,7 @@ public class XcodeTaskTest {
     }
 
     @Test
-    public void testGetPodFileLinesIfChanged_UpToDate() {
+    void testGetPodFileLinesIfChanged_UpToDate() {
         List<String> podFileLines = [
                 "target 'IosApp' do",
                 "pod 'j2objc-shared', :path => '/Users/USERNAME/dev/workspace/shared/build'",
@@ -109,7 +109,7 @@ public class XcodeTaskTest {
     }
 
     @Test
-    public void testGetPodFileLinesIfChanged_PodPathMissing() {
+    void testGetPodFileLinesIfChanged_PodPathMissing() {
         List<String> podFileLines = [
                 "target 'IosApp' do",
                 "",
@@ -130,7 +130,7 @@ public class XcodeTaskTest {
     }
 
     @Test
-    public void testGetPodFileLinesIfChanged_PodPathWrong() {
+    void testGetPodFileLinesIfChanged_PodPathWrong() {
         List<String> podFileLines = [
                 "target 'IosApp' do",
                 "pod 'j2objc-shared', :path => '/Users/WRONG/dev/workspace/shared/build'",
@@ -150,7 +150,7 @@ public class XcodeTaskTest {
     }
 
     @Test
-    public void testGetPodFileLinesIfChanged_CleansUpDuplicates() {
+    void testGetPodFileLinesIfChanged_CleansUpDuplicates() {
         List<String> podFileLines = [
                 "target 'IosApp' do",
                 "pod 'pod1', :path => 'IGNORE'",
@@ -176,7 +176,7 @@ public class XcodeTaskTest {
     }
 
     @Test
-    public void testGetPodFileLinesIfChanged_Complex() {
+    void testGetPodFileLinesIfChanged_Complex() {
         // Updates incorrect path
         // Cleans up duplicates
         // Handles multiple Xcode Targets
@@ -220,8 +220,8 @@ public class XcodeTaskTest {
         assert expectedLines == newPodFileLines
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testGetPodFileLinesIfChanged_XcodeTargetNotFound() {
+    @Test(expected = InvalidUserDataException.class)
+    void testGetPodFileLinesIfChanged_XcodeTargetNotFound() {
         List<String> podFileLines = [
                 "target 'IosApp' do",
                 "pod 'j2objc-shared', :path => '/Users/USERNAME/dev/workspace/shared/build'",

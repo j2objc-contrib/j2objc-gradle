@@ -21,7 +21,6 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
@@ -41,9 +40,9 @@ class TranslateTask extends DefaultTask {
         // Note that neither additionalSrcFiles nor translatePattern need
         // to be @Inputs because they are solely inputs to this method, which
         // is already an input.
-        FileCollection allFiles = Utils.srcDirs(project, 'main', 'java')
-        allFiles = allFiles.plus(Utils.srcDirs(project, 'test', 'java'))
-
+        FileCollection allFiles = project.files()
+        allFiles += Utils.srcSet(project, 'main', 'java')
+        allFiles += Utils.srcSet(project, 'test', 'java')
         if (project.j2objcConfig.translatePattern != null) {
             allFiles = allFiles.matching(project.j2objcConfig.translatePattern)
         }
@@ -57,18 +56,11 @@ class TranslateTask extends DefaultTask {
     @InputFiles
     FileCollection getAllInputFiles() {
         FileCollection allFiles = getSrcFiles()
-        if (getTranslateSourcepaths()) {
-            List<String> translateSourcepathPaths = getTranslateSourcepaths().split(':') as List<String>
-            translateSourcepathPaths.each { String sourcePath ->
-                allFiles = allFiles.plus(project.files(sourcePath))
-            }
-        }
-        getGeneratedSourceDirs().each { String sourceDir ->
-            allFiles = allFiles.plus(project.files(sourceDir))
-        }
-        getTranslateClassPaths().each { String classPath ->
-            allFiles = allFiles.plus(project.files(classPath))
-        }
+        allFiles += project.files(getTranslateClasspaths())
+        allFiles += project.files(getTranslateSourcepaths())
+        allFiles += project.files(getGeneratedSourceDirs())
+        // Only care about changes in the generatedSourceDirs paths and not the contents
+        // It assumes that any changes in generated code comes from change in non-generated code
         return allFiles
     }
 
@@ -79,25 +71,26 @@ class TranslateTask extends DefaultTask {
 
     // j2objcConfig dependencies for UP-TO-DATE checks
     @Input
-    String getJ2ObjCHome() { return Utils.j2objcHome(project) }
+    String getJ2objcHome() { return Utils.j2objcHome(project) }
 
     @Input
     List<String> getTranslateArgs() { return project.j2objcConfig.translateArgs }
 
-    @Input @Optional
-    String getTranslateSourcepaths() { return project.j2objcConfig.translateSourcepaths }
+    @Input
+    List<String> getTranslateClasspaths() { return project.j2objcConfig.translateClasspaths }
 
     @Input
-    boolean getFilenameCollisionCheck() { return project.j2objcConfig.filenameCollisionCheck }
+    List<String> getTranslateSourcepaths() { return project.j2objcConfig.translateSourcepaths }
 
     @Input
     List<String> getGeneratedSourceDirs() { return project.j2objcConfig.generatedSourceDirs }
 
     @Input
-    List<String> getTranslateClassPaths() { return project.j2objcConfig.translateClassPaths }
+    List<String> getTranslateJ2objcLibs() { return project.j2objcConfig.translateJ2objcLibs }
 
     @Input
-    List<String> getTranslateJ2objcLibs() { return project.j2objcConfig.translateJ2objcLibs }
+    boolean getFilenameCollisionCheck() { return project.j2objcConfig.filenameCollisionCheck }
+
 
     @TaskAction
     void translate(IncrementalTaskInputs inputs) {
@@ -105,7 +98,7 @@ class TranslateTask extends DefaultTask {
         // Don't evaluate this expensive property multiple times.
         FileCollection originalSrcFiles = getSrcFiles()
 
-        logger.debug "All source files: " + originalSrcFiles.getFiles().size()
+        logger.debug("All source files: " + originalSrcFiles.getFiles().size())
 
         FileCollection srcFilesChanged
         if (('--build-closure' in translateArgs) && !project.j2objcConfig.UNSAFE_incrementalBuildClosure) {
@@ -126,37 +119,37 @@ class TranslateTask extends DefaultTask {
             srcFilesChanged = project.files()
             inputs.outOfDate(new Action<InputFileDetails>() {
                 @Override
-                public void execute(InputFileDetails details) {
+                void execute(InputFileDetails details) {
                     // We must filter by srcFiles, since all possible input files are @InputFiles to this task.
                     if (originalSrcFiles.contains(details.file)) {
-                        logger.debug "New or Updated file: " + details.file
+                        logger.debug("New or Updated file: " + details.file)
                         srcFilesChanged += project.files(details.file)
                     } else {
                         nonSourceFileChanged = true
-                        logger.debug "New or Updated non-source file: " + details.file
+                        logger.debug("New or Updated non-source file: " + details.file)
                     }
                 }
             })
             List<String> removedFileNames = new ArrayList<>()
             inputs.removed(new Action<InputFileDetails>() {
                 @Override
-                public void execute(InputFileDetails details) {
+                void execute(InputFileDetails details) {
                     // We must filter by srcFiles, since all possible input files are @InputFiles to this task.
                     if (originalSrcFiles.contains(details.file)) {
-                        logger.debug "Removed file: " + details.file.name
+                        logger.debug("Removed file: " + details.file.name)
                         String nameWithoutExt = details.file.name.toString().replaceFirst("\\..*", "")
                         removedFileNames += nameWithoutExt
                     } else {
                         nonSourceFileChanged = true
-                        logger.debug "Removed non-source file: " + details.file
+                        logger.debug("Removed non-source file: " + details.file)
                     }
                 }
             })
-            logger.debug "Removed files: " + removedFileNames.size()
+            logger.debug("Removed files: " + removedFileNames.size())
 
-            logger.debug "New or Updated files: " + srcFilesChanged.getFiles().size()
+            logger.debug("New or Updated files: " + srcFilesChanged.getFiles().size())
             FileCollection unchangedSrcFiles = originalSrcFiles - srcFilesChanged
-            logger.debug "Unchanged files: " + unchangedSrcFiles.getFiles().size()
+            logger.debug("Unchanged files: " + unchangedSrcFiles.getFiles().size())
 
             if (!nonSourceFileChanged) {
                 // All changes were within srcFiles (i.e. in a Java source-set).
@@ -205,7 +198,11 @@ class TranslateTask extends DefaultTask {
             }
         }
 
-        String j2objcExecutable = "${getJ2ObjCHome()}/j2objc"
+        if (getFilenameCollisionCheck()) {
+            Utils.filenameCollisionCheck(getSrcFiles())
+        }
+
+        String j2objcExecutable = "${getJ2objcHome()}/j2objc"
         List<String> windowsOnlyArgs = new ArrayList<String>()
         if (Utils.isWindows()) {
             j2objcExecutable = 'java'
@@ -213,41 +210,33 @@ class TranslateTask extends DefaultTask {
             windowsOnlyArgs.add("${getJ2ObjCHome()}/lib/j2objc.jar")
         }
 
-        String sourcepath = Utils.sourcepathJava(project)
+        FileCollection sourcepathDirs = project.files()
+        sourcepathDirs += project.files(Utils.srcSet(project, 'main', 'java').getSrcDirs())
+        sourcepathDirs += project.files(Utils.srcSet(project, 'test', 'java').getSrcDirs())
+        sourcepathDirs += project.files(getTranslateSourcepaths())
+        sourcepathDirs += project.files(getGeneratedSourceDirs())
+        String sourcepathArg = Utils.joinedPathArg(sourcepathDirs)
 
-        // Additional Sourcepaths, e.g. source jars
-        if (getTranslateSourcepaths()) {
-            logger.debug "Add to sourcepath: ${getTranslateSourcepaths()}"
-            sourcepath += ":${getTranslateSourcepaths()}"
-        }
-
-        // Generated Files
-        sourcepath += Utils.absolutePathOrEmpty(project, getGeneratedSourceDirs())
-
-        // TODO perform file collision check with already translated files in the srcGenDir
-        if (getFilenameCollisionCheck()) {
-            Utils.filenameCollisionCheck(getSrcFiles())
-        }
-
-        String classPathArg = Utils.getClassPathArg(
-                project, getJ2ObjCHome(), getTranslateClassPaths(), getTranslateJ2objcLibs())
-
-        classPathArg += ":${project.buildDir}/classes"
+        FileCollection classpathFiles = project.files()
+        classpathFiles += project.files(getTranslateClasspaths())
+        classpathFiles += project.files(Utils.j2objcLibs(getJ2objcHome(), getTranslateJ2objcLibs()))
+        // TODO: comment explaining ${project.buildDir}/classes
+        String classpathArg = Utils.joinedPathArg(classpathFiles) + ":${project.buildDir}/classes"
 
         ByteArrayOutputStream output = new ByteArrayOutputStream()
         try {
             project.exec {
                 executable j2objcExecutable
-
-                args windowsOnlyArgs
-                args "-d", srcGenDir
-                args "-sourcepath", sourcepath
-
-                if (classPathArg.size() > 0) {
-                    args "-classpath", classPathArg
+                windowsOnlyArgs.each { String windowsOnlyArg ->
+                    args windowsOnlyArg
                 }
 
-                args translateArgs
+                args "-d", srcGenDir
+                args "-sourcepath", sourcepathArg
+                args "-classpath", classpathArg
+                translateArgs.each { String translateArg ->
+                    args translateArg
+                }
 
                 srcFilesChanged.each { File file ->
                     args file.path
@@ -258,19 +247,19 @@ class TranslateTask extends DefaultTask {
 
         } catch (Exception exception) {
             String outputStr = output.toString()
-            logger.debug 'Translation output:'
-            logger.debug outputStr
+            logger.debug('Translation output:')
+            logger.debug(outputStr)
             // Put to stderr only the lines at fault.
             // We do not separate standardOutput and errorOutput in the exec
             // task, because the interleaved output is helpful for context.
-            logger.error 'Error during translation:'
-            logger.error Utils.filterJ2objcOutputForErrorLines(outputStr)
+            logger.error('Error during translation:')
+            logger.error(Utils.filterJ2objcOutputForErrorLines(outputStr))
             // Gradle will helpfully tell the user to use --debug for more
             // output when the build fails.
             throw exception
         }
 
-        logger.debug 'Translation output:'
-        logger.debug output.toString()
+        logger.debug('Translation output:')
+        logger.debug(output.toString())
     }
 }
