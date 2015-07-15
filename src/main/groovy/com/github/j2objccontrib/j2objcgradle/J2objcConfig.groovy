@@ -387,8 +387,8 @@ class J2objcConfig {
      * @param extraObjcSrcDirs add directories for Objective-C source to be compiled
      */
     void extraObjcSrcDirs(String... extraObjcSrcDirs) {
-        for (String arg in args) {
-            extraObjcSrcDirs += arg
+        for (String arg in extraObjcSrcDirs) {
+            this.extraObjcSrcDirs += arg
         }
     }
     /**
@@ -402,8 +402,8 @@ class J2objcConfig {
      * @param extraObjcCompilerArgs add arguments to pass to the native compiler.
      */
     void extraObjcCompilerArgs(String... extraObjcCompilerArgs) {
-        for (String arg in args) {
-            extraObjcCompilerArgs += arg
+        for (String arg in extraObjcCompilerArgs) {
+            this.extraObjcCompilerArgs += arg
         }
     }
     /**
@@ -417,8 +417,8 @@ class J2objcConfig {
      * @param extraLinkerArgs add arguments to pass to the native linker.
      */
     void extraLinkerArgs(String... extraLinkerArgs) {
-        for (String arg in args) {
-            extraLinkerArgs += arg
+        for (String arg in extraLinkerArgs) {
+            this.extraLinkerArgs += arg
         }
     }
 
