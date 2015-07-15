@@ -43,6 +43,7 @@ class Utils {
             String message =
                     "j2objc plugin didn't find the 'java' plugin in the '${proj.name}' project.\n" +
                     "This is a requirement for using j2objc. Please see usage information at:\n" +
+                    "\n" +
                     "https://github.com/j2objc-contrib/j2objc-gradle/#usage"
             throw new InvalidUserDataException(message)
         }
@@ -194,14 +195,16 @@ class Utils {
             throw new InvalidUserDataException(
                     "Content:\n" +
                     "$str\n" +
-                    "Regex couldn't match number: $regex")
+                    "\n" +
+                    "Regex couldn't match number in output: $regex")
         } else {
             String value = matcher[0][1]
             if (!value.isInteger()) {
                 throw new InvalidUserDataException(
                         "Content:\n" +
                         "$str\n" +
-                        "Regex couldn't match number: $regex")
+                        "\n" +
+                        "Regex didn't find number in output: $regex, value: $value")
             }
             return value.toInteger()
         }

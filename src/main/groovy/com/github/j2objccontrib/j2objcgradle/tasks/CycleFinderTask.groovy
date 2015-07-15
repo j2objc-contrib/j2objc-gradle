@@ -92,7 +92,7 @@ class CycleFinderTask extends DefaultTask {
         if (Utils.isWindows()) {
             cycleFinderExec = 'java'
             windowsOnlyArgs.add('-jar')
-            windowsOnlyArgs.add("${getJ2objcHome()}/lib/cycle_finder.jar")
+            windowsOnlyArgs.add("${getJ2ObjCHome()}/lib/cycle_finder.jar")
         }
 
         FileCollection fullSrcFiles = getSrcFiles()
@@ -122,9 +122,6 @@ class CycleFinderTask extends DefaultTask {
         try {
             project.exec {
                 executable cycleFinderExec
-                windowsOnlyArgs.each { String windowsOnlyArg ->
-                    args windowsOnlyArg
-                }
 
                 // Arguments
                 args "-sourcepath", sourcepathArg
@@ -133,7 +130,6 @@ class CycleFinderTask extends DefaultTask {
                     args cycleFinderArg
                 }
 
-                // File Inputs
                 fullSrcFiles.each { File file ->
                     args file.path
                 }
@@ -155,7 +151,7 @@ class CycleFinderTask extends DefaultTask {
             if (cyclesFound != getCycleFinderExpectedCycles()) {
                 logger.error(outputStr)
                 String message =
-                        "Unexpected number of cycles found:\n" +
+                        "Unexpected number of cycles founder:\n" +
                         "Expected Cycles:  ${getCycleFinderExpectedCycles()}\n" +
                         "Actual Cycles:    $cyclesFound\n" +
                         "\n" +
