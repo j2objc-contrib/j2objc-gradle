@@ -239,6 +239,9 @@ class NativeCompilation {
                             beforeProjects.each { Project beforeProject ->
                                 lib project: beforeProject.path, library: "${beforeProject.name}-j2objc", linkage: 'static'
                             }
+                            j2objcConfig.extraNativeLibs.each { Map nativeLibSpec ->
+                                lib nativeLibSpec
+                            }
                         }
                     }
 
@@ -258,6 +261,9 @@ class NativeCompilation {
                             // Resolve dependencies from all java j2objc projects using the compiled static libs.
                             beforeProjects.each { Project beforeProject ->
                                 lib project: beforeProject.path, library: "${beforeProject.name}-j2objc", linkage: 'static'
+                            }
+                            j2objcConfig.extraNativeLibs.each { Map nativeLibSpec ->
+                                lib nativeLibSpec
                             }
 
                             // J2ObjC provided libraries for testing only

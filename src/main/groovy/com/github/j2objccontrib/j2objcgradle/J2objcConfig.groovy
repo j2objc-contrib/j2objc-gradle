@@ -420,6 +420,23 @@ class J2objcConfig {
         }
     }
 
+    /**
+     * Additional native libraries to link to.
+     */
+    List<Map> extraNativeLibs = []
+    /**
+     * Add additional native library to link to.
+     * <p/>
+     * For example, if you built native library 'utils' in project 'common':
+     * <pre>
+     * extraNativeLib project: 'common', library: 'utils', linkage: 'static'
+     * </pre>
+     */
+    void extraNativeLib(Map spec) {
+        extraNativeLibs.add(spec)
+    }
+
+
     // XCODE
     /**
      * Directory of the target Xcode project.
