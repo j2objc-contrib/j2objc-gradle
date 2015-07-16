@@ -13,6 +13,43 @@ due to support for native compilation features.
 You have to first create the [Gradle wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html).
 Go to your project folder and do ``gradle wrapper``. Refresh your Eclipse project.
 
+### How do I setup multiple related j2objc or native projects?
+You can express three kinds of dependencies within j2objcConfig:
+
+1.  The common case is that Java and j2objc Project B depends on Java and j2objc Project A,
+and you need the Project B J2ObjC generated library to depend on the Project A J2ObjC
+generated library. In this case add to B.gradle:
+    ```
+    j2objcConfig {
+        dependsOnJ2objc project(':A')
+    }
+    ```
+This kind of dependency should be inferred automatically from the corresponding Java
+dependency in the future.
+
+2.  Java and j2objc project B depends on a
+[custom native library](https://docs.gradle.org/current/userguide/nativeBinaries.html#N15F82)
+called someLibrary in native project A.  Add to B.gradle:
+    ```
+    j2objcConfig {
+        extraNativeLib project: ':A', library: 'someLibrary', linkage: 'static'
+    }
+    ```
+
+3.  Java and j2objc project B depends on library libpreBuilt pre-built outside of
+Gradle in directory /lib/SOMEPATH, with corresponding headers in /include/SOMEPATH.
+Add to B.gradle:
+    ```
+    j2objcConfig {
+        extraObjcCompilerArgs '-I/include/SOMEPATH'
+        extraLinkerArgs '-L/lib/SOMEPATH'
+        extraLinkerArgs '-lpreBuilt'
+    }
+    ```
+
+In (1) and (2), A's library will be linked in and A's headers will be available for inclusion, and
+B will automatically build after A.  (3) is not supported by Gradle's dependency management
+capabilities; you must ensure preBuilt's binary and headers are available before project B is built.
 
 ### How do I properly pass multiple arguments to j2objc?
 
