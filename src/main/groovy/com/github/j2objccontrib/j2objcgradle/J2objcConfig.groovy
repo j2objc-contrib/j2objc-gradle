@@ -18,16 +18,23 @@ package com.github.j2objccontrib.j2objcgradle
 
 import com.github.j2objccontrib.j2objcgradle.tasks.Utils
 import com.google.common.annotations.VisibleForTesting
+import groovy.transform.CompileStatic
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.tasks.bundling.AbstractArchiveTask
 import org.gradle.api.tasks.util.PatternSet
 import org.gradle.util.ConfigureUtil
 
 /**
  * Further configuration uses the following fields, setting them in j2objcConfig within build.gradle
  */
+@CompileStatic
 class J2objcConfig {
+
+    static J2objcConfig from(Project project) {
+        return project.extensions.findByType(J2objcConfig)
+    }
 
     final protected Project project
 
@@ -263,34 +270,28 @@ class J2objcConfig {
      */
     // TODO: Do this automatically based on project dependencies.
     void dependsOnJ2objcLib(Project beforeProject) {
-        project.with {
-            // We need to have j2objcConfig on the beforeProject configured first.
-            evaluationDependsOn beforeProject.path
+        // We need to have j2objcConfig on the beforeProject configured first.
+        project.evaluationDependsOn beforeProject.path
 
-            if (!beforeProject.plugins.hasPlugin(J2objcPlugin)) {
-                String message = "$beforeProject does not use the j2objc plugin.\n" +
-                              "dependsOnJ2objcLib can be used only with another project that\n" +
-                              "itself uses the j2objc plugin."
-                throw new InvalidUserDataException(message)
-            }
-
-            // Build and test the java/objc libraries and the objc headers of
-            // the other project first.
-            j2objcPreBuild.dependsOn {
-                beforeProject.tasks.getByName('j2objcBuild')
-            }
-            // Since we assert the presence of the J2objcPlugin above,
-            // we are guaranteed that the java plugin, which creates the jar task,
-            // is also present.
-            j2objcPreBuild.dependsOn {
-                beforeProject.tasks.getByName('jar')
-            }
-
-            logger.debug("$project:j2objcTranslate must use ${beforeProject.jar.archivePath}")
-            j2objcConfig {
-                translateClasspaths += beforeProject.jar.archivePath.absolutePath
-            }
+        if (!beforeProject.plugins.hasPlugin(J2objcPlugin)) {
+            String message = "$beforeProject does not use the j2objc plugin.\n" +
+                          "dependsOnJ2objcLib can be used only with another project that\n" +
+                          "itself uses the j2objc plugin."
+            throw new InvalidUserDataException(message)
         }
+
+        // Build and test the java/objc libraries and the objc headers of
+        // the other project first.
+        // Since we assert the presence of the J2objcPlugin above,
+        // we are guaranteed that the java plugin, which creates the jar task,
+        // is also present.
+        project.tasks.getByName('j2objcPreBuild').dependsOn {
+            return [beforeProject.tasks.getByName('j2objcBuild'),
+                    beforeProject.tasks.getByName('jar')]
+        }
+        AbstractArchiveTask jarTask = beforeProject.tasks.getByName('jar') as AbstractArchiveTask
+        project.logger.debug("$project:j2objcTranslate must use ${jarTask.archivePath}")
+        translateClasspaths += jarTask.archivePath.absolutePath
 
         nativeCompilation.dependsOnJ2objcLib(beforeProject)
     }
@@ -313,7 +314,7 @@ class J2objcConfig {
      * @see NativeCompilation#ALL_SUPPORTED_ARCHS
      */
     // Public to allow assignment of array of targets as shown in example
-    List<String> supportedArchs = NativeCompilation.ALL_SUPPORTED_ARCHS.clone()
+    List<String> supportedArchs = NativeCompilation.ALL_SUPPORTED_ARCHS.clone() as List<String>
 
 
     // TEST

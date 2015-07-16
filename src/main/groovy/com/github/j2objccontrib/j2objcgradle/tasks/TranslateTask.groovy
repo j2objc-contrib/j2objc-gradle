@@ -15,21 +15,26 @@
  */
 
 package com.github.j2objccontrib.j2objcgradle.tasks
-
+import com.github.j2objccontrib.j2objcgradle.J2objcConfig
+import groovy.transform.CompileStatic
+import groovy.transform.TypeCheckingMode
 import org.gradle.api.Action
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.FileCollection
+import org.gradle.api.file.FileTree
+import org.gradle.api.internal.file.UnionFileCollection
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 import org.gradle.api.tasks.incremental.InputFileDetails
+import org.gradle.process.ExecResult
 import org.gradle.process.internal.ExecException
-
 /**
  * Translation task for Java to Objective-C using j2objc tool.
  */
+@CompileStatic
 class TranslateTask extends DefaultTask {
 
     // Source files outside of the Java sourceSets of main and test.
@@ -41,15 +46,16 @@ class TranslateTask extends DefaultTask {
         // Note that neither additionalSrcFiles nor translatePattern need
         // to be @Inputs because they are solely inputs to this method, which
         // is already an input.
-        FileCollection allFiles = Utils.srcSet(project, 'main', 'java')
+        FileTree allFiles = Utils.srcSet(project, 'main', 'java')
         allFiles += Utils.srcSet(project, 'test', 'java')
-        if (project.j2objcConfig.translatePattern != null) {
-            allFiles = allFiles.matching(project.j2objcConfig.translatePattern)
+        if (J2objcConfig.from(project).translatePattern != null) {
+            allFiles = allFiles.matching(J2objcConfig.from(project).translatePattern)
         }
+        FileCollection ret = allFiles
         if (additionalSrcFiles != null) {
-            allFiles = allFiles.plus(additionalSrcFiles)
+            ret = allFiles.plus(additionalSrcFiles)
         }
-        return allFiles
+        return ret
     }
 
     // All input files that could affect translation output, except those in j2objc itself.
@@ -68,28 +74,27 @@ class TranslateTask extends DefaultTask {
     @OutputDirectory
     File srcGenDir
 
-
     // j2objcConfig dependencies for UP-TO-DATE checks
     @Input
     String getJ2objcHome() { return Utils.j2objcHome(project) }
 
     @Input
-    List<String> getTranslateArgs() { return project.j2objcConfig.translateArgs }
+    List<String> getTranslateArgs() { return J2objcConfig.from(project).translateArgs }
 
     @Input
-    List<String> getTranslateClasspaths() { return project.j2objcConfig.translateClasspaths }
+    List<String> getTranslateClasspaths() { return J2objcConfig.from(project).translateClasspaths }
 
     @Input
-    List<String> getTranslateSourcepaths() { return project.j2objcConfig.translateSourcepaths }
+    List<String> getTranslateSourcepaths() { return J2objcConfig.from(project).translateSourcepaths }
 
     @Input
-    List<String> getGeneratedSourceDirs() { return project.j2objcConfig.generatedSourceDirs }
+    List<String> getGeneratedSourceDirs() { return J2objcConfig.from(project).generatedSourceDirs }
 
     @Input
-    List<String> getTranslateJ2objcLibs() { return project.j2objcConfig.translateJ2objcLibs }
+    List<String> getTranslateJ2objcLibs() { return J2objcConfig.from(project).translateJ2objcLibs }
 
     @Input
-    boolean getFilenameCollisionCheck() { return project.j2objcConfig.filenameCollisionCheck }
+    boolean getFilenameCollisionCheck() { return J2objcConfig.from(project).filenameCollisionCheck }
 
 
     @TaskAction
@@ -101,7 +106,7 @@ class TranslateTask extends DefaultTask {
         logger.debug("All source files: " + originalSrcFiles.getFiles().size())
 
         FileCollection srcFilesChanged
-        if (('--build-closure' in translateArgs) && !project.j2objcConfig.UNSAFE_incrementalBuildClosure) {
+        if (('--build-closure' in translateArgs) && !J2objcConfig.from(project).UNSAFE_incrementalBuildClosure) {
             // We cannot correctly perform incremental compilation with --build-closure.
             // Consider the example where src/main/Something.java is deleted, we would not
             // be able to also delete the files that only Something.java depends on.
@@ -183,7 +188,7 @@ class TranslateTask extends DefaultTask {
                 // will not be translated, this can be fixed with a clean and fresh build.
                 // Due to this issue, incremental builds with --build-closure are enabled ONLY
                 // if the user requests it with the UNSAFE_incrementalBuildClosure argument.
-                if (translatedFiles > 0 && project.j2objcConfig.UNSAFE_incrementalBuildClosure) {
+                if (translatedFiles > 0 && J2objcConfig.from(project).UNSAFE_incrementalBuildClosure) {
                     translateArgs.remove('--build-closure')
                 }
             } else {
@@ -207,46 +212,29 @@ class TranslateTask extends DefaultTask {
         if (Utils.isWindows()) {
             j2objcExecutable = 'java'
             windowsOnlyArgs.add('-jar')
-            windowsOnlyArgs.add("${getJ2objcHome()}/lib/j2objc.jar")
+            windowsOnlyArgs.add("${getJ2objcHome()}/lib/j2objc.jar".toString())
         }
 
-        FileCollection sourcepathDirs = project.files()
-        sourcepathDirs += project.files(Utils.srcSet(project, 'main', 'java').getSrcDirs())
-        sourcepathDirs += project.files(Utils.srcSet(project, 'test', 'java').getSrcDirs())
-        sourcepathDirs += project.files(getTranslateSourcepaths())
-        sourcepathDirs += project.files(getGeneratedSourceDirs())
+        UnionFileCollection sourcepathDirs = new UnionFileCollection([
+                project.files(Utils.srcSet(project, 'main', 'java').getSrcDirs()),
+                project.files(Utils.srcSet(project, 'test', 'java').getSrcDirs()),
+                project.files(getTranslateSourcepaths()),
+                project.files(getGeneratedSourceDirs())
+        ])
+
         String sourcepathArg = Utils.joinedPathArg(sourcepathDirs)
 
-        FileCollection classpathFiles = project.files()
-        classpathFiles += project.files(getTranslateClasspaths())
-        classpathFiles += project.files(Utils.j2objcLibs(getJ2objcHome(), getTranslateJ2objcLibs()))
+        UnionFileCollection classpathFiles = new UnionFileCollection([
+                project.files(getTranslateClasspaths()),
+                project.files(Utils.j2objcLibs(getJ2objcHome(), getTranslateJ2objcLibs()))
+        ])
         // TODO: comment explaining ${project.buildDir}/classes
         String classpathArg = Utils.joinedPathArg(classpathFiles) + ":${project.buildDir}/classes"
 
         ByteArrayOutputStream output = new ByteArrayOutputStream()
         try {
-            project.exec {
-                executable j2objcExecutable
-                windowsOnlyArgs.each { String windowsOnlyArg ->
-                    args windowsOnlyArg
-                }
-
-                // Arguments
-                args "-d", srcGenDir
-                args "-sourcepath", sourcepathArg
-                args "-classpath", classpathArg
-                translateArgs.each { String translateArg ->
-                    args translateArg
-                }
-
-                // File Inputs
-                srcFilesChanged.each { File file ->
-                    args file.path
-                }
-
-                standardOutput output
-                errorOutput output
-            }
+            execJ2objc(j2objcExecutable, windowsOnlyArgs, sourcepathArg, classpathArg, translateArgs,
+                    srcFilesChanged, output)
 
         } catch (ExecException exception) {
             String outputStr = output.toString()
@@ -264,5 +252,33 @@ class TranslateTask extends DefaultTask {
 
         logger.debug('Translation output:')
         logger.debug(output.toString())
+    }
+
+    @CompileStatic(TypeCheckingMode.SKIP)
+    ExecResult execJ2objc(String j2objcExecutable, List<String> windowsOnlyArgs, String sourcepathArg,
+                          String classpathArg, List<String> translateArgs, srcFilesChanged,
+                          ByteArrayOutputStream output) {
+    return project.exec {
+            executable j2objcExecutable
+            windowsOnlyArgs.each { String windowsOnlyArg ->
+                args windowsOnlyArg
+            }
+
+            // Arguments
+            args "-d", srcGenDir
+            args "-sourcepath", sourcepathArg
+            args "-classpath", classpathArg
+            translateArgs.each { String translateArg ->
+                args translateArg
+            }
+
+            // File Inputs
+            srcFilesChanged.each { File file ->
+                args file.path
+            }
+
+            standardOutput output
+            errorOutput output
+        }
     }
 }

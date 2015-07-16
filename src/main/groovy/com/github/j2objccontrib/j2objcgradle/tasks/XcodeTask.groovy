@@ -16,7 +16,10 @@
 
 package com.github.j2objccontrib.j2objcgradle.tasks
 
+import com.github.j2objccontrib.j2objcgradle.J2objcConfig
 import com.google.common.annotations.VisibleForTesting
+import groovy.transform.CompileStatic
+import groovy.transform.TypeCheckingMode
 import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.tasks.Input
@@ -24,7 +27,9 @@ import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+import org.gradle.api.tasks.WorkResult
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
+import org.gradle.process.ExecResult
 
 /**
  * Updates the Xcode project with j2objc generated files and resources.
@@ -36,6 +41,7 @@ import org.gradle.api.tasks.incremental.IncrementalTaskInputs
  * If you haven't create a pod file yet you have to run `pod init` in your
  * project folder before you run this task.
  */
+@CompileStatic
 class XcodeTask extends DefaultTask {
 
     // Generated ObjC source files
@@ -64,10 +70,10 @@ class XcodeTask extends DefaultTask {
     String getJ2objcHome() { return Utils.j2objcHome(project) }
 
     @Input @Optional
-    String getXcodeProjectDir() { return project.j2objcConfig.xcodeProjectDir }
+    String getXcodeProjectDir() { return J2objcConfig.from(project).xcodeProjectDir }
 
     @Input @Optional
-    String getXcodeTarget() { return project.j2objcConfig.xcodeTarget }
+    String getXcodeTarget() { return J2objcConfig.from(project).xcodeTarget }
 
 
     @TaskAction
@@ -80,12 +86,7 @@ class XcodeTask extends DefaultTask {
         String j2objcResourceDirName = 'j2objcResources'
         String j2objcResourceDirPath = "${project.buildDir}/${j2objcResourceDirName}"
         project.delete j2objcResourceDirPath
-        project.copy {
-            Utils.srcSet(project, 'main', 'resources').srcDirs.each {
-                from it
-            }
-            into j2objcResourceDirPath
-        }
+        copyResources(j2objcResourceDirPath)
 
         // podspec paths must be relative to podspec file, which is in buildDir
         String srcGenDirRelativeToBuildDir = project.buildDir.toURI().relativize(srcGenDir.toURI())
@@ -136,13 +137,7 @@ class XcodeTask extends DefaultTask {
             // install the pod
             ByteArrayOutputStream output = new ByteArrayOutputStream()
             try {
-                project.exec {
-                    workingDir getXcodeProjectDir()
-                    executable 'pod'
-                    args 'install'
-                    standardOutput output
-                    errorOutput output
-                }
+                execPod(output)
             } catch (Exception exception) {
                 logger.error(output.toString())
 
@@ -160,6 +155,27 @@ class XcodeTask extends DefaultTask {
             }
             logger.debug('Pod install output:')
             logger.debug(output.toString())
+        }
+    }
+
+    @CompileStatic(TypeCheckingMode.SKIP)
+    WorkResult copyResources(String j2objcResourceDirPath) {
+        return project.copy {
+            Utils.srcSet(project, 'main', 'resources').srcDirs.each {
+                from it
+            }
+            into j2objcResourceDirPath
+        }
+    }
+
+    @CompileStatic(TypeCheckingMode.SKIP)
+    ExecResult execPod(ByteArrayOutputStream output) {
+        return project.exec {
+            workingDir getXcodeProjectDir()
+            executable 'pod'
+            args 'install'
+            standardOutput output
+            errorOutput output
         }
     }
 

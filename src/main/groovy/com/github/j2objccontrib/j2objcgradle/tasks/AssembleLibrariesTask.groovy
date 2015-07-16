@@ -16,6 +16,9 @@
 
 package com.github.j2objccontrib.j2objcgradle.tasks
 
+import com.github.j2objccontrib.j2objcgradle.J2objcConfig
+import groovy.transform.CompileStatic
+import groovy.transform.TypeCheckingMode
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
@@ -26,6 +29,7 @@ import org.gradle.api.tasks.TaskAction
  * Assemble task copies generated libraries to assembly directories for
  * use by an iOS application.
  */
+@CompileStatic
 class AssembleLibrariesTask extends DefaultTask {
     // Generated ObjC binaries
     @InputDirectory
@@ -48,8 +52,11 @@ class AssembleLibrariesTask extends DefaultTask {
     // We keep these strings as @Input properties in addition to the @OutputDirectory methods above because,
     // for example, whether or not the main source and test source are identical affects execution of this task.
     @Input
-    String getDestLibDirPath() { return project.j2objcConfig.destLibDir }
+    String getDestLibDirPath() { return J2objcConfig.from(project).destLibDir }
 
+    // project.copy closure configuration cannot be replaced with a non-internal
+    // statically compiled alternative.
+    @CompileStatic(TypeCheckingMode.SKIP)
     @TaskAction
     void destCopy() {
         // We don't need to clear out the library path, our libraries can co-exist
