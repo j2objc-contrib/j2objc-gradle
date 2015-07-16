@@ -34,7 +34,11 @@ class CycleFinderTaskTest {
 
     @Before
     void setUp() {
-        (proj, j2objcHome, j2objcConfig) = TestingUtils.setupProject(true)
+        (proj, j2objcHome, j2objcConfig) = TestingUtils.setupProject(new TestingUtils.ProjectConfig(
+                applyJavaPlugin: true,
+                createReportsDir: true,
+                createJ2objcConfig: true
+        ))
     }
 
     // TODO: add java source files to the test cases

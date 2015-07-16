@@ -84,7 +84,11 @@ class TestTaskTest {
     }
 
     private void setupTask() {
-        (proj, j2objcHome, j2objcConfig) = TestingUtils.setupProject(true)
+        (proj, j2objcHome, j2objcConfig) = TestingUtils.setupProject(new TestingUtils.ProjectConfig(
+                applyJavaPlugin: true,
+                createJ2objcConfig: true,
+                createReportsDir: true,
+        ))
 
         j2objcTest = (TestTask) proj.tasks.create(name: 'j2objcTest', type: TestTask) {
             testBinaryFile = proj.file("${proj.buildDir}/testJ2objc")
