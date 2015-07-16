@@ -16,20 +16,26 @@
 
 package com.github.j2objccontrib.j2objcgradle.tasks
 
+import com.github.j2objccontrib.j2objcgradle.J2objcConfig
+import groovy.transform.CompileStatic
+import groovy.transform.TypeCheckingMode
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
+import org.gradle.api.file.FileTree
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+import org.gradle.process.ExecResult
 
 import java.util.regex.Matcher
 
 /**
  * Test task to run all unit tests and verify results.
  */
+@CompileStatic
 class TestTask extends DefaultTask {
 
     // *Test.java files and TestRunner binary
@@ -37,16 +43,16 @@ class TestTask extends DefaultTask {
     File testBinaryFile
 
     @InputFiles
-    FileCollection getTestSrcFiles() {
+    FileTree getTestSrcFiles() {
         // Note that neither testPattern nor translatePattern need to be @Input methods because they are solely
         // inputs to this method, which is already an input via @InputFiles.
-        FileCollection allFiles = Utils.srcSet(project, 'test', 'java')
-
-        if (project.j2objcConfig.translatePattern != null) {
-            allFiles = allFiles.matching(project.j2objcConfig.translatePattern)
+        FileTree allFiles = Utils.srcSet(project, 'test', 'java')
+        J2objcConfig config = J2objcConfig.from(project)
+        if (config.translatePattern != null) {
+            allFiles = allFiles.matching(config.translatePattern)
         }
-        if (project.j2objcConfig.testPattern != null) {
-            allFiles = allFiles.matching(project.j2objcConfig.testPattern)
+        if (config.testPattern != null) {
+            allFiles = allFiles.matching(config.testPattern)
         }
         return allFiles
     }
@@ -57,13 +63,13 @@ class TestTask extends DefaultTask {
 
     // j2objcConfig dependencies for UP-TO-DATE checks
     @Input
-    List<String> getTestArgs() { return project.j2objcConfig.testArgs }
+    List<String> getTestArgs() { return J2objcConfig.from(project).testArgs }
 
     @Input
-    List<String> getTranslateArgs() { return project.j2objcConfig.translateArgs }
+    List<String> getTranslateArgs() { return J2objcConfig.from(project).translateArgs }
 
     @Input
-    int getTestMinExpectedTests() { return project.j2objcConfig.testMinExpectedTests }
+    int getTestMinExpectedTests() { return J2objcConfig.from(project).testMinExpectedTests }
 
 
     @TaskAction
@@ -79,19 +85,7 @@ class TestTask extends DefaultTask {
 
         ByteArrayOutputStream output = new ByteArrayOutputStream()
         try {
-            project.exec {
-                executable binary
-                args "org.junit.runner.JUnitCore"
-
-                args getTestArgs()
-
-                testNames.each { String testName ->
-                    args testName
-                }
-
-                errorOutput output
-                standardOutput output
-            }
+            execTestBinary(binary, testNames, output)
         } catch (Exception exception) {
             logger.error("STDOUT and STDERR from failed j2objcTest task:")
             logger.error(output.toString())
@@ -171,6 +165,22 @@ class TestTask extends DefaultTask {
         }
     }
 
+    @CompileStatic(TypeCheckingMode.SKIP)
+    ExecResult execTestBinary(String binary, List<String> testNames, ByteArrayOutputStream output) {
+        return project.exec {
+            executable binary
+            args 'org.junit.runner.JUnitCore'
+
+            args getTestArgs()
+
+            testNames.each { String testName ->
+                args testName
+            }
+
+            errorOutput output
+            standardOutput output
+        }
+    }
 
     // Generate Test Names
     // Generate list of tests from the source java files
@@ -195,7 +205,7 @@ class TestTask extends DefaultTask {
             // First match against the set of Java packages, excluding the filename
             Matcher matcher = (testName =~ /^(([^.]+\.)+)[^.]+$/)  // (com.example.dir.)SomeTest
             if (matcher.find()) {
-                String namespace = matcher[0][1]  // com.example.dir.
+                String namespace = matcher.group(1)  // com.example.dir.
                 String namespaceChopped = namespace[0..-2]  // com.example.dir
                 if (packagePrefixes.containsKey(namespaceChopped)) {
                     String prefix = packagePrefixes.getProperty(namespaceChopped)

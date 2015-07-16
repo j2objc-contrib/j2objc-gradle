@@ -16,6 +16,9 @@
 
 package com.github.j2objccontrib.j2objcgradle.tasks
 
+import com.github.j2objccontrib.j2objcgradle.J2objcConfig
+import groovy.transform.CompileStatic
+import groovy.transform.TypeCheckingMode
 import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.file.ConfigurableFileCollection
@@ -28,6 +31,7 @@ import org.gradle.api.tasks.TaskAction
  * Assemble task copies generated source to assembly directories for
  * use by an iOS application.
  */
+@CompileStatic
 class AssembleSourceTask extends DefaultTask {
 
     // Generated ObjC source files
@@ -49,10 +53,23 @@ class AssembleSourceTask extends DefaultTask {
     // We keep these strings as @Input properties in addition to the @OutputDirectory methods above because,
     // for example, whether or not the main source and test source are identical affects execution of this task.
     @Input
-    String getDestSrcDirPath() { return project.j2objcConfig.destSrcDir }
+    String getDestSrcDirPath() { return J2objcConfig.from(project).destSrcDir }
 
     @Input
-    String getDestSrcDirTestPath() { return project.j2objcConfig.destSrcDirTest }
+    String getDestSrcDirTestPath() { return J2objcConfig.from(project).destSrcDirTest }
+
+    @TaskAction
+    void destCopy() {
+        clearDestSrcDirWithChecks(destSrcDir, 'destSrcDir')
+        copyMainSource()
+
+        if (destSrcDirTest.absolutePath != destSrcDir.absolutePath) {
+            // If we want main source and test source in one directory, then don't
+            // re-delete the main directory where we just put files!
+            clearDestSrcDirWithChecks(destSrcDirTest, 'destSrcDirTest')
+        }
+        copyTestSource()
+    }
 
 
     private void clearDestSrcDirWithChecks(File destDir, String name) {
@@ -74,9 +91,8 @@ class AssembleSourceTask extends DefaultTask {
         project.delete destDir
     }
 
-    @TaskAction
-    void destCopy() {
-        clearDestSrcDirWithChecks(destSrcDir, 'destSrcDir')
+    @CompileStatic(TypeCheckingMode.SKIP)
+    void copyMainSource() {
         project.copy {
             includeEmptyDirs = false
             from srcGenDir
@@ -88,12 +104,10 @@ class AssembleSourceTask extends DefaultTask {
             exclude "**/*Test.h"
             exclude "**/*Test.m"
         }
+    }
 
-        if (destSrcDirTest.absolutePath != destSrcDir.absolutePath) {
-            // If we want main source and test source in one directory, then don't
-            // re-delete the main directory where we just put files!
-            clearDestSrcDirWithChecks(destSrcDirTest, 'destSrcDirTest')
-        }
+    @CompileStatic(TypeCheckingMode.SKIP)
+    void copyTestSource() {
         project.copy {
             includeEmptyDirs = false
             from srcGenDir

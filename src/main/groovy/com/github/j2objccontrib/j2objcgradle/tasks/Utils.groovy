@@ -15,21 +15,23 @@
  */
 
 package com.github.j2objccontrib.j2objcgradle.tasks
-
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.SourceDirectorySet
+import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.tasks.SourceSet
-import java.util.regex.Matcher
 
+import java.util.regex.Matcher
 /**
  * Internal utilities supporting plugin implementation.
  */
 // Without access to the project, logging is performed using the
 // static 'log' variable added during decoration with this annotation.
 @Slf4j
+@CompileStatic
 class Utils {
     // TODO: ideally bundle j2objc binaries with plugin jar and load at runtime with
     // TODO: ClassLoader.getResourceAsStream(), extract, chmod and then execute
@@ -155,9 +157,10 @@ class Utils {
 
         assert fileType == 'java' || fileType == 'resources'
         assert sourceSetName == 'main' || sourceSetName == 'test'
-        SourceSet sourceSet = proj.sourceSets.findByName(sourceSetName)
+        JavaPluginConvention javaConvention = proj.getConvention().getPlugin(JavaPluginConvention);
+        SourceSet sourceSet = javaConvention.sourceSets.findByName(sourceSetName)
         // For standard fileTypes 'java' and 'resources,' per contract this cannot be null.
-        SourceDirectorySet srcDirSet = sourceSet.getProperty(fileType)
+        SourceDirectorySet srcDirSet = fileType == 'java' ? sourceSet.java : sourceSet.resources
         return srcDirSet
     }
 
@@ -201,7 +204,7 @@ class Utils {
                     "$str\n" +
                     "Regex couldn't match number in output: $regex")
         } else {
-            String value = matcher[0][1]
+            String value = matcher.group(1)
             if (!value.isInteger()) {
                 throw new InvalidUserDataException(
                         "Content:\n" +

@@ -16,17 +16,22 @@
 
 package com.github.j2objccontrib.j2objcgradle.tasks
 
+import com.github.j2objccontrib.j2objcgradle.J2objcConfig
+import groovy.transform.CompileStatic
+import groovy.transform.TypeCheckingMode
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
-import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.process.ExecResult
 
 /**
  * Uses 'lipo' binary to combine multiple architecture flavors of a library into a
  * single 'fat' library.
  */
+@CompileStatic
 class PackLibrariesTask extends DefaultTask {
 
     // Generated ObjC binaries
@@ -48,7 +53,7 @@ class PackLibrariesTask extends DefaultTask {
     String buildType
 
     @Input
-    List<String> getSupportedArchs() { return project.j2objcConfig.supportedArchs }
+    List<String> getSupportedArchs() { return J2objcConfig.from(project).supportedArchs }
 
     @TaskAction
     void lipoLibraries() {
@@ -59,18 +64,7 @@ class PackLibrariesTask extends DefaultTask {
         }
         ByteArrayOutputStream output = new ByteArrayOutputStream()
         try {
-            project.exec {
-                executable 'xcrun'
-
-                args 'lipo'
-                args '-create', '-output', "${outputLibDir}/lib${project.name}-j2objc.a"
-                getInputLibraries().each { File libFile ->
-                    args libFile.absolutePath
-                }
-
-                errorOutput output
-                standardOutput output
-            }
+            execLipo(output)
 
         } catch (Exception exception) {
             String outputStr = output.toString()
@@ -80,5 +74,21 @@ class PackLibrariesTask extends DefaultTask {
         }
         logger.debug("$name output: ")
         logger.debug(output.toString())
+    }
+
+    @CompileStatic(TypeCheckingMode.SKIP)
+    ExecResult execLipo(ByteArrayOutputStream output) {
+        return project.exec {
+            executable 'xcrun'
+
+            args 'lipo'
+            args '-create', '-output', "${outputLibDir}/lib${project.name}-j2objc.a"
+            getInputLibraries().each { File libFile ->
+                args libFile.absolutePath
+            }
+
+            errorOutput output
+            standardOutput output
+        }
     }
 }

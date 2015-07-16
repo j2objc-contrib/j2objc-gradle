@@ -16,43 +16,53 @@
 
 package com.github.j2objccontrib.j2objcgradle.tasks
 
+import com.github.j2objccontrib.j2objcgradle.J2objcConfig
+import groovy.transform.CompileStatic
+import groovy.transform.TypeCheckingMode
 import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.file.FileCollection
+import org.gradle.api.file.FileTree
+import org.gradle.api.internal.file.UnionFileCollection
+import org.gradle.api.internal.file.UnionFileTree
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+import org.gradle.process.ExecResult
 import org.gradle.process.internal.ExecException
 
 /**
  * CycleFinder task checks for memory cycles that can cause memory leaks
  * since iOS doesn't have garbage collection.
  */
+@CompileStatic
 class CycleFinderTask extends DefaultTask {
 
     @InputFiles
-    FileCollection getSrcFiles() {
+    FileTree getSrcFiles() {
         // Note that translatePattern does not need to be an @Input because it is
         // solely an input to this method, which is already an input (via @InputFiles).
-        FileCollection allFiles = Utils.srcSet(project, 'main', 'java')
+        UnionFileTree allFiles = new UnionFileTree(Utils.srcSet(project, 'main', 'java'))
         allFiles += Utils.srcSet(project, 'test', 'java')
-        if (project.j2objcConfig.translatePattern != null) {
-            allFiles = allFiles.matching(project.j2objcConfig.translatePattern)
+        FileTree ret = allFiles
+        if (J2objcConfig.from(project).translatePattern != null) {
+            ret = allFiles.matching(J2objcConfig.from(project).translatePattern)
         }
-        return allFiles
+        return ret
     }
 
     // All input files that could affect translation output, except those in j2objc itself.
     @InputFiles
-    FileCollection getAllInputFiles() {
-        FileCollection allFiles = getSrcFiles()
-        allFiles += project.files(getTranslateClasspaths())
-        allFiles += project.files(getTranslateSourcepaths())
-        allFiles += project.files(getGeneratedSourceDirs())
+    UnionFileCollection getAllInputFiles() {
         // Only care about changes in the generatedSourceDirs paths and not the contents
         // Assumes that any changes in generated code causes change in non-generated @Input
-        return allFiles
+        return new UnionFileCollection([
+                getSrcFiles(),
+                project.files(getTranslateClasspaths()),
+                project.files(getTranslateSourcepaths()),
+                project.files(getGeneratedSourceDirs())
+        ])
     }
 
     @OutputFile
@@ -60,28 +70,28 @@ class CycleFinderTask extends DefaultTask {
 
     // j2objcConfig dependencies for UP-TO-DATE checks
     @Input
-    int getCycleFinderExpectedCycles() { return project.j2objcConfig.cycleFinderExpectedCycles }
+    int getCycleFinderExpectedCycles() { return J2objcConfig.from(project).cycleFinderExpectedCycles }
 
     @Input
     String getJ2objcHome() { return Utils.j2objcHome(project) }
 
     @Input
-    List<String> getCycleFinderArgs() { return project.j2objcConfig.cycleFinderArgs }
+    List<String> getCycleFinderArgs() { return J2objcConfig.from(project).cycleFinderArgs }
 
     @Input
-    List<String> getTranslateClasspaths() { return project.j2objcConfig.translateClasspaths }
+    List<String> getTranslateClasspaths() { return J2objcConfig.from(project).translateClasspaths }
 
     @Input
-    List<String> getTranslateSourcepaths() { return project.j2objcConfig.translateSourcepaths }
+    List<String> getTranslateSourcepaths() { return J2objcConfig.from(project).translateSourcepaths }
 
     @Input
-    List<String> getGeneratedSourceDirs() { return project.j2objcConfig.generatedSourceDirs }
+    List<String> getGeneratedSourceDirs() { return J2objcConfig.from(project).generatedSourceDirs }
 
     @Input
-    List<String> getTranslateJ2objcLibs() { return project.j2objcConfig.translateJ2objcLibs }
+    List<String> getTranslateJ2objcLibs() { return J2objcConfig.from(project).translateJ2objcLibs }
 
     @Input
-    boolean getFilenameCollisionCheck() { return project.j2objcConfig.filenameCollisionCheck }
+    boolean getFilenameCollisionCheck() { return J2objcConfig.from(project).filenameCollisionCheck }
 
 
     @TaskAction
@@ -91,7 +101,7 @@ class CycleFinderTask extends DefaultTask {
         if (Utils.isWindows()) {
             cycleFinderExec = 'java'
             windowsOnlyArgs.add('-jar')
-            windowsOnlyArgs.add("${getJ2objcHome()}/lib/cycle_finder.jar")
+            windowsOnlyArgs.add("${getJ2objcHome()}/lib/cycle_finder.jar".toString())
         }
 
         FileCollection fullSrcFiles = getSrcFiles()
@@ -104,42 +114,24 @@ class CycleFinderTask extends DefaultTask {
         // Assumes that any changes in generated code causes change in non-generated @Input
         fullSrcFiles = fullSrcFiles.plus(Utils.javaTrees(project, getGeneratedSourceDirs()))
 
-        FileCollection sourcepathDirs = project.files()
-        sourcepathDirs += project.files(Utils.srcSet(project, 'main', 'java').getSrcDirs())
-        sourcepathDirs += project.files(Utils.srcSet(project, 'test', 'java').getSrcDirs())
-        sourcepathDirs += project.files(getTranslateSourcepaths())
-        sourcepathDirs += project.files(getGeneratedSourceDirs())
+        UnionFileCollection sourcepathDirs = new UnionFileCollection([
+                project.files(Utils.srcSet(project, 'main', 'java').getSrcDirs()),
+                project.files(Utils.srcSet(project, 'test', 'java').getSrcDirs()),
+                project.files(getTranslateSourcepaths()),
+                project.files(getGeneratedSourceDirs())
+        ])
         String sourcepathArg = Utils.joinedPathArg(sourcepathDirs)
 
-        FileCollection classpathFiles = project.files()
-        classpathFiles += project.files(getTranslateClasspaths())
-        classpathFiles += project.files(Utils.j2objcLibs(getJ2objcHome(), getTranslateJ2objcLibs()))
+        UnionFileCollection classpathFiles = new UnionFileCollection([
+                project.files(getTranslateClasspaths()),
+                project.files(Utils.j2objcLibs(getJ2objcHome(), getTranslateJ2objcLibs()))
+        ])
         // TODO: comment explaining ${project.buildDir}/classes
         String classpathArg = Utils.joinedPathArg(classpathFiles) + ":${project.buildDir}/classes"
 
         ByteArrayOutputStream output = new ByteArrayOutputStream()
         try {
-            project.exec {
-                executable cycleFinderExec
-                windowsOnlyArgs.each { String windowsOnlyArg ->
-                    args windowsOnlyArg
-                }
-
-                // Arguments
-                args "-sourcepath", sourcepathArg
-                args "-classpath", classpathArg
-                getCycleFinderArgs().each { String cycleFinderArg ->
-                    args cycleFinderArg
-                }
-
-                // File Inputs
-                fullSrcFiles.each { File file ->
-                    args file.path
-                }
-
-                errorOutput output;
-                standardOutput output;
-            }
+            execCycleFinder(cycleFinderExec, windowsOnlyArgs, sourcepathArg, classpathArg, fullSrcFiles, output)
 
             logger.debug("CycleFinder found 0 cycles")
             assert 0 == getCycleFinderExpectedCycles()
@@ -170,5 +162,31 @@ class CycleFinderTask extends DefaultTask {
 
         reportFile.write(output.toString())
         logger.debug("CycleFinder Output: ${reportFile.path}")
+    }
+
+    @CompileStatic(TypeCheckingMode.SKIP)
+    ExecResult execCycleFinder(String cycleFinderExec, List<String> windowsOnlyArgs, String sourcepathArg,
+                               String classpathArg, FileCollection fullSrcFiles, ByteArrayOutputStream output) {
+        return project.exec {
+            executable cycleFinderExec
+            windowsOnlyArgs.each { String windowsOnlyArg ->
+                args windowsOnlyArg
+            }
+
+            // Arguments
+            args "-sourcepath", sourcepathArg
+            args "-classpath", classpathArg
+            getCycleFinderArgs().each { String cycleFinderArg ->
+                args cycleFinderArg
+            }
+
+            // File Inputs
+            fullSrcFiles.each { File file ->
+                args file.path
+            }
+
+            errorOutput output
+            standardOutput output
+        }
     }
 }
