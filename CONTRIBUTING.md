@@ -23,19 +23,17 @@ This will create a .jar containing the plugin at projectDir/build/libs/j2objc-gr
 In order to test your modification to the plugin using your own project, you need to modify the
 project that uses the plugin:
 
-1. Comment out the `plugins {...}` section for the j2objc plugin
-1. Add in the `buildscript` and `apply plugin` lines then update X.Y.Z based on "version = 'X.Y.Z-alpha'"
-in j2objc-gradle/build.gradle. Only modify j2objcConfig if needed:
+1. Comment out the `plugins {...}` section
+1. Add the `buildscript` and `apply plugin` lines then update X.Y.Z based on "version = 'X.Y.Z-alpha'"
+in j2objc-gradle/build.gradle
 
     // File: shared/build.gradle
 
-    // Comment out for local development
     //plugins {
     //    id 'java'
     //    id 'com.github.j2objccontrib.j2objcgradle' version 'X.Y.Z-alpha'
     //}
 
-    // Add the following lines for local development:
     buildscript {
         dependencies {
             classpath files('/LOCAL_J2OBJC_GRADLE/j2objc-gradle/build/libs/j2objc-gradle-X.Y.Z-alpha.jar')
