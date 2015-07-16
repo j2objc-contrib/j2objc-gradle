@@ -35,7 +35,8 @@ class TranslateTaskTest {
 
     @Before
     void setUp() {
-        (proj, j2objcHome, j2objcConfig) = TestingUtils.setupProject(false)
+        (proj, j2objcHome, j2objcConfig) = TestingUtils.setupProject(
+                new TestingUtils.ProjectConfig(applyJavaPlugin: true, createJ2objcConfig: true))
     }
 
     // TODO: add java source files to the test cases
