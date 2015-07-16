@@ -24,29 +24,25 @@ In order to test your modification to the plugin using your own project, you nee
 project that uses the plugin:
 
 1. Comment out the `plugins {...}` section for the j2objc plugin
-1. Add in the `buildscript` and `apply plugin` lines to load and apply the local j2objc plugin:
+1. Add in the `buildscript` and `apply plugin` lines then update X.Y.Z based on "version = 'X.Y.Z-alpha'"
+in j2objc-gradle/build.gradle. Only modify j2objcConfig if needed:
 
     // File: shared/build.gradle
 
-    plugins {
-        id 'java'
-        // Comment out this line for local development
-        // id 'com.github.j2objccontrib.j2objcgradle' version 'X.Y.Z-alpha'
-    }
+    // Comment out for local development
+    //plugins {
+    //    id 'java'
+    //    id 'com.github.j2objccontrib.j2objcgradle' version 'X.Y.Z-alpha'
+    //}
 
     // Add the following lines for local development:
-    // Modify for the local version based on "version = 'X.Y.Z-alpha'" in j2objc-gradle/build.gradle
     buildscript {
         dependencies {
             classpath files('/LOCAL_J2OBJC_GRADLE/j2objc-gradle/build/libs/j2objc-gradle-X.Y.Z-alpha.jar')
         }
     }
+    apply plugin: 'java'
     apply plugin: 'com.github.j2objccontrib.j2objcgradle'
-
-    // Modify configuration only if needed
-    j2objcConfig {
-        ...
-    }
 
 Note that when rapidly developing and testing changes to the plugin by building your own project,
 avoid using the Gradle daemon as issues sometimes arise with the daemon using an old version
