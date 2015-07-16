@@ -18,7 +18,6 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 
 import com.github.j2objccontrib.j2objcgradle.J2objcConfig
 import groovy.transform.CompileStatic
-import groovy.transform.TypeCheckingMode
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
@@ -105,7 +104,7 @@ class TestTask extends DefaultTask {
                     "To identify the failing test, run with the --debug argument and look for:\n" +
                     "    testJ2objc org.junit.runner.JUnitCore\n" +
                     "Copy the command from \"Command:\" onwards, then try varying the command\n" +
-                    "to drop tests and figure out which ones are causing the failures.\n"
+                    "to drop tests and figure out which ones are causing the failures.\n" +
                     "Then disable them as described above.\n"
             if (exception.getMessage().find("finished with non-zero exit value 139")) {
                 message +=
@@ -165,9 +164,8 @@ class TestTask extends DefaultTask {
         }
     }
 
-    @CompileStatic(TypeCheckingMode.SKIP)
     ExecResult execTestBinary(String binary, List<String> testNames, ByteArrayOutputStream output) {
-        return project.exec {
+        Utils.projectExec(project, {
             executable binary
             args 'org.junit.runner.JUnitCore'
 
@@ -177,9 +175,9 @@ class TestTask extends DefaultTask {
                 args testName
             }
 
-            errorOutput output
-            standardOutput output
-        }
+            setErrorOutput output
+            setStandardOutput output
+        })
     }
 
     // Generate Test Names

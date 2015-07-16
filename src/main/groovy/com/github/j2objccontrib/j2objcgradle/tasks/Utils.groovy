@@ -15,16 +15,25 @@
  */
 
 package com.github.j2objccontrib.j2objcgradle.tasks
+
 import groovy.transform.CompileStatic
+import groovy.transform.TypeCheckingMode
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 import groovy.util.logging.Slf4j
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
+import org.gradle.api.file.CopySpec
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.tasks.SourceSet
+import org.gradle.api.tasks.WorkResult
+import org.gradle.process.ExecResult
+import org.gradle.process.ExecSpec
 
 import java.util.regex.Matcher
+
 /**
  * Internal utilities supporting plugin implementation.
  */
@@ -128,6 +137,7 @@ class Utils {
      * Throws exception if two filenames match, even if in distinct directories.
      * This is important for referencing files with Xcode.
      */
+
     static void filenameCollisionCheck(FileCollection files) {
         HashMap<String, File> nameMap = [:]
         for (file in files) {
@@ -212,6 +222,38 @@ class Utils {
                         "Regex didn't find number in output: $regex, value: $value")
             }
             return value.toInteger()
+        }
+    }
+
+    // See http://melix.github.io/blog/2014/01/closure_param_inference.html
+    //
+    // TypeCheckingMode.SKIP allows Project.exec to be mocked via a metaclass in TestingUtils.groovy.
+    // ClosureParams allows type checking to enforce that the first param ('it') to the Closure is an ExecSpec.
+    // DelegatesTo allows type checking to enforce that the delegate is also an ExecSpec.
+    // Together this emulates the functionality of ExecSpec.with(Closure).
+    //
+    // We are using a non-API-documented assumption that the delegate is an ExecSpec.  If the implementation
+    // changes, this will fail at runtime.
+    // TODO: In Gradle 2.5, we can switch to strongly-typed Actions, like:
+    // https://docs.gradle.org/2.5/javadoc/org/gradle/api/Project.html#copy(org.gradle.api.Action)
+    @CompileStatic(TypeCheckingMode.SKIP)
+    static ExecResult projectExec(Project proj,
+                                  @ClosureParams(value = SimpleType.class, options = "org.gradle.process.ExecSpec")
+                                  @DelegatesTo(ExecSpec)
+                                          Closure closure) {
+        proj.exec {
+            (delegate as ExecSpec).with closure
+        }
+    }
+
+    // See projectExec for explanation of the annotations.
+    @CompileStatic(TypeCheckingMode.SKIP)
+    static WorkResult projectCopy(Project proj,
+                                  @ClosureParams(value = SimpleType.class, options = "org.gradle.api.CopySpec")
+                                  @DelegatesTo(CopySpec)
+                                          Closure closure) {
+        proj.copy {
+            (delegate as CopySpec).with closure
         }
     }
 }

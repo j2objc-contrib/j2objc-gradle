@@ -15,9 +15,9 @@
  */
 
 package com.github.j2objccontrib.j2objcgradle.tasks
+
 import com.github.j2objccontrib.j2objcgradle.J2objcConfig
 import groovy.transform.CompileStatic
-import groovy.transform.TypeCheckingMode
 import org.gradle.api.Action
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.FileCollection
@@ -31,6 +31,7 @@ import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 import org.gradle.api.tasks.incremental.InputFileDetails
 import org.gradle.process.ExecResult
 import org.gradle.process.internal.ExecException
+
 /**
  * Translation task for Java to Objective-C using j2objc tool.
  */
@@ -254,11 +255,10 @@ class TranslateTask extends DefaultTask {
         logger.debug(output.toString())
     }
 
-    @CompileStatic(TypeCheckingMode.SKIP)
     ExecResult execJ2objc(String j2objcExecutable, List<String> windowsOnlyArgs, String sourcepathArg,
-                          String classpathArg, List<String> translateArgs, srcFilesChanged,
+                          String classpathArg, List<String> translateArgs, FileCollection srcFilesChanged,
                           ByteArrayOutputStream output) {
-    return project.exec {
+        Utils.projectExec(project, {
             executable j2objcExecutable
             windowsOnlyArgs.each { String windowsOnlyArg ->
                 args windowsOnlyArg
@@ -277,8 +277,8 @@ class TranslateTask extends DefaultTask {
                 args file.path
             }
 
-            standardOutput output
-            errorOutput output
-        }
+            setStandardOutput output
+            setErrorOutput output
+        })
     }
 }

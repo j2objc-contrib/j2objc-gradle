@@ -18,7 +18,6 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 
 import com.github.j2objccontrib.j2objcgradle.J2objcConfig
 import groovy.transform.CompileStatic
-import groovy.transform.TypeCheckingMode
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.tasks.Input
@@ -76,9 +75,8 @@ class PackLibrariesTask extends DefaultTask {
         logger.debug(output.toString())
     }
 
-    @CompileStatic(TypeCheckingMode.SKIP)
     ExecResult execLipo(ByteArrayOutputStream output) {
-        return project.exec {
+        Utils.projectExec(project, {
             executable 'xcrun'
 
             args 'lipo'
@@ -87,8 +85,8 @@ class PackLibrariesTask extends DefaultTask {
                 args libFile.absolutePath
             }
 
-            errorOutput output
-            standardOutput output
-        }
+            setErrorOutput output
+            setStandardOutput output
+        })
     }
 }

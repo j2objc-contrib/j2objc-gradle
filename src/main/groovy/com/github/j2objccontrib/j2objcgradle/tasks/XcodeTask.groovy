@@ -19,7 +19,6 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 import com.github.j2objccontrib.j2objcgradle.J2objcConfig
 import com.google.common.annotations.VisibleForTesting
 import groovy.transform.CompileStatic
-import groovy.transform.TypeCheckingMode
 import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.tasks.Input
@@ -106,9 +105,12 @@ class XcodeTask extends DefaultTask {
                 "s.resources = '${j2objcResourceDirName}/**/*'\n" +
                 "s.requires_arc = true\n" +
                 "s.preserve_paths = '${srcGenDirRelativeToBuildDir}**/*.a'\n" +
-                "s.libraries = 'ObjC', 'guava', 'javax_inject', 'jre_emul', 'jsr305', 'z', 'icucore', '${project.name}-j2objc'\n" +
-                "s.xcconfig = { 'HEADER_SEARCH_PATHS' => '${getJ2objcHome()}/include', " +
-                "'LIBRARY_SEARCH_PATHS' => '${getJ2objcHome()}/lib ${project.buildDir}/j2objcOutputs/lib/iosDebug' }\n" +
+                "s.libraries = " +
+                "'ObjC', 'guava', 'javax_inject', 'jre_emul', 'jsr305', 'z', 'icucore', '${project.name}-j2objc'\n" +
+                "s.xcconfig = { "+
+                "'HEADER_SEARCH_PATHS' => '${getJ2objcHome()}/include', " +
+                "'LIBRARY_SEARCH_PATHS' => '${getJ2objcHome()}/lib ${project.buildDir}/j2objcOutputs/lib/iosDebug' " +
+                "}\n" +
                 "end\n"
         logger.debug('podspecFileContents creation...\n\n' + podspecFileContents)
         File podspecFile = getPodspecFile()
@@ -158,25 +160,23 @@ class XcodeTask extends DefaultTask {
         }
     }
 
-    @CompileStatic(TypeCheckingMode.SKIP)
     WorkResult copyResources(String j2objcResourceDirPath) {
-        return project.copy {
+        Utils.projectCopy(project, {
             Utils.srcSet(project, 'main', 'resources').srcDirs.each {
                 from it
             }
             into j2objcResourceDirPath
-        }
+        })
     }
 
-    @CompileStatic(TypeCheckingMode.SKIP)
     ExecResult execPod(ByteArrayOutputStream output) {
-        return project.exec {
+        Utils.projectExec(project, {
             workingDir getXcodeProjectDir()
             executable 'pod'
             args 'install'
-            standardOutput output
-            errorOutput output
-        }
+            setStandardOutput output
+            setErrorOutput output
+        })
     }
 
     @VisibleForTesting
