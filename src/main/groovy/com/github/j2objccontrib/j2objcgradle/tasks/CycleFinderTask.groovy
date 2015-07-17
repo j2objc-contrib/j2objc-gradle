@@ -23,7 +23,6 @@ import org.gradle.api.InvalidUserDataException
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileTree
 import org.gradle.api.internal.file.UnionFileCollection
-import org.gradle.api.internal.file.UnionFileTree
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputFile
@@ -42,8 +41,8 @@ class CycleFinderTask extends DefaultTask {
     FileTree getSrcFiles() {
         // Note that translatePattern does not need to be an @Input because it is
         // solely an input to this method, which is already an input (via @InputFiles).
-        UnionFileTree allFiles = new UnionFileTree(Utils.srcSet(project, 'main', 'java'))
-        allFiles += Utils.srcSet(project, 'test', 'java')
+        FileTree allFiles = Utils.srcSet(project, 'main', 'java')
+        allFiles = allFiles.plus(Utils.srcSet(project, 'test', 'java'))
         FileTree ret = allFiles
         if (J2objcConfig.from(project).translatePattern != null) {
             ret = allFiles.matching(J2objcConfig.from(project).translatePattern)
