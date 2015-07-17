@@ -249,7 +249,7 @@ class Utils {
     // See projectExec for explanation of the annotations.
     @CompileStatic(TypeCheckingMode.SKIP)
     static WorkResult projectCopy(Project proj,
-                                  @ClosureParams(value = SimpleType.class, options = "org.gradle.api.CopySpec")
+                                  @ClosureParams(value = SimpleType.class, options = "org.gradle.api.file.CopySpec")
                                   @DelegatesTo(CopySpec)
                                           Closure closure) {
         proj.copy {
