@@ -18,7 +18,6 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 
 import com.github.j2objccontrib.j2objcgradle.J2objcConfig
 import groovy.transform.CompileStatic
-import groovy.transform.TypeCheckingMode
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
@@ -54,19 +53,17 @@ class AssembleLibrariesTask extends DefaultTask {
     @Input
     String getDestLibDirPath() { return J2objcConfig.from(project).destLibDir }
 
-    // project.copy closure configuration cannot be replaced with a non-internal
-    // statically compiled alternative.
-    @CompileStatic(TypeCheckingMode.SKIP)
     @TaskAction
     void destCopy() {
         // We don't need to clear out the library path, our libraries can co-exist
         // with other libraries if the user wishes them to.
-        project.copy {
+
+        Utils.projectCopy(project, {
             includeEmptyDirs = true
             from libDir
             from packedLibDir
             into destLibDir
             include "*$buildType/*.a"
-        }
+        })
     }
 }

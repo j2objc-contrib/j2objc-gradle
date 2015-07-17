@@ -18,7 +18,6 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 
 import com.github.j2objccontrib.j2objcgradle.J2objcConfig
 import groovy.transform.CompileStatic
-import groovy.transform.TypeCheckingMode
 import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.file.ConfigurableFileCollection
@@ -91,9 +90,8 @@ class AssembleSourceTask extends DefaultTask {
         project.delete destDir
     }
 
-    @CompileStatic(TypeCheckingMode.SKIP)
     void copyMainSource() {
-        project.copy {
+        Utils.projectCopy(project, {
             includeEmptyDirs = false
             from srcGenDir
             into destSrcDir
@@ -103,18 +101,17 @@ class AssembleSourceTask extends DefaultTask {
             // Don't copy the test code
             exclude "**/*Test.h"
             exclude "**/*Test.m"
-        }
+        })
     }
 
-    @CompileStatic(TypeCheckingMode.SKIP)
     void copyTestSource() {
-        project.copy {
+        Utils.projectCopy(project, {
             includeEmptyDirs = false
             from srcGenDir
             into destSrcDirTest
             // Only copy the test code
             include "**/*Test.h"
             include "**/*Test.m"
-        }
+        })
     }
 }

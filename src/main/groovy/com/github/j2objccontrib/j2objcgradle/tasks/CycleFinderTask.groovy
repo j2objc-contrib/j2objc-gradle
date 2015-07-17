@@ -18,7 +18,6 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 
 import com.github.j2objccontrib.j2objcgradle.J2objcConfig
 import groovy.transform.CompileStatic
-import groovy.transform.TypeCheckingMode
 import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.file.FileCollection
@@ -164,10 +163,10 @@ class CycleFinderTask extends DefaultTask {
         logger.debug("CycleFinder Output: ${reportFile.path}")
     }
 
-    @CompileStatic(TypeCheckingMode.SKIP)
+
     ExecResult execCycleFinder(String cycleFinderExec, List<String> windowsOnlyArgs, String sourcepathArg,
                                String classpathArg, FileCollection fullSrcFiles, ByteArrayOutputStream output) {
-        return project.exec {
+        return Utils.projectExec(project, {
             executable cycleFinderExec
             windowsOnlyArgs.each { String windowsOnlyArg ->
                 args windowsOnlyArg
@@ -185,8 +184,8 @@ class CycleFinderTask extends DefaultTask {
                 args file.path
             }
 
-            errorOutput output
-            standardOutput output
-        }
+            setErrorOutput output
+            setStandardOutput output
+        })
     }
 }
