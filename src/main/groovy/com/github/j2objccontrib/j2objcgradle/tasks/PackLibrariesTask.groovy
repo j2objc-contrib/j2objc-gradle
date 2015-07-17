@@ -24,7 +24,6 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
-import org.gradle.process.ExecResult
 
 /**
  * Uses 'lipo' binary to combine multiple architecture flavors of a library into a
@@ -61,32 +60,29 @@ class PackLibrariesTask extends DefaultTask {
             getOutputLibDir().deleteDir()
             getOutputLibDir().mkdirs()
         }
-        ByteArrayOutputStream output = new ByteArrayOutputStream()
+
+        ByteArrayOutputStream stdout = new ByteArrayOutputStream()
+        ByteArrayOutputStream stderr = new ByteArrayOutputStream()
+        logger.debug("PackLibrariesTask - projectExec - $name:")
+
         try {
-            execLipo(output)
+            Utils.projectExec(project, stdout, stderr, {
+                executable 'xcrun'
+
+                args 'lipo'
+                args '-create', '-output', "${outputLibDir}/lib${project.name}-j2objc.a"
+
+                getInputLibraries().each { File libFile ->
+                    args libFile.absolutePath
+                }
+
+                setErrorOutput stdout
+                setStandardOutput stderr
+            })
 
         } catch (Exception exception) {
-            String outputStr = output.toString()
-            logger.error("$name failed, output:")
-            logger.error(outputStr)
+            // TODO: match on common failure and provide useful help
             throw exception
         }
-        logger.debug("$name output: ")
-        logger.debug(output.toString())
-    }
-
-    ExecResult execLipo(ByteArrayOutputStream output) {
-        Utils.projectExec(project, {
-            executable 'xcrun'
-
-            args 'lipo'
-            args '-create', '-output', "${outputLibDir}/lib${project.name}-j2objc.a"
-            getInputLibraries().each { File libFile ->
-                args libFile.absolutePath
-            }
-
-            setErrorOutput output
-            setStandardOutput output
-        })
     }
 }

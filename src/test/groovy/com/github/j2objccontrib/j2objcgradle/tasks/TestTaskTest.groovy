@@ -17,6 +17,7 @@
 package com.github.j2objccontrib.j2objcgradle.tasks
 
 import com.github.j2objccontrib.j2objcgradle.J2objcConfig
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 import org.gradle.testfixtures.ProjectBuilder
@@ -96,28 +97,6 @@ class TestTaskTest {
     }
 
     @Test
-    void test_NoTests() {
-        setupTask()
-
-        MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
-        mockProjectExec.demandExecAndReturn(
-                [
-                        "${proj.buildDir}/testJ2objc",
-                        "org.junit.runner.JUnitCore",
-                        "[]"
-                ],
-                // Fake test output
-                'IGNORE\nOK (2 tests)\nIGNORE',
-                // stderr
-                '',
-                null)
-
-        j2objcTest.test()
-
-        mockProjectExec.verify()
-    }
-
-    @Test
     void test_OneTest() {
         setupTask()
 
@@ -126,12 +105,9 @@ class TestTaskTest {
                 [
                         "${proj.buildDir}/testJ2objc",
                         "org.junit.runner.JUnitCore",
-                        "[]"
                 ],
-                // NOTE: 'test' instead of 'tests'
-                'OK (1 test)',
-                // stderr
-                '',
+                'OK (1 test)',  // NOTE: 'test' is singular for stdout
+                '',  // stderr
                 null)
 
         j2objcTest.test()
@@ -139,7 +115,45 @@ class TestTaskTest {
         mockProjectExec.verify()
     }
 
-    // TODO: test_Simple() - with some unit tests
+    @Test
+    void test_MultipleTests() {
+        setupTask()
+
+        MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
+        mockProjectExec.demandExecAndReturn(
+                [
+                        "${proj.buildDir}/testJ2objc",
+                        "org.junit.runner.JUnitCore",
+                ],
+                'IGNORE\nOK (2 tests)\nIGNORE',  // stdout
+                '',  // stderr
+                null)
+
+        j2objcTest.test()
+
+        mockProjectExec.verify()
+    }
+
+    @Test(expected=InvalidUserDataException.class)
+    void test_CantParseOutput() {
+        setupTask()
+
+        MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
+        mockProjectExec.demandExecAndReturn(
+                [
+                        "${proj.buildDir}/testJ2objc",
+                        "org.junit.runner.JUnitCore",
+                ],
+                'OK (2 testXXXX)',  // NOTE: invalid stdout fails matchRegexOutputStreams
+                '',  // stderr
+                null)
+
+        j2objcTest.test()
+
+        mockProjectExec.verify()
+    }
+
+    // TODO: test_Simple() - with some real unit tests
 
     // TODO: test_Complex() - preferably using real project in src/test/resources
 }

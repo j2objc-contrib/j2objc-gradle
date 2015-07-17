@@ -27,8 +27,6 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-import org.gradle.process.ExecResult
-import org.gradle.process.internal.ExecException
 
 /**
  * CycleFinder task checks for memory cycles that can cause memory leaks
@@ -127,22 +125,48 @@ class CycleFinderTask extends DefaultTask {
         // TODO: comment explaining ${project.buildDir}/classes
         String classpathArg = Utils.joinedPathArg(classpathFiles) + ":${project.buildDir}/classes"
 
-        ByteArrayOutputStream output = new ByteArrayOutputStream()
+        ByteArrayOutputStream stdout = new ByteArrayOutputStream()
+        ByteArrayOutputStream stderr = new ByteArrayOutputStream()
         try {
-            execCycleFinder(cycleFinderExec, windowsOnlyArgs, sourcepathArg, classpathArg, fullSrcFiles, output)
+            logger.debug('CycleFinderTask - projectExec:')
+            Utils.projectExec(project, stdout, stderr, {
+                executable cycleFinderExec
+                windowsOnlyArgs.each { String windowsOnlyArg ->
+                    args windowsOnlyArg
+                }
+
+                // Arguments
+                args "-sourcepath", sourcepathArg
+                args "-classpath", classpathArg
+                getCycleFinderArgs().each { String cycleFinderArg ->
+                    args cycleFinderArg
+                }
+
+                // File Inputs
+                fullSrcFiles.each { File file ->
+                    args file.path
+                }
+
+                setStandardOutput stdout
+                setErrorOutput stderr
+            })
 
             logger.debug("CycleFinder found 0 cycles")
             assert 0 == getCycleFinderExpectedCycles()
 
-        } catch (ExecException exception) {
-            // Expected exception for non-zero exit of process
+        } catch (Exception exception) {
+            // ExecException is converted to InvalidUserDataException in Utils.projectExec(...)
 
-            // TODO show output for build failure instead of matchNumberRegex exception
-            String outputStr = output.toString()
-            // matchNumberRegex throws exception if regex isn't found
-            int cyclesFound = Utils.matchNumberRegex(outputStr, /(\d+) CYCLES FOUND/)
+            // Suppress rethrow of exception if it's expected non-zero exit matching "CYCLES FOUND"
+            String cyclesFoundStr = Utils.matchRegexOutputStreams(stdout, stderr, /(\d+) CYCLES FOUND/)
+            if (!(exception instanceof InvalidUserDataException) || !cyclesFoundStr?.isInteger()) {
+                // Didn't match (XX CYCLES FOUND)
+                throw exception
+            }
+
+            // Matched (XX CYCLES FOUND), so assert on cyclesFound
+            int cyclesFound = cyclesFoundStr.toInteger()
             if (cyclesFound != getCycleFinderExpectedCycles()) {
-                logger.error(outputStr)
                 String message =
                         "Unexpected number of cycles found:\n" +
                         "Expected Cycles:  ${getCycleFinderExpectedCycles()}\n" +
@@ -158,33 +182,8 @@ class CycleFinderTask extends DefaultTask {
             // Suppress exception when cycles found == cycleFinderExpectedCycles
         }
 
-        reportFile.write(output.toString())
+        // Only write output if task is successful
+        reportFile.write(Utils.stdOutAndErrToLogString(stdout, stderr))
         logger.debug("CycleFinder Output: ${reportFile.path}")
-    }
-
-
-    ExecResult execCycleFinder(String cycleFinderExec, List<String> windowsOnlyArgs, String sourcepathArg,
-                               String classpathArg, FileCollection fullSrcFiles, ByteArrayOutputStream output) {
-        return Utils.projectExec(project, {
-            executable cycleFinderExec
-            windowsOnlyArgs.each { String windowsOnlyArg ->
-                args windowsOnlyArg
-            }
-
-            // Arguments
-            args "-sourcepath", sourcepathArg
-            args "-classpath", classpathArg
-            getCycleFinderArgs().each { String cycleFinderArg ->
-                args cycleFinderArg
-            }
-
-            // File Inputs
-            fullSrcFiles.each { File file ->
-                args file.path
-            }
-
-            setErrorOutput output
-            setStandardOutput output
-        })
     }
 }

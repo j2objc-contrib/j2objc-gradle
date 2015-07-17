@@ -19,6 +19,7 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 import groovy.mock.interceptor.MockFor
 import groovy.util.logging.Slf4j
 import org.gradle.api.Project
+import org.gradle.process.ExecResult
 import org.gradle.util.ConfigureUtil
 
 /**
@@ -56,7 +57,7 @@ class MockProjectExec {
         project.metaClass.invokeMethod = { String name, Object[] args ->
             if (name == 'exec') {
                 // Call the proxy object so that it can track verifications
-                projectProxyInstance().exec((Closure) args.first())
+                return projectProxyInstance().exec((Closure) args.first())
             } else {
                 // This calls the delegate without causing infinite recursion
                 // http://stackoverflow.com/a/10126006/1509221
@@ -111,8 +112,8 @@ class MockProjectExec {
 
     void demandExecAndReturn(
             List<String> expectedCommandLine,
-            String standardOutput,
-            String errorOutput,
+            String stdout,
+            String stderr,
             Exception exceptionToThrow) {
 
         mockForProj.demand.exec { Closure closure ->
@@ -129,18 +130,23 @@ class MockProjectExec {
             }
             assert expectedCommandLine == canonicalizedArgs
 
-            if (errorOutput) {
-                mockExec.errorOutput.write(errorOutput.getBytes('utf-8'))
-                mockExec.errorOutput.flush()
-            }
-            if (standardOutput) {
-                mockExec.standardOutput.write(standardOutput.getBytes('utf-8'))
+            if (stdout) {
+                mockExec.standardOutput.write(stdout.getBytes('utf-8'))
                 mockExec.standardOutput.flush()
+                // warn is needed to output to stdout in unit tests
+                log.warn(stdout)
+            }
+            if (stderr) {
+                mockExec.errorOutput.write(stderr.getBytes('utf-8'))
+                mockExec.errorOutput.flush()
+                log.error(stderr)
             }
 
             if (exceptionToThrow != null) {
                 throw exceptionToThrow
             }
+
+            return (ExecResult) null
         }
     }
 
@@ -149,11 +155,12 @@ class MockProjectExec {
     }
 
     // Basically mocks Gradle's AbstractExecTask
+    // TODO: implements ExecSpec
     private class MockExec {
         String executable
         List<String> args = new ArrayList<>()
-        OutputStream errorOutput;
-        OutputStream standardOutput;
+        OutputStream errorOutput
+        OutputStream standardOutput
 
         void executable(Object executable) {
             this.executable = (String) executable
@@ -166,12 +173,16 @@ class MockProjectExec {
             }
         }
 
-        void errorOutput(OutputStream errorOutput) {
-            this.errorOutput = errorOutput
+        List<String> getCommandLine() {
+            return args
         }
 
-        void standardOutput(OutputStream standardOutput) {
+        void setStandardOutput(OutputStream standardOutput) {
             this.standardOutput = standardOutput
+        }
+
+        void setErrorOutput(OutputStream errorOutput) {
+            this.errorOutput = errorOutput
         }
 
         String toString() {

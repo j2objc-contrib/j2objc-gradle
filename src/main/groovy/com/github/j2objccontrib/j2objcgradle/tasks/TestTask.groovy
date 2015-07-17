@@ -19,6 +19,7 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 import com.github.j2objccontrib.j2objcgradle.J2objcConfig
 import groovy.transform.CompileStatic
 import org.gradle.api.DefaultTask
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileTree
@@ -27,7 +28,6 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-import org.gradle.process.ExecResult
 
 import java.util.regex.Matcher
 
@@ -82,17 +82,41 @@ class TestTask extends DefaultTask {
         Properties packagePrefixes = Utils.packagePrefixes(project, translateArgs)
         List<String> testNames = getTestNames(project, getTestSrcFiles(), packagePrefixes)
 
-        ByteArrayOutputStream output = new ByteArrayOutputStream()
+        ByteArrayOutputStream stdout = new ByteArrayOutputStream()
+        ByteArrayOutputStream stderr = new ByteArrayOutputStream()
         try {
-            execTestBinary(binary, testNames, output)
+            Utils.projectExec(project, stdout, stderr, {
+                executable binary
+                args 'org.junit.runner.JUnitCore'
+
+                getTestArgs().each { String testArg ->
+                    args testArg
+                }
+
+                testNames.each { String testName ->
+                    args testName
+                }
+
+                setStandardOutput stdout
+                setErrorOutput stderr
+            })
+
         } catch (Exception exception) {
-            logger.error("STDOUT and STDERR from failed j2objcTest task:")
-            logger.error(output.toString())
             String message =
                     "The j2objcTest task failed. Given that the java plugin 'test' task\n" +
-                    "completed successfully, this shows an error specific to the j2objc build.\n" +
-                    "It may be that the code will still perform correctly. If you can identify\n" +
-                    "the failing test, then it can be excluded by modifying build.gradle:\n" +
+                    "completed successfully, this is an error specific to the j2objc build.\n" +
+                    "\n" +
+                    "1) Check BOTH 'Standard Output' and 'Error Output' above for problems.\n" +
+                    "\n" +
+                    "2) It may be that only the tests are failing while the translated code\n" +
+                    "may run correctly. If you can identify the failing test, then can try\n" +
+                    "marking it to be ignored.\n" +
+                    "\n" +
+                    "To identify the failing test, look for 'Command Line failed' above.\n" +
+                    "Copy and then run it in your shell. Selectively remove the test cases\n" +
+                    "until you identify the failing test.\n" +
+                    "\n" +
+                    "The failing test can be filtered out using build.gradle:\n" +
                     "\n" +
                     "j2objcConfig {\n" +
                     "    testPattern {\n" +
@@ -101,31 +125,25 @@ class TestTask extends DefaultTask {
                     "    }\n" +
                     "}\n" +
                     "\n" +
-                    "To identify the failing test, run with the --debug argument and look for:\n" +
-                    "    testJ2objc org.junit.runner.JUnitCore\n" +
-                    "Copy the command from \"Command:\" onwards, then try varying the command\n" +
-                    "to drop tests and figure out which ones are causing the failures.\n" +
-                    "Then disable them as described above.\n"
-            if (exception.getMessage().find("finished with non-zero exit value 139")) {
-                message +=
-                        "\n" +
-                        "\"non-zero exit value 139\" indicates a process crash, most likely\n" +
-                        "caused by a segmentation fault (SIGSEGV) in user space.\n" +
-                        "\n" +
-                        "Look at the known crash issues to see what may be causing this:\n" +
-                        "    https://github.com/google/j2objc/issues?q=is%3Aissue+crash+is%3Aopen+\n"
-            }
-            logger.error(message)
-            throw exception
+                    "Look at known J2ObjcC crash issues for further insights:\n" +
+                    "    https://github.com/google/j2objc/issues?q=is%3Aissue+is%3Aopen+crash\n"
+
+            // Copy message afterwards to make it more visible as exception text may be long
+            message = exception.toString() + '\n' + message
+            throw new InvalidUserDataException(message, exception)
         }
 
-        // Test Output Report
-        String outputStr = output.toString()
-        reportFile.write(outputStr)
-        logger.debug("Test Output: ${reportFile.path}")
+        // Only write output if task is successful
+        reportFile.write(Utils.stdOutAndErrToLogString(stdout, stderr))
+        logger.error("Test Output: ${reportFile.path}")
 
         // NOTE: last 's' is optional
-        int testCount = Utils.matchNumberRegex(outputStr, /OK \((\d+) tests?\)/)
+        String testCountStr = Utils.matchRegexOutputStreams(stdout, stderr, /OK \((\d+) tests?\)/)
+        if (!testCountStr?.toInteger()) {
+            throw new InvalidUserDataException()
+        }
+        int testCount = testCountStr.toInteger()
+
         String message =
                 "\n" +
                 "j2objcConfig {\n" +
@@ -162,22 +180,6 @@ class TestTask extends DefaultTask {
                     message
             logger.debug(message)
         }
-    }
-
-    ExecResult execTestBinary(String binary, List<String> testNames, ByteArrayOutputStream output) {
-        Utils.projectExec(project, {
-            executable binary
-            args 'org.junit.runner.JUnitCore'
-
-            args getTestArgs()
-
-            testNames.each { String testName ->
-                args testName
-            }
-
-            setErrorOutput output
-            setStandardOutput output
-        })
     }
 
     // Generate Test Names

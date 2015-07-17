@@ -60,8 +60,8 @@ class CycleFinderTaskTest {
                         '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java',
                         '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/PROJECT_DIR/build/classes',
                 ],
-                'IGNORE\n40 CYCLES FOUND\nIGNORE',
-                null,
+                'IGNORE\n40 CYCLES FOUND\nIGNORE',  // stdout
+                null,  // stderr
                 new ExecException('Non-Zero Exit'))
 
         j2objcCycleFinder.cycleFinder()
@@ -84,9 +84,9 @@ class CycleFinderTaskTest {
                         '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java',
                         '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/PROJECT_DIR/build/classes',
                 ],
-                // Note the '50' cycles instead of expected 40
-                'IGNORE\n50 CYCLES FOUND\nIGNORE',
-                null,
+                // NOTE: '50' cycles instead of expected 40
+                '50 CYCLES FOUND',  // stdout
+                null,  // stderr
                 new ExecException('Non-Zero Exit'))
 
         try {
@@ -117,7 +117,10 @@ class CycleFinderTaskTest {
                         '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/PROJECT_DIR/build/classes',
                         '--whitelist', '/J2OBJC_REPO/jre_emul/cycle_whitelist.txt',
                         '--sourcefilelist', '/J2OBJC_REPO/jre_emul/build_result/java_sources.mf'
-                ])
+                ],
+                '0 CYCLES FOUND',  // stdout
+                null,  // stderr
+                null)
 
         j2objcCycleFinder.cycleFinder()
 
@@ -144,8 +147,8 @@ class CycleFinderTaskTest {
                         '--whitelist', '/J2OBJC_REPO/jre_emul/cycle_whitelist.txt',
                         '--sourcefilelist', '/J2OBJC_REPO/jre_emul/build_result/java_sources.mf'
                 ],
-                'IGNORE\n2 CYCLES FOUND\nIGNORE',
-                null,
+                'IGNORE\n2 CYCLES FOUND\nIGNORE',  // stdout
+                null,  // stderr
                 new ExecException('Non-Zero Exit'))
 
         try {
