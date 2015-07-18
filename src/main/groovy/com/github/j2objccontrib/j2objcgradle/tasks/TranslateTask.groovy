@@ -235,7 +235,7 @@ class TranslateTask extends DefaultTask {
 
         logger.debug('TranslateTask - projectExec:')
         try {
-            Utils.projectExec(project, stdout, stderr, {
+            Utils.projectExec(project, stdout, stderr, null, {
                 executable j2objcExecutable
                 windowsOnlyArgs.each { String windowsOnlyArg ->
                     args windowsOnlyArg
@@ -259,7 +259,7 @@ class TranslateTask extends DefaultTask {
             })
 
         } catch(Exception exception) {
-            // TODO: match on common failure and provide useful help
+            // TODO: match on common failures and provide useful help
             throw exception
         }
     }

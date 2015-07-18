@@ -84,8 +84,11 @@ class TestTask extends DefaultTask {
 
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()
+
+        // NOTE: last 's' is optional for the case of "(OK 1 test)"
+        String testCountRegex = /OK \((\d+) tests?\)/
         try {
-            Utils.projectExec(project, stdout, stderr, {
+            Utils.projectExec(project, stdout, stderr, testCountRegex, {
                 executable binary
                 args 'org.junit.runner.JUnitCore'
 
@@ -108,7 +111,7 @@ class TestTask extends DefaultTask {
                     "\n" +
                     "1) Check BOTH 'Standard Output' and 'Error Output' above for problems.\n" +
                     "\n" +
-                    "2) It may be that only the tests are failing while the translated code\n" +
+                    "2) It could be that only the tests are failing while the non-test code\n" +
                     "may run correctly. If you can identify the failing test, then can try\n" +
                     "marking it to be ignored.\n" +
                     "\n" +
@@ -116,7 +119,7 @@ class TestTask extends DefaultTask {
                     "Copy and then run it in your shell. Selectively remove the test cases\n" +
                     "until you identify the failing test.\n" +
                     "\n" +
-                    "The failing test can be filtered out using build.gradle:\n" +
+                    "Then the failing test can be filtered out using build.gradle:\n" +
                     "\n" +
                     "j2objcConfig {\n" +
                     "    testPattern {\n" +
@@ -137,10 +140,14 @@ class TestTask extends DefaultTask {
         reportFile.write(Utils.stdOutAndErrToLogString(stdout, stderr))
         logger.error("Test Output: ${reportFile.path}")
 
-        // NOTE: last 's' is optional
-        String testCountStr = Utils.matchRegexOutputStreams(stdout, stderr, /OK \((\d+) tests?\)/)
+        String testCountStr = Utils.matchRegexOutputs(stdout, stderr, testCountRegex)
         if (!testCountStr?.toInteger()) {
-            throw new InvalidUserDataException()
+            // Should have been caught in projectExec call above
+            throw new InvalidUserDataException(
+                    Utils.stdOutAndErrToLogString(stdout, stderr) + '\n' +
+                    'Tests passed but could not find test count.\n' +
+                    "Failed Regex Match testCountRegex: /$testCountRegex/" +
+                    "Found: $testCountStr")
         }
         int testCount = testCountStr.toInteger()
 

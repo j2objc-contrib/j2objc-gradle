@@ -66,7 +66,7 @@ class PackLibrariesTask extends DefaultTask {
         logger.debug("PackLibrariesTask - projectExec - $name:")
 
         try {
-            Utils.projectExec(project, stdout, stderr, {
+            Utils.projectExec(project, stdout, stderr, null, {
                 executable 'xcrun'
 
                 args 'lipo'
@@ -81,7 +81,7 @@ class PackLibrariesTask extends DefaultTask {
             })
 
         } catch (Exception exception) {
-            // TODO: match on common failure and provide useful help
+            // TODO: match on common failures and provide useful help
             throw exception
         }
     }

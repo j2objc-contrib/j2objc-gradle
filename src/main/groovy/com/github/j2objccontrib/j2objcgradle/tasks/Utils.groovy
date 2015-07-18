@@ -23,6 +23,7 @@ import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 import groovy.util.logging.Slf4j
 import org.gradle.api.InvalidUserDataException
+import org.gradle.api.Nullable
 import org.gradle.api.Project
 import org.gradle.api.file.CopySpec
 import org.gradle.api.file.FileCollection
@@ -204,15 +205,23 @@ class Utils {
     }
 
     // Matches regex, return first match as string, must have >1 capturing group
-    // Compares against stderr first then stdout
-    static String matchRegexOutputStreams(
-            ByteArrayOutputStream stdout, ByteArrayOutputStream stderr, String regex) {
+    // Return first capture group, comparing stderr first then stdout
+    // Returns null for no match
+    static String matchRegexOutputs(
+            ByteArrayOutputStream stdout,
+            ByteArrayOutputStream stderr,
+            @Nullable String regex) {
+
+        if (regex == null) {
+            return null
+        }
 
         Matcher stdMatcher = (stdout.toString() =~ regex)
         Matcher errMatcher = (stderr.toString() =~ regex)
         // Requires a capturing group in the regex
-        assert 1 <= stdMatcher.groupCount(), "regex must have '(...)' capturing group: $regex"
-        assert 1 <= errMatcher.groupCount(), "regex must have '(...)' capturing group: $regex"
+        String assertFailMsg = "matchRegexOutputs must have '(...)' capture group, regex: '$regex'"
+        assert stdMatcher.groupCount() >= 1, assertFailMsg
+        assert errMatcher.groupCount() >= 1, assertFailMsg
 
         if (errMatcher.find()) {
             return errMatcher.group(1)
@@ -224,15 +233,29 @@ class Utils {
         return null
     }
 
+    /**
+     * Executes command line and returns result.
+     *
+     * Throws exception if command fails or non-null regex doesn't match stdout or stderr.
+     * The exceptions have detailed information on command line, stdout, stderr and failure cause.
+     *
+     * @param proj Runs proj.exec {...} method
+     * @param stdout To capture standard output
+     * @param stderr To capture standard output
+     * @param matchRegexOutputsRequired Throws exception if stdout/stderr don't match regex.
+     *        Matches each OutputStream separately, not in combination. Ignored if null.
+     * @param closure ExecSpec type for proj.exec {...} method
+     * @return ExecResult from the method
+     */
     // See http://melix.github.io/blog/2014/01/closure_param_inference.html
     //
-    // TypeCheckingMode.SKIP allows Project.exec to be mocked via a metaclass in TestingUtils.groovy.
-    // ClosureParams allows type checking to enforce that the first param ('it') to the Closure is an ExecSpec.
-    // DelegatesTo allows type checking to enforce that the delegate is also an ExecSpec.
+    // TypeCheckingMode.SKIP allows Project.exec to be mocked via metaclass in TestingUtils.groovy.
+    // ClosureParams allows type checking to enforce that the first param ('it') to the Closure is
+    // an ExecSpec. DelegatesTo allows type checking to enforce that the delegate is ExecSpec.
     // Together this emulates the functionality of ExecSpec.with(Closure).
     //
-    // We are using a non-API-documented assumption that the delegate is an ExecSpec.  If the implementation
-    // changes, this will fail at runtime.
+    // We are using a non-API-documented assumption that the delegate is an ExecSpec.  If the
+    // implementation changes, this will fail at runtime.
     // TODO: In Gradle 2.5, we can switch to strongly-typed Actions, like:
     // https://docs.gradle.org/2.5/javadoc/org/gradle/api/Project.html#copy(org.gradle.api.Action)
     @CompileStatic(TypeCheckingMode.SKIP)
@@ -240,32 +263,42 @@ class Utils {
             Project proj,
             ByteArrayOutputStream stdout,
             ByteArrayOutputStream stderr,
+            @Nullable String matchRegexOutputsRequired,
             @ClosureParams(value = SimpleType.class, options = "org.gradle.process.ExecSpec")
             @DelegatesTo(ExecSpec)
                     Closure closure) {
 
         ExecSpec execSpec = null
         ExecResult execResult
+        boolean execSucceeded = false
 
         try {
             execResult = proj.exec {
                 execSpec = delegate as ExecSpec
                 (execSpec).with closure
             }
-
-        } catch (ExecException exception) {
-
-            if (execSpec == null) {
-                throw exception
+            execSucceeded = true
+            if (matchRegexOutputsRequired) {
+                if (!matchRegexOutputs(stdout, stderr, matchRegexOutputsRequired)) {
+                    // Exception thrown here to output command line
+                    throw new InvalidUserDataException(
+                            'Unable to find expected expected output in stdout or stderr\n' +
+                            "Failed Regex Match: /$matchRegexOutputsRequired/")
+                }
             }
 
-            logDebugExecSpecOutput(stdout, stderr, execSpec)
+        } catch (Exception exception) {
 
-            // ExecException only indicates "non-zero exit" which is unhelpful for debugging
-            // exceptionMsg has command line and stderr which is more useful
+            // ExecException is most common, which indicates "non-zero exit"
+            // Add command line and stderr to make the error message more useful
             // Chain to the original ExecException for complete stack trace
-            String exceptionMsg =
-                    'Command Line failed:\n' +
+            String exceptionMsg = ''
+            if (execSucceeded) {
+                exceptionMsg += 'Command Line Succeeded (failure cause listed below):\n'
+            } else {
+                exceptionMsg += 'Command Line Failed:\n'
+            }
+            exceptionMsg +=
                     execSpec.getCommandLine().join(' ') + '\n' +
                     // The command line can be long, so put more important details at the end
                     'Caused by:\n' +
@@ -306,6 +339,12 @@ class Utils {
                 stdout.toString() + '\n' +
                 'Error Output:\n' +
                 stderr.toString()
+    }
+
+    static boolean isProjectExecNonZeroExit(Exception exception) {
+        return (exception instanceof InvalidUserDataException) &&
+               // TODO: improve indentification of non-zero exits?
+               (exception?.getCause() instanceof ExecException)
     }
 
     // See projectExec for explanation of the annotations.

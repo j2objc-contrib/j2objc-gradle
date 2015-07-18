@@ -140,7 +140,7 @@ class XcodeTask extends DefaultTask {
             ByteArrayOutputStream stderr = new ByteArrayOutputStream()
             try {
                 logger.debug('XcodeTask - projectExec - pod install:')
-                Utils.projectExec(project, stdout, stderr, {
+                Utils.projectExec(project, stdout, stderr, null, {
                     workingDir getXcodeProjectDir()
                     executable 'pod'
                     args 'install'

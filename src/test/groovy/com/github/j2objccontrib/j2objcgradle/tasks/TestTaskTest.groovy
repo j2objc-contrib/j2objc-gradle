@@ -144,7 +144,7 @@ class TestTaskTest {
                         "${proj.buildDir}/testJ2objc",
                         "org.junit.runner.JUnitCore",
                 ],
-                'OK (2 testXXXX)',  // NOTE: invalid stdout fails matchRegexOutputStreams
+                'OK (2 testXXXX)',  // NOTE: invalid stdout fails matchRegexOutputs
                 '',  // stderr
                 null)
 
