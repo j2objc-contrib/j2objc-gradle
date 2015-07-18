@@ -29,8 +29,6 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 import org.gradle.api.tasks.incremental.InputFileDetails
-import org.gradle.process.ExecResult
-import org.gradle.process.internal.ExecException
 
 /**
  * Translation task for Java to Objective-C using j2objc tool.
@@ -232,53 +230,37 @@ class TranslateTask extends DefaultTask {
         // TODO: comment explaining ${project.buildDir}/classes
         String classpathArg = Utils.joinedPathArg(classpathFiles) + ":${project.buildDir}/classes"
 
-        ByteArrayOutputStream output = new ByteArrayOutputStream()
-        try {
-            execJ2objc(j2objcExecutable, windowsOnlyArgs, sourcepathArg, classpathArg, translateArgs,
-                    srcFilesChanged, output)
+        ByteArrayOutputStream stdout = new ByteArrayOutputStream()
+        ByteArrayOutputStream stderr = new ByteArrayOutputStream()
 
-        } catch (ExecException exception) {
-            String outputStr = output.toString()
-            logger.debug('Translation output:')
-            logger.debug(outputStr)
-            // Put to stderr only the lines at fault.
-            // We do not separate standardOutput and errorOutput in the exec
-            // task, because the interleaved output is helpful for context.
-            logger.error('Error during translation:')
-            logger.error(Utils.filterJ2objcOutputForErrorLines(outputStr))
-            // Gradle will helpfully tell the user to use --debug for more
-            // output when the build fails.
+        logger.debug('TranslateTask - projectExec:')
+        try {
+            Utils.projectExec(project, stdout, stderr, {
+                executable j2objcExecutable
+                windowsOnlyArgs.each { String windowsOnlyArg ->
+                    args windowsOnlyArg
+                }
+
+                // Arguments
+                args "-d", srcGenDir
+                args "-sourcepath", sourcepathArg
+                args "-classpath", classpathArg
+                translateArgs.each { String translateArg ->
+                    args translateArg
+                }
+
+                // File Inputs
+                srcFilesChanged.each { File file ->
+                    args file.path
+                }
+
+                setStandardOutput stdout
+                setErrorOutput stderr
+            })
+
+        } catch(Exception exception) {
+            // TODO: match on common failure and provide useful help
             throw exception
         }
-
-        logger.debug('Translation output:')
-        logger.debug(output.toString())
-    }
-
-    ExecResult execJ2objc(String j2objcExecutable, List<String> windowsOnlyArgs, String sourcepathArg,
-                          String classpathArg, List<String> translateArgs, FileCollection srcFilesChanged,
-                          ByteArrayOutputStream output) {
-        Utils.projectExec(project, {
-            executable j2objcExecutable
-            windowsOnlyArgs.each { String windowsOnlyArg ->
-                args windowsOnlyArg
-            }
-
-            // Arguments
-            args "-d", srcGenDir
-            args "-sourcepath", sourcepathArg
-            args "-classpath", classpathArg
-            translateArgs.each { String translateArg ->
-                args translateArg
-            }
-
-            // File Inputs
-            srcFilesChanged.each { File file ->
-                args file.path
-            }
-
-            setStandardOutput output
-            setErrorOutput output
-        })
     }
 }

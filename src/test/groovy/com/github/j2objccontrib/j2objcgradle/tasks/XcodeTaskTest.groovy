@@ -21,7 +21,7 @@ import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
-import org.junit.Test;
+import org.junit.Test
 
 /**
  * Utils tests.

@@ -16,14 +16,16 @@
 
 package com.github.j2objccontrib.j2objcgradle.tasks
 
+import org.apache.commons.io.output.TeeOutputStream
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.plugins.JavaPlugin
+import org.gradle.process.internal.ExecHandleBuilder
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
-import org.junit.Test;
+import org.junit.Test
 
 /**
  * Utils tests.
@@ -97,7 +99,7 @@ class UtilsTest {
         localProperties.write("j2objc.home=$j2objcHomeWritten\n")
 
         String j2objcHomeRead = Utils.j2objcHome(proj)
-        assert j2objcHomeWritten == j2objcHomeRead
+        assert j2objcHomeWritten.equals(j2objcHomeRead)
     }
 
     // TODO: testJ2objcHome_EnvironmentVariable
@@ -202,18 +204,114 @@ class UtilsTest {
     // TODO: testFilterJ2objcOutputForErrorLines()
 
     @Test
-    void testMatchNumberRegex() {
-        int count = Utils.matchNumberRegex("15 CYCLES FOUND", /(\d+) CYCLES FOUND/)
-        assert count == 15
+    void projectExec_StdOut() {
+        ByteArrayOutputStream stdout = new ByteArrayOutputStream()
+        ByteArrayOutputStream stderr = new ByteArrayOutputStream()
+        // This will branch outputs to both the system and internal test OutputStreams
+        // If this is useful, it can be extended to other unit tests
+        TeeOutputStream stdoutTee = new TeeOutputStream(System.out, stdout)
+        TeeOutputStream stderrTee = new TeeOutputStream(System.err, stderr)
+
+        Utils.projectExec(proj, stdout, stderr, {
+            executable 'echo'
+            args 'written-stdout'
+            setStandardOutput stdoutTee
+            setErrorOutput stderrTee
+        })
+
+        // newline is added at end of stdout/stderr
+        assert stdout.toString().equals('written-stdout\n')
+        assert stderr.toString().isEmpty()
     }
 
-    @Test(expected = InvalidUserDataException.class)
-    void testMatchNumberRegex_NoMatch() {
-        int count = Utils.matchNumberRegex("AA CYCLES FOUND", /(\d+) CYCLES FOUND/)
+    @Test
+    void projectExec_StdErr() {
+        ByteArrayOutputStream stdout = new ByteArrayOutputStream()
+        ByteArrayOutputStream stderr = new ByteArrayOutputStream()
+
+        // TODO: get the command to write to stderr rather than faking it
+        // Tried to do "args '>/dev/stderr'" but it's passed to echo command rather than shell
+        stderr.write('fake-stderr'.getBytes('utf-8'))
+
+        Utils.projectExec(proj, stdout, stderr, {
+            executable 'echo'
+            args 'echo-stdout'
+            setStandardOutput stdout
+            setErrorOutput stderr
+        })
+
+        // newline is added at end of stdout/stderr
+        assert stdout.toString().equals('echo-stdout\n')
+        assert stderr.toString().equals('fake-stderr')
     }
 
-    @Test(expected = InvalidUserDataException.class)
-    void testMatchNumberRegex_NotNumber() {
-        int count = Utils.matchNumberRegex("AA CYCLES FOUND", /(.*) CYCLES FOUND/)
+    @Test(expected=InvalidUserDataException.class)
+    void projectExec_HelpfulErrorMessage() {
+        ByteArrayOutputStream stdout = new ByteArrayOutputStream()
+        ByteArrayOutputStream stderr = new ByteArrayOutputStream()
+        // TODO: get command to write to stderr
+        stdout.write('fake-stdout'.getBytes('utf-8'))
+        stderr.write('fake-stderr'.getBytes('utf-8'))
+
+        try {
+            Utils.projectExec(proj, stdout, stderr, {
+                executable 'exit'
+                args '1'
+                setStandardOutput stdout
+                setErrorOutput stderr
+            })
+        } catch (InvalidUserDataException exception) {
+            String expected =
+                    'org.gradle.api.InvalidUserDataException: Command Line failed:\n' +
+                    'exit 1\n' +
+                    'Caused by:\n' +
+                    "org.gradle.process.internal.ExecException: A problem occurred starting process 'command 'exit''\n" +
+                    'Standard Output:\n' +
+                    'fake-stdout\n' +
+                    'Error Output:\n' +
+                    'fake-stderr'
+            assert exception.toString().equals(expected)
+            throw exception
+        }
+    }
+
+    @Test
+    void testMatchRegexOutputStreams_Fails() {
+        ByteArrayOutputStream ostream = new ByteArrayOutputStream()
+        ostream.write('written'.getBytes('utf-8'))
+
+        assert null == Utils.matchRegexOutputStreams(ostream, ostream, /(NoMatch)/)
+    }
+
+    @Test
+    void testMatchRegexOutputStreams_MatchString() {
+        ByteArrayOutputStream stdout = new ByteArrayOutputStream()
+        ByteArrayOutputStream stderr = new ByteArrayOutputStream()
+        stdout.write('written-stdout'.getBytes('utf-8'))
+        stderr.write('written-stderr'.getBytes('utf-8'))
+
+        assert null != Utils.matchRegexOutputStreams(stdout, stderr, /(std+out)/).equals('stdout')
+        assert null != Utils.matchRegexOutputStreams(stdout, stderr, /(std+err)/).equals('stderr')
+    }
+
+    @Test
+    void testMatchRegexOutputStreams_MatchNumber() {
+        ByteArrayOutputStream ostream = new ByteArrayOutputStream()
+        ostream.write('15 CYCLES FOUND'.getBytes('utf-8'))
+
+        String countStr = Utils.matchRegexOutputStreams(ostream, ostream, /(\d+) CYCLES FOUND/)
+        assert 15 == countStr.toInteger()
+    }
+
+    @Test
+    void testLogExecSpecOutput() {
+        ExecHandleBuilder execHandleBuilder = new ExecHandleBuilder()
+        ByteArrayOutputStream stdout = new ByteArrayOutputStream()
+        ByteArrayOutputStream stderr = new ByteArrayOutputStream()
+        stderr.write('written-stdout'.getBytes('utf-8'))
+        stdout.write('written-stderr'.getBytes('utf-8'))
+
+        // No validation of results, only that the code runs without error
+        Utils.logDebugExecSpecOutput(stdout, stderr, execHandleBuilder)
     }
 }

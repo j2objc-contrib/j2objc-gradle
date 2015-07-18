@@ -16,6 +16,7 @@
 
 package com.github.j2objccontrib.j2objcgradle.tasks
 
+import com.google.common.annotations.VisibleForTesting
 import groovy.transform.CompileStatic
 import groovy.transform.TypeCheckingMode
 import groovy.transform.stc.ClosureParams
@@ -31,6 +32,7 @@ import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.WorkResult
 import org.gradle.process.ExecResult
 import org.gradle.process.ExecSpec
+import org.gradle.process.internal.ExecException
 
 import java.util.regex.Matcher
 
@@ -63,7 +65,7 @@ class Utils {
         File localPropertiesFile = new File(proj.rootDir, 'local.properties')
         String result = defaultValue
         if (localPropertiesFile.exists()) {
-            Properties localProperties = new Properties();
+            Properties localProperties = new Properties()
             localPropertiesFile.withInputStream {
                 localProperties.load it
             }
@@ -120,7 +122,7 @@ class Utils {
                 newProps.load(new FileInputStream(proj.file(prefixesPath).path))
             } else {
                 // --prefix com.example.dir=CED
-                newProps.load(new StringReader(argValue.trim()));
+                newProps.load(new StringReader(argValue.trim()))
             }
             props.putAll(newProps)
         }
@@ -167,7 +169,7 @@ class Utils {
 
         assert fileType == 'java' || fileType == 'resources'
         assert sourceSetName == 'main' || sourceSetName == 'test'
-        JavaPluginConvention javaConvention = proj.getConvention().getPlugin(JavaPluginConvention);
+        JavaPluginConvention javaConvention = proj.getConvention().getPlugin(JavaPluginConvention)
         SourceSet sourceSet = javaConvention.sourceSets.findByName(sourceSetName)
         // For standard fileTypes 'java' and 'resources,' per contract this cannot be null.
         SourceDirectorySet srcDirSet = fileType == 'java' ? sourceSet.java : sourceSet.resources
@@ -201,28 +203,25 @@ class Utils {
         return paths.join(':')
     }
 
-    static String filterJ2objcOutputForErrorLines(String processOutput) {
-        return processOutput.tokenize('\n').grep(~/^(.*: )?error:.*/).join('\n')
-    }
+    // Matches regex, return first match as string, must have >1 capturing group
+    // Compares against stderr first then stdout
+    static String matchRegexOutputStreams(
+            ByteArrayOutputStream stdout, ByteArrayOutputStream stderr, String regex) {
 
-    // Matches regex within 'str', extracts first match and then returns as int
-    static int matchNumberRegex(String str, String regex) {
-        Matcher matcher = (str =~ regex)
-        if (!matcher.find()) {
-            throw new InvalidUserDataException(
-                    "Content:\n" +
-                    "$str\n" +
-                    "Regex couldn't match number in output: $regex")
-        } else {
-            String value = matcher.group(1)
-            if (!value.isInteger()) {
-                throw new InvalidUserDataException(
-                        "Content:\n" +
-                        "$str\n" +
-                        "Regex didn't find number in output: $regex, value: $value")
-            }
-            return value.toInteger()
+        Matcher stdMatcher = (stdout.toString() =~ regex)
+        Matcher errMatcher = (stderr.toString() =~ regex)
+        // Requires a capturing group in the regex
+        assert 1 <= stdMatcher.groupCount(), "regex must have '(...)' capturing group: $regex"
+        assert 1 <= errMatcher.groupCount(), "regex must have '(...)' capturing group: $regex"
+
+        if (errMatcher.find()) {
+            return errMatcher.group(1)
         }
+        if (stdMatcher.find()) {
+            return stdMatcher.group(1)
+        }
+
+        return null
     }
 
     // See http://melix.github.io/blog/2014/01/closure_param_inference.html
@@ -237,13 +236,76 @@ class Utils {
     // TODO: In Gradle 2.5, we can switch to strongly-typed Actions, like:
     // https://docs.gradle.org/2.5/javadoc/org/gradle/api/Project.html#copy(org.gradle.api.Action)
     @CompileStatic(TypeCheckingMode.SKIP)
-    static ExecResult projectExec(Project proj,
-                                  @ClosureParams(value = SimpleType.class, options = "org.gradle.process.ExecSpec")
-                                  @DelegatesTo(ExecSpec)
-                                          Closure closure) {
-        proj.exec {
-            (delegate as ExecSpec).with closure
+    static ExecResult projectExec(
+            Project proj,
+            ByteArrayOutputStream stdout,
+            ByteArrayOutputStream stderr,
+            @ClosureParams(value = SimpleType.class, options = "org.gradle.process.ExecSpec")
+            @DelegatesTo(ExecSpec)
+                    Closure closure) {
+
+        ExecSpec execSpec = null
+        ExecResult execResult
+
+        try {
+            execResult = proj.exec {
+                execSpec = delegate as ExecSpec
+                (execSpec).with closure
+            }
+
+        } catch (ExecException exception) {
+
+            if (execSpec == null) {
+                throw exception
+            }
+
+            logDebugExecSpecOutput(stdout, stderr, execSpec)
+
+            // ExecException only indicates "non-zero exit" which is unhelpful for debugging
+            // exceptionMsg has command line and stderr which is more useful
+            // Chain to the original ExecException for complete stack trace
+            String exceptionMsg =
+                    'Command Line failed:\n' +
+                    execSpec.getCommandLine().join(' ') + '\n' +
+                    // The command line can be long, so put more important details at the end
+                    'Caused by:\n' +
+                    exception.toString() + '\n' +
+                    stdOutAndErrToLogString(stdout, stderr)
+
+            throw new InvalidUserDataException(exceptionMsg, exception)
         }
+
+        logDebugExecSpecOutput(stdout, stderr, execSpec)
+
+        return execResult
+    }
+
+    @VisibleForTesting
+    static void logDebugExecSpecOutput(
+            ByteArrayOutputStream stdout, ByteArrayOutputStream stderr, ExecSpec execSpec) {
+
+        if (execSpec == null) {
+            log.debug('execSpec is null')
+            return
+        }
+
+        log.debug('Command Line:\n' + execSpec.getCommandLine().join(' '))
+
+        String stdoutStr = stdout.toString()
+        String stderrStr = stderr.toString()
+        if (!stdoutStr.empty) {
+            log.debug(stdoutStr)
+        }
+        if (!stderrStr.empty) {
+            log.debug(stderrStr)
+        }
+    }
+
+    static String stdOutAndErrToLogString(ByteArrayOutputStream stdout, ByteArrayOutputStream stderr) {
+        return 'Standard Output:\n' +
+                stdout.toString() + '\n' +
+                'Error Output:\n' +
+                stderr.toString()
     }
 
     // See projectExec for explanation of the annotations.

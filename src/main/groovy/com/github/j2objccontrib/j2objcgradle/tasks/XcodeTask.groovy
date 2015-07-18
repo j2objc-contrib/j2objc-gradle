@@ -28,7 +28,6 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.WorkResult
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
-import org.gradle.process.ExecResult
 
 /**
  * Updates the Xcode project with j2objc generated files and resources.
@@ -137,26 +136,31 @@ class XcodeTask extends DefaultTask {
             writeUpdatedPodFileIfNeeded(podFile, getXcodeTarget(), getPodName(), project.buildDir.path)
 
             // install the pod
-            ByteArrayOutputStream output = new ByteArrayOutputStream()
+            ByteArrayOutputStream stdout = new ByteArrayOutputStream()
+            ByteArrayOutputStream stderr = new ByteArrayOutputStream()
             try {
-                execPod(output)
-            } catch (Exception exception) {
-                logger.error(output.toString())
+                logger.debug('XcodeTask - projectExec - pod install:')
+                Utils.projectExec(project, stdout, stderr, {
+                    workingDir getXcodeProjectDir()
+                    executable 'pod'
+                    args 'install'
+                    setStandardOutput stdout
+                    setErrorOutput stderr
+                })
 
+            } catch (Exception exception) {
                 if (exception.getMessage().find(
-                        "A problem occurred starting process 'command 'pod install''")) {
+                        "A problem occurred starting process 'command 'pod''")) {
                     String message =
-                            'Fix this by installing CocoaPods:\n' +
-                            '    sudo gem install cocoapods\n' +
+                            exception.toString() +
                             '\n' +
-                            'See: https://cocoapods.org/'
-                    throw new InvalidUserDataException(message)
+                            'Please install CocoaPods to use j2objcXcode (https://cocoapods.org):\n' +
+                            '    sudo gem install cocoapods'
+                    throw new InvalidUserDataException(message, exception)
                 }
                 // unrecognized errors are rethrown:
                 throw exception
             }
-            logger.debug('Pod install output:')
-            logger.debug(output.toString())
         }
     }
 
@@ -166,16 +170,6 @@ class XcodeTask extends DefaultTask {
                 from it
             }
             into j2objcResourceDirPath
-        })
-    }
-
-    ExecResult execPod(ByteArrayOutputStream output) {
-        Utils.projectExec(project, {
-            workingDir getXcodeProjectDir()
-            executable 'pod'
-            args 'install'
-            setStandardOutput output
-            setErrorOutput output
         })
     }
 

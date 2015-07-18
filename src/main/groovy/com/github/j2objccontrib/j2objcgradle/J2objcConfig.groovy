@@ -497,16 +497,16 @@ class J2objcConfig {
     @VisibleForTesting
     static void appendArgs(List<String> listArgs, String nameArgs, String... args) {
         if (args == null) {
-            throw new InvalidUserDataException("args == null!");
+            throw new InvalidUserDataException("args == null!")
         }
         for (String arg in args) {
             if (arg.contains(' ')) {
                 String rewrittenArgs = "'" + arg.split(' ').join("', '") + "'"
                 throw new InvalidUserDataException(
-                        "'$arg' should not contain spaces and be written out as distinct entries:\n" +
+                        "'$arg' argument should not contain spaces and be written out as distinct entries:\n" +
                         "$nameArgs $rewrittenArgs")
             }
         }
-        listArgs.addAll(Arrays.asList(args));
+        listArgs.addAll(Arrays.asList(args))
     }
 }
