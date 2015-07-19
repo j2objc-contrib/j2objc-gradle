@@ -127,9 +127,10 @@ class CycleFinderTask extends DefaultTask {
 
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()
+        String cyclesFoundRegex = /(\d+) CYCLES FOUND/
         try {
             logger.debug('CycleFinderTask - projectExec:')
-            Utils.projectExec(project, stdout, stderr, {
+            Utils.projectExec(project, stdout, stderr, cyclesFoundRegex, {
                 executable cycleFinderExec
                 windowsOnlyArgs.each { String windowsOnlyArg ->
                     args windowsOnlyArg
@@ -157,11 +158,18 @@ class CycleFinderTask extends DefaultTask {
         } catch (Exception exception) {
             // ExecException is converted to InvalidUserDataException in Utils.projectExec(...)
 
-            // Suppress rethrow of exception if it's expected non-zero exit matching "CYCLES FOUND"
-            String cyclesFoundStr = Utils.matchRegexOutputStreams(stdout, stderr, /(\d+) CYCLES FOUND/)
-            if (!(exception instanceof InvalidUserDataException) || !cyclesFoundStr?.isInteger()) {
-                // Didn't match (XX CYCLES FOUND)
+            if (!Utils.isProjectExecNonZeroExit(exception)) {
                 throw exception
+            }
+
+            String cyclesFoundStr = Utils.matchRegexOutputs(stdout, stderr, cyclesFoundRegex)
+            if (!cyclesFoundStr?.isInteger()) {
+                String message =
+                        exception.toString() + '\n' +
+                        "CycleFinder completed could not find expected output.\n" +
+                        "Failed Regex Match cyclesFoundRegex: /$cyclesFoundRegex/" +
+                        "Found: $cyclesFoundStr"
+                throw new InvalidUserDataException(message, exception)
             }
 
             // Matched (XX CYCLES FOUND), so assert on cyclesFound

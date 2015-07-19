@@ -212,7 +212,7 @@ class UtilsTest {
         TeeOutputStream stdoutTee = new TeeOutputStream(System.out, stdout)
         TeeOutputStream stderrTee = new TeeOutputStream(System.err, stderr)
 
-        Utils.projectExec(proj, stdout, stderr, {
+        Utils.projectExec(proj, stdout, stderr, null, {
             executable 'echo'
             args 'written-stdout'
             setStandardOutput stdoutTee
@@ -233,7 +233,7 @@ class UtilsTest {
         // Tried to do "args '>/dev/stderr'" but it's passed to echo command rather than shell
         stderr.write('fake-stderr'.getBytes('utf-8'))
 
-        Utils.projectExec(proj, stdout, stderr, {
+        Utils.projectExec(proj, stdout, stderr, null, {
             executable 'echo'
             args 'echo-stdout'
             setStandardOutput stdout
@@ -245,6 +245,9 @@ class UtilsTest {
         assert stderr.toString().equals('fake-stderr')
     }
 
+    // TODO: projectExec_NonZeroExit
+    // Needs command line that outputs non-zero result
+
     @Test(expected=InvalidUserDataException.class)
     void projectExec_HelpfulErrorMessage() {
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
@@ -254,7 +257,7 @@ class UtilsTest {
         stderr.write('fake-stderr'.getBytes('utf-8'))
 
         try {
-            Utils.projectExec(proj, stdout, stderr, {
+            Utils.projectExec(proj, stdout, stderr, null, {
                 executable 'exit'
                 args '1'
                 setStandardOutput stdout
@@ -262,7 +265,7 @@ class UtilsTest {
             })
         } catch (InvalidUserDataException exception) {
             String expected =
-                    'org.gradle.api.InvalidUserDataException: Command Line failed:\n' +
+                    'org.gradle.api.InvalidUserDataException: Command Line Failed:\n' +
                     'exit 1\n' +
                     'Caused by:\n' +
                     "org.gradle.process.internal.ExecException: A problem occurred starting process 'command 'exit''\n" +
@@ -273,6 +276,38 @@ class UtilsTest {
             assert exception.toString().equals(expected)
             throw exception
         }
+        assert false
+    }
+
+    @Test(expected=InvalidUserDataException.class)
+    void projectExec_MatchRegexFailed() {
+        ByteArrayOutputStream stdout = new ByteArrayOutputStream()
+        ByteArrayOutputStream stderr = new ByteArrayOutputStream()
+
+        // Trailing '\n' is to test escaping
+        String matchRegexOutputs = /(no-match\n)/
+        try {
+            Utils.projectExec(proj, stdout, stderr, matchRegexOutputs, {
+                executable 'echo'
+                args 'echo-stdout'
+                setStandardOutput stdout
+                setErrorOutput stderr
+            })
+        } catch (InvalidUserDataException exception) {
+            String expected =
+                    'org.gradle.api.InvalidUserDataException: Command Line Succeeded (failure cause listed below):\n' +
+                    'echo echo-stdout\n' +
+                    'Caused by:\n' +
+                    'org.gradle.api.InvalidUserDataException: Unable to find expected expected output in stdout or stderr\n' +
+                    'Failed Regex Match: /' + matchRegexOutputs + '/\n' +
+                    'Standard Output:\n' +
+                    'echo-stdout\n' +
+                    '\n' +
+                    'Error Output:\n'
+            assert exception.toString().equals(expected)
+            throw exception
+        }
+        assert false
     }
 
     @Test
@@ -280,7 +315,7 @@ class UtilsTest {
         ByteArrayOutputStream ostream = new ByteArrayOutputStream()
         ostream.write('written'.getBytes('utf-8'))
 
-        assert null == Utils.matchRegexOutputStreams(ostream, ostream, /(NoMatch)/)
+        assert null == Utils.matchRegexOutputs(ostream, ostream, /(NoMatch)/)
     }
 
     @Test
@@ -290,8 +325,8 @@ class UtilsTest {
         stdout.write('written-stdout'.getBytes('utf-8'))
         stderr.write('written-stderr'.getBytes('utf-8'))
 
-        assert null != Utils.matchRegexOutputStreams(stdout, stderr, /(std+out)/).equals('stdout')
-        assert null != Utils.matchRegexOutputStreams(stdout, stderr, /(std+err)/).equals('stderr')
+        assert null != Utils.matchRegexOutputs(stdout, stderr, /(std+out)/).equals('stdout')
+        assert null != Utils.matchRegexOutputs(stdout, stderr, /(std+err)/).equals('stderr')
     }
 
     @Test
@@ -299,7 +334,7 @@ class UtilsTest {
         ByteArrayOutputStream ostream = new ByteArrayOutputStream()
         ostream.write('15 CYCLES FOUND'.getBytes('utf-8'))
 
-        String countStr = Utils.matchRegexOutputStreams(ostream, ostream, /(\d+) CYCLES FOUND/)
+        String countStr = Utils.matchRegexOutputs(ostream, ostream, /(\d+) CYCLES FOUND/)
         assert 15 == countStr.toInteger()
     }
 
