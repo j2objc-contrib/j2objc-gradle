@@ -85,8 +85,10 @@ class TestTask extends DefaultTask {
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()
 
-        // NOTE: last 's' is optional for the case of "(OK 1 test)"
+        // NOTE: last 's' is optional for the case of "OK (1 test)"
+        // Capturing group is the test count, i.e. '\d+'
         String testCountRegex = /OK \((\d+) tests?\)/
+
         try {
             Utils.projectExec(project, stdout, stderr, testCountRegex, {
                 executable binary
@@ -141,13 +143,14 @@ class TestTask extends DefaultTask {
         logger.error("Test Output: ${reportFile.path}")
 
         String testCountStr = Utils.matchRegexOutputs(stdout, stderr, testCountRegex)
-        if (!testCountStr?.toInteger()) {
+        if (!testCountStr?.isInteger()) {
             // Should have been caught in projectExec call above
             throw new InvalidUserDataException(
                     Utils.stdOutAndErrToLogString(stdout, stderr) + '\n' +
                     'Tests passed but could not find test count.\n' +
-                    "Failed Regex Match testCountRegex: /$testCountRegex/" +
-                    "Found: $testCountStr")
+                    'Failed Regex Match testCountRegex: ' +
+                    Utils.escapeSlashyString(testCountRegex) + '\n' +
+                    'Found: ' + testCountStr)
         }
         int testCount = testCountStr.toInteger()
 
@@ -176,7 +179,7 @@ class TestTask extends DefaultTask {
                         "If there are legitimately fewer tests, then modify build.gradle:\n" +
                         message
             }
-            throw new Exception(message)
+            throw new InvalidUserDataException(message)
         } else if (testCount != getTestMinExpectedTests()) {
             assert getTestMinExpectedTests() > 0
             assert getTestMinExpectedTests() < testCount

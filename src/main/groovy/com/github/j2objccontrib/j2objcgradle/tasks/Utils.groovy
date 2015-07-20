@@ -204,6 +204,13 @@ class Utils {
         return paths.join(':')
     }
 
+    // Convert regex to string for display, wrapping it with /.../
+    // From Groovy-Lang: "Only forward slashes need to be escaped with a backslash"
+    // http://docs.groovy-lang.org/latest/html/documentation/#_slashy_string
+    static String escapeSlashyString(String regex) {
+        return '/' + regex.replace('/', '\\/') + '/'
+    }
+
     // Matches regex, return first match as string, must have >1 capturing group
     // Return first capture group, comparing stderr first then stdout
     // Returns null for no match
@@ -283,7 +290,7 @@ class Utils {
                     // Exception thrown here to output command line
                     throw new InvalidUserDataException(
                             'Unable to find expected expected output in stdout or stderr\n' +
-                            "Failed Regex Match: /$matchRegexOutputsRequired/")
+                            'Failed Regex Match: ' + escapeSlashyString(matchRegexOutputsRequired))
                 }
             }
 

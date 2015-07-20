@@ -91,10 +91,10 @@ class CycleFinderTaskTest {
 
         try {
             j2objcCycleFinder.cycleFinder()
-        } catch (Exception e) {
+        } catch (Exception exception) {
             // Catch expected exception, do verifications, then throw again
             mockProjectExec.verify()
-            throw e
+            throw exception
         }
     }
 
@@ -153,10 +153,10 @@ class CycleFinderTaskTest {
 
         try {
             j2objcCycleFinder.cycleFinder()
-        } catch (Exception e) {
+        } catch (Exception exception) {
             // Catch expected exception, do verifications, then throw again
             mockProjectExec.verify()
-            throw e
+            throw exception
         }
     }
 }
