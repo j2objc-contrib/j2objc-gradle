@@ -21,7 +21,9 @@ import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 import org.gradle.testfixtures.ProjectBuilder
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.ExpectedException
 
 /**
  * TestTask tests.
@@ -33,6 +35,9 @@ class TestTaskTest {
     private String j2objcHome
     private J2objcConfig j2objcConfig
     private TestTask j2objcTest
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     void testGetTestNames_Simple() {
@@ -97,7 +102,53 @@ class TestTaskTest {
     }
 
     @Test
-    void test_OneTest() {
+    // Name 'taskAction' as method name 'test' is ambiguous
+    void testTaskAction_ZeroTestUnexpected() {
+        setupTask()
+
+        MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
+
+        expectedException.expect(InvalidUserDataException.class)
+        // Error:
+        expectedException.expectMessage('Unit tests are strongly encouraged with J2ObjC')
+        // Workaround:
+        expectedException.expectMessage('testMinExpectedTests 0')
+
+        mockProjectExec.demandExecAndReturn(
+                [
+                        "${proj.buildDir}/testJ2objc",
+                        "org.junit.runner.JUnitCore",
+                ],
+                'OK (0 test)',  // NOTE: 'test' is singular for stdout
+                '',  // stderr
+                null)
+
+        j2objcTest.test()
+    }
+
+    @Test
+    void testTaskAction_ZeroTestExpected() {
+        setupTask()
+
+        MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
+        j2objcConfig.testMinExpectedTests = 0
+
+        mockProjectExec.demandExecAndReturn(
+                [
+                        "${proj.buildDir}/testJ2objc",
+                        "org.junit.runner.JUnitCore",
+                ],
+                'OK (0 test)',  // NOTE: 'test' is singular for stdout
+                '',  // stderr
+                null)
+
+        j2objcTest.test()
+
+        mockProjectExec.verify()
+    }
+
+    @Test
+    void testTaskAction_OneTest() {
         setupTask()
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
@@ -116,7 +167,7 @@ class TestTaskTest {
     }
 
     @Test
-    void test_MultipleTests() {
+    void testTaskAction_MultipleTests() {
         setupTask()
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
@@ -135,7 +186,7 @@ class TestTaskTest {
     }
 
     @Test(expected=InvalidUserDataException.class)
-    void test_CantParseOutput() {
+    void testTaskAction_CantParseOutput() {
         setupTask()
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)

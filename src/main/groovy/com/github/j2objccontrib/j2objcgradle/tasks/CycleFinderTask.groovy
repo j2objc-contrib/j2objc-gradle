@@ -127,7 +127,10 @@ class CycleFinderTask extends DefaultTask {
 
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()
+
+        // Capturing group is the cycle count, i.e. '\d+'
         String cyclesFoundRegex = /(\d+) CYCLES FOUND/
+
         try {
             logger.debug('CycleFinderTask - projectExec:')
             Utils.projectExec(project, stdout, stderr, cyclesFoundRegex, {
@@ -166,9 +169,10 @@ class CycleFinderTask extends DefaultTask {
             if (!cyclesFoundStr?.isInteger()) {
                 String message =
                         exception.toString() + '\n' +
-                        "CycleFinder completed could not find expected output.\n" +
-                        "Failed Regex Match cyclesFoundRegex: /$cyclesFoundRegex/" +
-                        "Found: $cyclesFoundStr"
+                        'CycleFinder completed could not find expected output.\n' +
+                        'Failed Regex Match cyclesFoundRegex: ' +
+                        Utils.escapeSlashyString(cyclesFoundRegex) + '\n' +
+                        'Found: ' + cyclesFoundStr
                 throw new InvalidUserDataException(message, exception)
             }
 

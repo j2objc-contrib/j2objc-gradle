@@ -248,7 +248,7 @@ class UtilsTest {
     // TODO: projectExec_NonZeroExit
     // Needs command line that outputs non-zero result
 
-    @Test(expected=InvalidUserDataException.class)
+    @Test
     void projectExec_HelpfulErrorMessage() {
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()
@@ -263,6 +263,8 @@ class UtilsTest {
                 setStandardOutput stdout
                 setErrorOutput stderr
             })
+            assert false, 'Expected Exception'
+
         } catch (InvalidUserDataException exception) {
             String expected =
                     'org.gradle.api.InvalidUserDataException: Command Line Failed:\n' +
@@ -274,18 +276,16 @@ class UtilsTest {
                     'Error Output:\n' +
                     'fake-stderr'
             assert exception.toString().equals(expected)
-            throw exception
         }
-        assert false
     }
 
-    @Test(expected=InvalidUserDataException.class)
+    @Test
     void projectExec_MatchRegexFailed() {
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()
 
-        // Trailing '\n' is to test escaping
-        String matchRegexOutputs = /(no-match\n)/
+        // String has escaped '/' and '\n' to test escaping
+        String matchRegexOutputs = /(no\/match\n)/
         try {
             Utils.projectExec(proj, stdout, stderr, matchRegexOutputs, {
                 executable 'echo'
@@ -293,21 +293,21 @@ class UtilsTest {
                 setStandardOutput stdout
                 setErrorOutput stderr
             })
+            assert false, 'Expected Exception'
+
         } catch (InvalidUserDataException exception) {
             String expected =
                     'org.gradle.api.InvalidUserDataException: Command Line Succeeded (failure cause listed below):\n' +
                     'echo echo-stdout\n' +
                     'Caused by:\n' +
                     'org.gradle.api.InvalidUserDataException: Unable to find expected expected output in stdout or stderr\n' +
-                    'Failed Regex Match: /' + matchRegexOutputs + '/\n' +
+                    'Failed Regex Match: /(no\\/match\\n)/\n' +
                     'Standard Output:\n' +
                     'echo-stdout\n' +
                     '\n' +
                     'Error Output:\n'
             assert exception.toString().equals(expected)
-            throw exception
         }
-        assert false
     }
 
     @Test
@@ -332,14 +332,20 @@ class UtilsTest {
     @Test
     void testMatchRegexOutputStreams_MatchNumber() {
         ByteArrayOutputStream ostream = new ByteArrayOutputStream()
-        ostream.write('15 CYCLES FOUND'.getBytes('utf-8'))
+        ostream.write('OK (15 tests)'.getBytes('utf-8'))
 
-        String countStr = Utils.matchRegexOutputs(ostream, ostream, /(\d+) CYCLES FOUND/)
+        String countStr = Utils.matchRegexOutputs(ostream, ostream, /OK \((\d+) tests?\)/)
         assert 15 == countStr.toInteger()
     }
 
     @Test
-    void testLogExecSpecOutput() {
+    void testEscapeSlashyString() {
+        String regex = /forward-slash:\/,newline:\n,multi-digit:\d+/
+        assert "/forward-slash:\\/,newline:\\n,multi-digit:\\d+/" == Utils.escapeSlashyString(regex)
+    }
+
+    @Test
+    void testLogDebugExecSpecOutput() {
         ExecHandleBuilder execHandleBuilder = new ExecHandleBuilder()
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()
