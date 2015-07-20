@@ -83,6 +83,7 @@ Further Customizations:
 logging.captureStandardOutput(LogLevel.INFO)  // CORRECT
 logging.captureStandardOutput LogLevel.INFO   // WRONG
 ```
+
 * Configure calls do not use parentheses:
 ```
 project.exec {
@@ -93,6 +94,7 @@ project.exec {
     args('-sourcepath', sourcepath)  // WRONG
 }
 ```
+
 * Explicit Types instead of 'def':
 ```
 String message = 'a message'  // CORRECT
@@ -102,6 +104,7 @@ def message = 'a message'     // WRONG
 translateArgs.each { String arg ->  // CORRECT
 translateArgs.each { arg ->         // WRONG
 ```
+
 * GString curly braces only for methods or object members:
 ```
 String message = "the count is $count"           // CORRECT
@@ -112,18 +115,27 @@ String message = "the count is ${count}"         // WRONG
 String message = "the count is $method()"        // WRONG
 String message = "the count is $object.count"    // incorrect as it only prints "$object"
 ```
+
 * Single quotes for non-GString, i.e. no string interpolation:
 ```
 String message = 'the count is negative'  // CORRECT
 String message = "the count is negative"  // WRONG - only needed for $var interpolation
 ```
 
+* Regexes should be written and displayed as
+[http://docs.groovy-lang.org/latest/html/documentation/#_slashy_string](Slashy Strings):
+```
+String regex = /dot-star:.*,forward-slash:\/,newline:\n/
+logger.debug('Regex is: ' + Utils.escapedSlashyString(regex))
+// Debug log: '/dot-star:.*,forward-slash:\/,newline:\n/'
+```
+
 
 ### Testing your code
-Unit tests must be written for all new code and major changes. Please follow the example
-of existing tests within the code.
+Unit tests must be written for all new code and major changes. Please follow the examples
+of existing tests.
 
-To run the build and all the tests:
+Running `build` also runs all the unit tests:
 ```
 ./gradlew build
 ```
