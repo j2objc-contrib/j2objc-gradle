@@ -269,7 +269,7 @@ class UtilsTest {
             String expected =
                     'org.gradle.api.InvalidUserDataException: Command Line Failed:\n' +
                     'exit 1\n' +
-                    'Caused by:\n' +
+                    'Cause:\n' +
                     "org.gradle.process.internal.ExecException: A problem occurred starting process 'command 'exit''\n" +
                     'Standard Output:\n' +
                     'fake-stdout\n' +
@@ -299,7 +299,7 @@ class UtilsTest {
             String expected =
                     'org.gradle.api.InvalidUserDataException: Command Line Succeeded (failure cause listed below):\n' +
                     'echo echo-stdout\n' +
-                    'Caused by:\n' +
+                    'Cause:\n' +
                     'org.gradle.api.InvalidUserDataException: Unable to find expected expected output in stdout or stderr\n' +
                     'Failed Regex Match: /(no\\/match\\n)/\n' +
                     'Standard Output:\n' +

@@ -306,9 +306,10 @@ class Utils {
                 exceptionMsg += 'Command Line Failed:\n'
             }
             exceptionMsg +=
+                    // The command line can be long, so highlight more important details below
                     execSpec.getCommandLine().join(' ') + '\n' +
-                    // The command line can be long, so put more important details at the end
-                    'Caused by:\n' +
+                    // Use 'Cause' instead of 'Caused by' to help debugging these error messages
+                    'Cause:\n' +
                     exception.toString() + '\n' +
                     stdOutAndErrToLogString(stdout, stderr)
 
