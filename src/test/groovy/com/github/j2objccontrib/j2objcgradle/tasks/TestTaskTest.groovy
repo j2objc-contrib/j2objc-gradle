@@ -115,6 +115,7 @@ class TestTaskTest {
         expectedException.expectMessage('testMinExpectedTests 0')
 
         mockProjectExec.demandExecAndReturn(
+                null,
                 [
                         "${proj.buildDir}/testJ2objc",
                         "org.junit.runner.JUnitCore",
@@ -134,6 +135,7 @@ class TestTaskTest {
         j2objcConfig.testMinExpectedTests = 0
 
         mockProjectExec.demandExecAndReturn(
+                null,
                 [
                         "${proj.buildDir}/testJ2objc",
                         "org.junit.runner.JUnitCore",
@@ -153,6 +155,7 @@ class TestTaskTest {
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
         mockProjectExec.demandExecAndReturn(
+                null,
                 [
                         "${proj.buildDir}/testJ2objc",
                         "org.junit.runner.JUnitCore",
@@ -172,6 +175,7 @@ class TestTaskTest {
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
         mockProjectExec.demandExecAndReturn(
+                null,
                 [
                         "${proj.buildDir}/testJ2objc",
                         "org.junit.runner.JUnitCore",
@@ -191,6 +195,7 @@ class TestTaskTest {
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
         mockProjectExec.demandExecAndReturn(
+                null,
                 [
                         "${proj.buildDir}/testJ2objc",
                         "org.junit.runner.JUnitCore",

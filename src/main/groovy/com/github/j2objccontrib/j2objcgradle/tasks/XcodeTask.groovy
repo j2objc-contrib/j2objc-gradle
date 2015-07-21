@@ -75,7 +75,7 @@ class XcodeTask extends DefaultTask {
 
 
     @TaskAction
-    void xcodeConfig(IncrementalTaskInputs inputs) {
+    void xcodeConfig() {
 
         verifyXcodeArgs()
 
@@ -124,7 +124,7 @@ class XcodeTask extends DefaultTask {
                     "No podfile exists in the xcodeProjectDir directory:\n" +
                     "    ${podFile.path}\n" +
                     "\n" +
-                    "The Podfile needes to be created with this command:\n" +
+                    "The Podfile must be created with this command:\n" +
                     "    (cd $xcodeAbsPath && pod init)\n" +
                     "\n" +
                     "If the pod command isn't found, then install CocoaPods:\n" +
@@ -141,7 +141,7 @@ class XcodeTask extends DefaultTask {
             try {
                 logger.debug('XcodeTask - projectExec - pod install:')
                 Utils.projectExec(project, stdout, stderr, null, {
-                    workingDir getXcodeProjectDir()
+                    setWorkingDir getXcodeProjectDir()
                     executable 'pod'
                     args 'install'
                     setStandardOutput stdout
