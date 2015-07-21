@@ -85,14 +85,16 @@ class MockProjectExec {
     // Debug logging for invokeMethod calls parameters
     private static void debugLogInvokeMethod(String name, Object[] args, MetaMethod metaMethod) {
         String call = "call: $name, ${args.class}"
+        // NOTE: String interpolation fails on Closure methods for some reason
+        // Exception will be thrown on ", ${args.first()}"
         if (args.size() > 0) {
             if (args.first() == null) {
-                call += ", null, ${args}, ${args.first()}"
+                call += ', null, ' + args + ', ' + args.first()
             } else {
-                call += ", ${args.first().class}, ${args}, ${args.first()}"
+                call += ', ' + args.first().class + ', ' + args + ', ' + args.first()
             }
         } else {
-            call += ", ${args}"
+            call += ', ' + args
         }
         log.debug(call)
         log.debug("method: ${metaMethod.isValidExactMethod(args)}, " +
@@ -107,13 +109,12 @@ class MockProjectExec {
 
     void demandExecAndReturn(
             List<String> expectedCommandLine) {
-        demandExecAndReturn(expectedCommandLine, null, null, null)
+        demandExecAndReturn(null, expectedCommandLine, null, null, null)
     }
 
     void demandExecAndReturn(
-            List<String> expectedCommandLine,
-            String stdout,
-            String stderr,
+            String expectWorkingDir, List<String> expectedCommandLine,
+            String stdout, String stderr,
             Exception exceptionToThrow) {
 
         mockForProj.demand.exec { Closure closure ->
@@ -129,6 +130,7 @@ class MockProjectExec {
                         .replace(project.projectDir.path, projectDirStd)
             }
             assert expectedCommandLine == canonicalizedArgs
+            assert expectWorkingDir == mockExec.workingDir
 
             if (stdout) {
                 mockExec.standardOutput.write(stdout.getBytes('utf-8'))
@@ -157,6 +159,7 @@ class MockProjectExec {
     // Basically mocks Gradle's AbstractExecTask
     // TODO: implements ExecSpec
     private class MockExec {
+        String workingDir
         String executable
         List<String> args = new ArrayList<>()
         OutputStream errorOutput
@@ -183,6 +186,10 @@ class MockProjectExec {
 
         void setErrorOutput(OutputStream errorOutput) {
             this.errorOutput = errorOutput
+        }
+
+        void setWorkingDir(String workingDir) {
+            this.workingDir = workingDir
         }
 
         String toString() {

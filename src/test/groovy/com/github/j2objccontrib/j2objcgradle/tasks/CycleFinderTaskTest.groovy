@@ -55,6 +55,7 @@ class CycleFinderTaskTest {
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
         mockProjectExec.demandExecAndReturn(
+                null,
                 [
                         '/J2OBJC_HOME/cycle_finder',
                         '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java',
@@ -79,6 +80,7 @@ class CycleFinderTaskTest {
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
         mockProjectExec.demandExecAndReturn(
+                null,
                 [
                         '/J2OBJC_HOME/cycle_finder',
                         '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java',
@@ -111,6 +113,7 @@ class CycleFinderTaskTest {
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
         mockProjectExec.demandExecAndReturn(
+                null,
                 [
                         '/J2OBJC_HOME/cycle_finder',
                         '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java',
@@ -140,6 +143,7 @@ class CycleFinderTaskTest {
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
         mockProjectExec.demandExecAndReturn(
+                null,
                 [
                         '/J2OBJC_HOME/cycle_finder',
                         '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java',
