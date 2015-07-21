@@ -73,6 +73,15 @@ j2objcConfig {
 }
 ```
 
+### Why is my clean build failing?
+This is a [known issue](https://github.com/j2objc-contrib/j2objc-gradle/issues/306) if you don't
+have any tests.
+If you are doing `./gradlew clean build`, try instead `./gradlew clean && ./gradlew build`.
+
+When you don't have any test source files, The plugin creates a placeholder to force the
+creation of a test binary; this is done during project configuration phase, but `clean` deletes
+this file before `build` can use it.
+
 ### How do I include Java files from additional source directories?
 
 In order to include source files from sources different than ``src/main/java`` you have to
