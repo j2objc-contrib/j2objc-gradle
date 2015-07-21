@@ -161,6 +161,10 @@ class XcodeTask extends DefaultTask {
                 // unrecognized errors are rethrown:
                 throw exception
             }
+            // Warning to avoid breaking CocoaPods
+            // Error: "library not found for -lPods-*-j2objc-shared"
+            // See: https://github.com/j2objc-contrib/j2objc-gradle/issues/273
+            logger.warn("NOTE: open the '.xcworkspace' file in Xcode. It will fail if you open the '.xcodeproj' file")
         }
     }
 
