@@ -48,6 +48,12 @@ Within the Android application's project `build.gradle`, make it dependent on th
         compile project(':shared')
     }
 
+#### NOTE: Open `.xcworkspace` in Xcode
+
+When using the j2objcXcodeTask, open the `.xcworkspace` file in Xcode. If the `.xcodeproj` file
+is opened in Xcode then CocoaPods will fail. This will appear as an Xcode build time error:
+
+    library not found for -lPods-*-j2objc-shared
 
 ### Folder Structure
 
