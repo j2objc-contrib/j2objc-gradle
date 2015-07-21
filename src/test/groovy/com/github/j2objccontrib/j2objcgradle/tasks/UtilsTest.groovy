@@ -102,6 +102,18 @@ class UtilsTest {
         assert j2objcHomeWritten.equals(j2objcHomeRead)
     }
 
+    @Test
+    public void testJ2objcHome_LocalPropertiesWithTrailingSlash() {
+        // Write j2objc path to local.properties file within the project
+        String j2objcHomePath = File.createTempDir('J2OBJC_HOME', '').path
+        String j2objcHomePathWithSlash = j2objcHomePath + '/'
+        File localProperties = proj.file('local.properties')
+        localProperties.write("j2objc.home=$j2objcHomePathWithSlash\n")
+
+        String j2objcHomeRead = Utils.j2objcHome(proj)
+        assert j2objcHomePath.equals(j2objcHomeRead)
+    }
+
     // TODO: testJ2objcHome_EnvironmentVariable
 
     @Test
