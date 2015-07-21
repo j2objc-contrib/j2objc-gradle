@@ -99,6 +99,10 @@ class Utils {
             String message = "j2objc directory not found, expected location: ${result}"
             throw new InvalidUserDataException(message)
         }
+        // Trailing slashes cause problems with string concatenation logic.
+        if (result != null && result.endsWith('/')) {
+            result = result.substring(0, result.length() - 1)
+        }
         return result
     }
 
