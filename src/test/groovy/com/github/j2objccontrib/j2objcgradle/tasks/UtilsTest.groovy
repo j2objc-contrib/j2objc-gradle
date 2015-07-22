@@ -217,7 +217,7 @@ class UtilsTest {
     // TODO: testFilterJ2objcOutputForErrorLines()
 
     @Test
-    void projectExec_StdOut() {
+    void testProjectExec_StdOut() {
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()
         // This will branch outputs to both the system and internal test OutputStreams
@@ -238,7 +238,7 @@ class UtilsTest {
     }
 
     @Test
-    void projectExec_StdErr() {
+    void testProjectExec_StdErr() {
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()
 
@@ -262,7 +262,7 @@ class UtilsTest {
     // Needs command line that outputs non-zero result
 
     @Test
-    void projectExec_HelpfulErrorMessage() {
+    void testProjectExec_HelpfulErrorMessage() {
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()
         // TODO: get executable passed to projectExec to write to stderr
@@ -295,7 +295,7 @@ class UtilsTest {
     }
 
     @Test
-    void projectExec_MatchRegexFailed() {
+    void testProjectExec_MatchRegexFailed() {
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()
 
@@ -325,6 +325,42 @@ class UtilsTest {
                     'Error Output:\n'
             assert exception.toString().equals(expected)
         }
+    }
+
+    @Test
+    // Tests intercepting and verifying call to project.exec(...)
+    void testProjectExec_MockProjectExec() {
+        ByteArrayOutputStream stdout = new ByteArrayOutputStream()
+        ByteArrayOutputStream stderr = new ByteArrayOutputStream()
+
+        MockProjectExec mockProjectExec = new MockProjectExec(proj, '/J2OBJC_HOME')
+        mockProjectExec.demandExecAndReturn(
+                null,
+                [
+                        'echo',
+                        'written-stdout',
+                ],
+                null,
+                'written-stderr-INSTEAD-OF-STDOUT',
+                new InvalidUserDataException('Faked-Exception'))
+
+        try {
+            Utils.projectExec(proj, stdout, stderr, null, {
+                executable 'echo'
+                args 'written-stdout'
+                setStandardOutput stdout
+                setErrorOutput stderr
+            })
+            assert false
+        } catch (InvalidUserDataException exception) {
+            assert exception.toString().contains('Faked-Exception')
+        }
+
+        mockProjectExec.verify()
+
+        // Verifies that 'echo written-stdout' didn't reach the output streams
+        assert '' == stdout.toString()
+        assert 'written-stderr-INSTEAD-OF-STDOUT' == stderr.toString()
     }
 
     @Test
@@ -404,5 +440,45 @@ class UtilsTest {
                 'Error Output:\n' +
                 'written-stderr'
         assert expectedLogFailure.equals(execLogFailure)
+    }
+
+    @Test
+    // Tests intercepting and verifying call to project.copy(...)
+    void testProjectCopy_MockProjectExec() {
+
+        MockProjectExec mockProjectExec = new MockProjectExec(proj, '/J2OBJC_HOME')
+        mockProjectExec.demandCopyAndReturn(
+                '/DEST-DIR',
+                '/INPUT-DIR-1', '/INPUT-DIR-2')
+
+        Utils.projectCopy(proj, {
+            from '/INPUT-DIR-1', '/INPUT-DIR-2'
+            into '/DEST-DIR'
+        })
+
+        mockProjectExec.verify()
+    }
+
+    @Test
+    // Tests intercepting and verifying call to project.exec(...)
+    void testProjectCopy_MockProjectExecTwoCalls() {
+        MockProjectExec mockProjectExec = new MockProjectExec(proj, '/J2OBJC_HOME')
+        mockProjectExec.demandCopyAndReturn(
+                '/DEST-1',
+                '/INPUT-1A', '/INPUT-1B')
+        mockProjectExec.demandCopyAndReturn(
+                '/DEST-2',
+                '/INPUT-2A', '/INPUT-2B')
+
+        Utils.projectCopy(proj, {
+            into '/DEST-1'
+            from '/INPUT-1A', '/INPUT-1B'
+        })
+        Utils.projectCopy(proj, {
+            into '/DEST-2'
+            from '/INPUT-2A', '/INPUT-2B'
+        })
+
+        mockProjectExec.verify()
     }
 }

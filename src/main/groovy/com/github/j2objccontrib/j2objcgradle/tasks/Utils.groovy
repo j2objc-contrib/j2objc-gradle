@@ -315,6 +315,7 @@ class Utils {
             boolean execSucceeded, Exception exception) {
         // Add command line and stderr to make the error message more useful
         // Chain to the original ExecException for complete stack trace
+
         String msg
         // The command line can be long, so highlight more important details below
         if (execSucceeded) {
@@ -322,6 +323,7 @@ class Utils {
         } else {
             msg = 'Command Line Failed:\n'
         }
+
         msg += execSpec.getCommandLine().join(' ') + '\n'
 
         // Working Directory appears to always be set
@@ -352,6 +354,15 @@ class Utils {
         return (exception instanceof InvalidUserDataException) &&
                // TODO: improve indentification of non-zero exits?
                (exception?.getCause() instanceof ExecException)
+    }
+
+    static WorkResult copyResources(Project proj, String sourceSetName, File destDir) {
+        return projectCopy(proj, {
+            srcSet(proj, sourceSetName, 'resources').srcDirs.each {
+                from it
+            }
+            into destDir
+        })
     }
 
     // See projectExec for explanation of the annotations.

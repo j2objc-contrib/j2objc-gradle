@@ -97,7 +97,7 @@ class TestTaskTest {
         ))
 
         j2objcTest = (TestTask) proj.tasks.create(name: 'j2objcTest', type: TestTask) {
-            testBinaryFile = proj.file("${proj.buildDir}/testJ2objc")
+            testBinaryFile = proj.file("${proj.buildDir}/binaries/testJ2objcExecutable/debug/testJ2objc")
         }
     }
 
@@ -108,21 +108,23 @@ class TestTaskTest {
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
 
-        expectedException.expect(InvalidUserDataException.class)
-        // Error:
-        expectedException.expectMessage('Unit tests are strongly encouraged with J2ObjC')
-        // Workaround:
-        expectedException.expectMessage('testMinExpectedTests 0')
-
+        // TODO: demandDelete...(getJ2objcTestContentDir())
+        demandCopyForJ2objcTestContent(mockProjectExec)
         mockProjectExec.demandExecAndReturn(
                 null,
                 [
-                        "${proj.buildDir}/testJ2objc",
+                        "${proj.buildDir}/j2objcTestContent/testJ2objc",
                         "org.junit.runner.JUnitCore",
                 ],
                 'OK (0 test)',  // NOTE: 'test' is singular for stdout
                 '',  // stderr
                 null)
+
+        expectedException.expect(InvalidUserDataException.class)
+        // Error:
+        expectedException.expectMessage('Unit tests are strongly encouraged with J2ObjC')
+        // Workaround:
+        expectedException.expectMessage('testMinExpectedTests 0')
 
         j2objcTest.test()
     }
@@ -134,10 +136,11 @@ class TestTaskTest {
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
         j2objcConfig.testMinExpectedTests = 0
 
+        demandCopyForJ2objcTestContent(mockProjectExec)
         mockProjectExec.demandExecAndReturn(
                 null,
                 [
-                        "${proj.buildDir}/testJ2objc",
+                        "${proj.buildDir}/j2objcTestContent/testJ2objc",
                         "org.junit.runner.JUnitCore",
                 ],
                 'OK (0 test)',  // NOTE: 'test' is singular for stdout
@@ -154,10 +157,11 @@ class TestTaskTest {
         setupTask()
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
+        demandCopyForJ2objcTestContent(mockProjectExec)
         mockProjectExec.demandExecAndReturn(
                 null,
                 [
-                        "${proj.buildDir}/testJ2objc",
+                        "${proj.buildDir}/j2objcTestContent/testJ2objc",
                         "org.junit.runner.JUnitCore",
                 ],
                 'OK (1 test)',  // NOTE: 'test' is singular for stdout
@@ -174,10 +178,11 @@ class TestTaskTest {
         setupTask()
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
+        demandCopyForJ2objcTestContent(mockProjectExec)
         mockProjectExec.demandExecAndReturn(
                 null,
                 [
-                        "${proj.buildDir}/testJ2objc",
+                        "${proj.buildDir}/j2objcTestContent/testJ2objc",
                         "org.junit.runner.JUnitCore",
                 ],
                 'IGNORE\nOK (2 tests)\nIGNORE',  // stdout
@@ -194,10 +199,11 @@ class TestTaskTest {
         setupTask()
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
+        demandCopyForJ2objcTestContent(mockProjectExec)
         mockProjectExec.demandExecAndReturn(
                 null,
                 [
-                        "${proj.buildDir}/testJ2objc",
+                        "${proj.buildDir}/j2objcTestContent/testJ2objc",
                         "org.junit.runner.JUnitCore",
                 ],
                 'OK (2 testXXXX)',  // NOTE: invalid stdout fails matchRegexOutputs
@@ -207,6 +213,21 @@ class TestTaskTest {
         j2objcTest.test()
 
         mockProjectExec.verify()
+    }
+
+    private void demandCopyForJ2objcTestContent(MockProjectExec mockProjectExec) {
+        mockProjectExec.demandCopyAndReturn(
+                "$proj.projectDir/build/j2objcTestContent",
+                "$proj.projectDir/src/main/resources",
+        )
+        mockProjectExec.demandCopyAndReturn(
+                "$proj.projectDir/build/j2objcTestContent",
+                "$proj.projectDir/src/test/resources",
+        )
+        mockProjectExec.demandCopyAndReturn(
+                "$proj.projectDir/build/j2objcTestContent",
+                "$proj.projectDir/build/binaries/testJ2objcExecutable/debug/testJ2objc",
+        )
     }
 
     // TODO: test_Simple() - with some real unit tests

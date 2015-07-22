@@ -24,9 +24,9 @@ import org.gradle.api.InvalidUserDataException
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-import org.gradle.api.tasks.WorkResult
 
 /**
  * Updates the Xcode project with j2objc generated files and resources.
@@ -51,6 +51,16 @@ class XcodeTask extends DefaultTask {
     @Input
     String getPodNameRelease() { "j2objc-${project.name}-release" }
 
+    // j2objcConfig dependencies for UP-TO-DATE checks
+    @Input
+    String getJ2objcHome() { return Utils.j2objcHome(project) }
+
+    @Input @Optional
+    String getXcodeProjectDir() { return J2objcConfig.from(project).xcodeProjectDir }
+
+    @Input @Optional
+    String getXcodeTarget() { return J2objcConfig.from(project).xcodeTarget }
+
     // CocoaPods podspec file that's used by the Podfile
     @OutputFile
     File getPodspecDebug() { new File(project.buildDir, "${getPodNameDebug()}.podspec") }
@@ -63,19 +73,13 @@ class XcodeTask extends DefaultTask {
         verifyXcodeArgs()
         // xcodeProjectDir is relative to projectDir if it's not an absolute path
         File xcodeProjectDir = project.file(getXcodeProjectDir())
-        return new File(xcodeProjectDir, "Podfile")
+        return new File(xcodeProjectDir, 'Podfile')
     }
 
-    // j2objcConfig dependencies for UP-TO-DATE checks
-    @Input
-    String getJ2objcHome() { return Utils.j2objcHome(project) }
-
-    @Input @Optional
-    String getXcodeProjectDir() { return J2objcConfig.from(project).xcodeProjectDir }
-
-    @Input @Optional
-    String getXcodeTarget() { return J2objcConfig.from(project).xcodeTarget }
-
+    @OutputDirectory
+    File getJ2objcResourcesDir() {
+        return new File(project.buildDir, 'j2objcResources')
+    }
 
     @TaskAction
     void xcodeConfig() {
@@ -84,14 +88,14 @@ class XcodeTask extends DefaultTask {
 
         // Resource Folder is copied to buildDir where it's accessed by the pod later
         // TODO: is it necessary to copy the files or can they be referenced in place?
-        String j2objcResourceDirName = 'j2objcResources'
-        String j2objcResourceDirPath = "${project.buildDir}/${j2objcResourceDirName}"
-        project.delete j2objcResourceDirPath
-        copyResources(j2objcResourceDirPath)
+        project.delete(getJ2objcResourcesDir())
+        Utils.copyResources(project, 'main', getJ2objcResourcesDir())
+        // Should be: "j2objcResources"
+        String j2objcResourcesRelativeToBuildDir = project.buildDir.toURI().relativize(getJ2objcResourcesDir().toURI())
 
         // podspec paths must be relative to podspec file, which is in buildDir
+        // Should be: "j2objc/"
         String srcGenDirRelativeToBuildDir = project.buildDir.toURI().relativize(srcGenDir.toURI())
-        // File("${project.buildDir}/j2objc") => "j2objc/"
 
         // TODO: make this an explicit @Input
         // Same for both debug and release builds
@@ -105,10 +109,10 @@ class XcodeTask extends DefaultTask {
 
         String podspecContentsDebug =
                 genPodspec(getPodNameDebug(), libDirDebug, libName, getJ2objcHome(),
-                        srcGenDirRelativeToBuildDir, "$j2objcResourceDirName/**/*")
+                        srcGenDirRelativeToBuildDir, "$j2objcResourcesRelativeToBuildDir/**/*")
         String podspecContentsRelease =
                 genPodspec(getPodNameRelease(), libDirRelease, libName, getJ2objcHome(),
-                        srcGenDirRelativeToBuildDir, "$j2objcResourceDirName/**/*")
+                        srcGenDirRelativeToBuildDir, "$j2objcResourcesRelativeToBuildDir/**/*")
 
         logger.debug("Writing debug podspec... ${getPodspecDebug()}\n$podspecContentsDebug")
         getPodspecDebug().write(podspecContentsDebug)
@@ -175,15 +179,6 @@ class XcodeTask extends DefaultTask {
         }
     }
 
-    WorkResult copyResources(String j2objcResourceDirPath) {
-        Utils.projectCopy(project, {
-            Utils.srcSet(project, 'main', 'resources').srcDirs.each {
-                from it
-            }
-            into j2objcResourceDirPath
-        })
-    }
-
     @VisibleForTesting
     void verifyXcodeArgs() {
         if (getXcodeProjectDir() == null ||
@@ -205,6 +200,7 @@ class XcodeTask extends DefaultTask {
         }
     }
 
+    // Podspec references are relative to project.buildDir
     @VisibleForTesting
     static String genPodspec(String podname, String libDir, String libName, String j2objcHome,
                              String publicHeadersDir, String resourceDir) {

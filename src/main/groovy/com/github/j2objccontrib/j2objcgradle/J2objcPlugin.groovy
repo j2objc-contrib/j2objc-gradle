@@ -105,6 +105,8 @@ class J2objcPlugin implements Plugin<Project> {
 
             // Note the '(debug|release)TestJ2objcExecutable' tasks are dynamically created by the Objective-C plugin.
             // It is specified by the testJ2objc native component in NativeCompilation.groovy.
+            // TODO: copy and run debug and release tests within j2objcTestContent at the
+            //       same time instead of destroying and recreating j2objcTestContent twice
             tasks.create(name: 'j2objcTestDebug', type: TestTask,
                     dependsOn: ['test', 'debugTestJ2objcExecutable']) {
                 group 'verification'
