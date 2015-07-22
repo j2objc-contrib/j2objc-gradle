@@ -180,9 +180,8 @@ class XcodeTaskTest {
     @Test
     void testXcodeConfig_NeedsPodInit() {
         Object unused
-        String j2objcHome
         J2objcConfig j2objcConfig
-        (proj, j2objcHome, j2objcConfig) =
+        (proj, unused, j2objcConfig) =
                 TestingUtils.setupProject(new TestingUtils.ProjectConfig(
                         applyJavaPlugin: true,
                         createJ2objcConfig: true))
@@ -212,7 +211,7 @@ class XcodeTaskTest {
     void testGenPodspec_Debug() {
         List<String> podspecDebug = XcodeTask.genPodspec(
                 'j2objc-shared-debug', '/PROJECTDIR/build/j2objcOutputs/lib/iosDebug', 'shared-j2objc',
-                '/J2OBJC_HOME', 'j2objcSrcGen',  'j2objcResources/**/*').split('\n')
+                '/J2OBJC_HOME', 'j2objcSrcGen', 'j2objcResources/**/*').split('\n')
 
         List<String> expectedPodspecDebug = [
                 "Pod::Spec.new do |spec|",
@@ -237,7 +236,7 @@ class XcodeTaskTest {
     void testGenPodspec_Release() {
         List<String> podspecRelease = XcodeTask.genPodspec(
                 'j2objc-shared-release', '/PROJECTDIR/build/j2objcOutputs/lib/iosRelease', 'shared-j2objc',
-                '/J2OBJC_HOME', 'j2objcSrcGen',  'j2objcResources/**/*').split('\n')
+                '/J2OBJC_HOME', 'j2objcSrcGen', 'j2objcResources/**/*').split('\n')
 
         List<String> expectedPodspecRelease = [
                 "Pod::Spec.new do |spec|",
@@ -256,6 +255,29 @@ class XcodeTaskTest {
                 "end"]
 
         assert expectedPodspecRelease == podspecRelease
+    }
+
+    @Test
+    void testVerifyXcodeArgs() {
+        Object unused
+        J2objcConfig j2objcConfig
+        (proj, unused, j2objcConfig) =
+                TestingUtils.setupProject(new TestingUtils.ProjectConfig(
+                        applyJavaPlugin: true,
+                        createJ2objcConfig: true))
+        assert null == j2objcConfig.xcodeProjectDir
+        assert null == j2objcConfig.xcodeTarget
+
+        // Cast required as return type of create(...) is Task
+        XcodeTask j2objcXcode =
+                (XcodeTask) proj.tasks.create(name: 'j2objcXcode', type: XcodeTask)
+
+        // Expect exception suggesting to configure j2objcConfig:
+        expectedException.expect(InvalidUserDataException.class)
+        expectedException.expectMessage("xcodeProjectDir '../ios'")
+        expectedException.expectMessage("xcodeTarget 'TARGET_NAME'")
+
+        j2objcXcode.verifyXcodeArgs()
     }
 
     @Test
