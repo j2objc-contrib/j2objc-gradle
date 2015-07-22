@@ -22,6 +22,7 @@ import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.plugins.JavaPlugin
+import org.gradle.process.ExecSpec
 import org.gradle.process.internal.ExecHandleBuilder
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
@@ -264,9 +265,9 @@ class UtilsTest {
     void projectExec_HelpfulErrorMessage() {
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()
-        // TODO: get command to write to stderr
-        stdout.write('fake-stdout'.getBytes('utf-8'))
-        stderr.write('fake-stderr'.getBytes('utf-8'))
+        // TODO: get executable passed to projectExec to write to stderr
+        stdout.write('written-stdout'.getBytes('utf-8'))
+        stderr.write('written-stderr'.getBytes('utf-8'))
 
         try {
             Utils.projectExec(proj, stdout, stderr, null, {
@@ -281,12 +282,14 @@ class UtilsTest {
             String expected =
                     'org.gradle.api.InvalidUserDataException: Command Line Failed:\n' +
                     'exit 1\n' +
+                    'Working Dir:\n' +
+                    proj.projectDir.absolutePath + '\n' +
                     'Cause:\n' +
                     "org.gradle.process.internal.ExecException: A problem occurred starting process 'command 'exit''\n" +
                     'Standard Output:\n' +
-                    'fake-stdout\n' +
+                    'written-stdout\n' +
                     'Error Output:\n' +
-                    'fake-stderr'
+                    'written-stderr'
             assert exception.toString().equals(expected)
         }
     }
@@ -309,8 +312,10 @@ class UtilsTest {
 
         } catch (InvalidUserDataException exception) {
             String expected =
-                    'org.gradle.api.InvalidUserDataException: Command Line Succeeded (failure cause listed below):\n' +
+                    'org.gradle.api.InvalidUserDataException: Command Line Succeeded:\n' +
                     'echo echo-stdout\n' +
+                    'Working Dir:\n' +
+                    proj.projectDir.absolutePath + '\n' +
                     'Cause:\n' +
                     'org.gradle.api.InvalidUserDataException: Unable to find expected expected output in stdout or stderr\n' +
                     'Failed Regex Match: /(no\\/match\\n)/\n' +
@@ -357,14 +362,47 @@ class UtilsTest {
     }
 
     @Test
-    void testLogDebugExecSpecOutput() {
-        ExecHandleBuilder execHandleBuilder = new ExecHandleBuilder()
+    void testProjectExecLog() {
+        ExecSpec execSpec = new ExecHandleBuilder()
+        execSpec.setExecutable('/EXECUTABLE')
+        execSpec.args('ARG_1')
+        execSpec.args('ARG_2')
+        execSpec.args('ARG_3', 'ARG_4')
+
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()
-        stderr.write('written-stdout'.getBytes('utf-8'))
-        stdout.write('written-stderr'.getBytes('utf-8'))
+        stdout.write('written-stdout'.getBytes('utf-8'))
+        stderr.write('written-stderr'.getBytes('utf-8'))
 
-        // No validation of results, only that the code runs without error
-        Utils.logDebugExecSpecOutput(stdout, stderr, execHandleBuilder)
+        // Command Succeeded
+        execSpec.setWorkingDir('/WORKING_DIR')
+        String execLogSuccess = Utils.projectExecLog(execSpec, stdout, stderr, true, null)
+        String expectedLogSuccess =
+                'Command Line Succeeded:\n' +
+                '/EXECUTABLE ARG_1 ARG_2 ARG_3 ARG_4\n' +
+                'Working Dir:\n' +
+                '/WORKING_DIR\n' +
+                'Standard Output:\n' +
+                'written-stdout\n' +
+                'Error Output:\n' +
+                'written-stderr'
+        assert expectedLogSuccess.equals(execLogSuccess)
+
+        // Command Failed
+        // Normally this should be a distinct test but this avoid duplicating the setup code
+        Exception cause = new InvalidUserDataException("I'm the cause of it all!")
+        String execLogFailure = Utils.projectExecLog(execSpec, stdout, stderr, false, cause)
+        String expectedLogFailure =
+                'Command Line Failed:\n' +
+                '/EXECUTABLE ARG_1 ARG_2 ARG_3 ARG_4\n' +
+                'Working Dir:\n' +
+                '/WORKING_DIR\n' +
+                'Cause:\n' +
+                'org.gradle.api.InvalidUserDataException: I\'m the cause of it all!\n' +
+                'Standard Output:\n' +
+                'written-stdout\n' +
+                'Error Output:\n' +
+                'written-stderr'
+        assert expectedLogFailure.equals(execLogFailure)
     }
 }

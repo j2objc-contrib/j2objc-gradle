@@ -84,8 +84,8 @@ class XcodeTaskTest {
                 TestingUtils.setupProject(new TestingUtils.ProjectConfig(
                         applyJavaPlugin: true,
                         createJ2objcConfig: true))
-        // TODO: should be '../ios' but that needs temp project to be subdirectory of temp dir
-        j2objcConfig.xcodeProjectDir = 'ios'
+        // Absolute Path to avoid test error: "Cannot convert relative path ios to an absolute file."
+        j2objcConfig.xcodeProjectDir = "${proj.projectDir}/ios"
         j2objcConfig.xcodeTarget = 'IosApp'
 
         // Needed for podspecDebug
@@ -107,7 +107,7 @@ class XcodeTaskTest {
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
         mockProjectExec.demandExecAndReturn(
-                'ios',  // working directory
+                "${proj.projectDir}/ios",  // working directory
                 [
                         "pod",
                         "install",

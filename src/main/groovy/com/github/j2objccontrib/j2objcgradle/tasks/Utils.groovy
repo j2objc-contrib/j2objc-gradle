@@ -299,51 +299,46 @@ class Utils {
             }
 
         } catch (Exception exception) {
-
             // ExecException is most common, which indicates "non-zero exit"
-            // Add command line and stderr to make the error message more useful
-            // Chain to the original ExecException for complete stack trace
-            String exceptionMsg = ''
-            if (execSucceeded) {
-                exceptionMsg += 'Command Line Succeeded (failure cause listed below):\n'
-            } else {
-                exceptionMsg += 'Command Line Failed:\n'
-            }
-            exceptionMsg +=
-                    // The command line can be long, so highlight more important details below
-                    execSpec.getCommandLine().join(' ') + '\n' +
-                    // Use 'Cause' instead of 'Caused by' to help debugging these error messages
-                    'Cause:\n' +
-                    exception.toString() + '\n' +
-                    stdOutAndErrToLogString(stdout, stderr)
-
+            String exceptionMsg = projectExecLog(execSpec, stdout, stderr, execSucceeded, exception)
             throw new InvalidUserDataException(exceptionMsg, exception)
         }
 
-        logDebugExecSpecOutput(stdout, stderr, execSpec)
+        log.debug(projectExecLog(execSpec, stdout, stderr, execSucceeded, null))
 
         return execResult
     }
 
     @VisibleForTesting
-    static void logDebugExecSpecOutput(
-            ByteArrayOutputStream stdout, ByteArrayOutputStream stderr, ExecSpec execSpec) {
+    static String projectExecLog(
+            ExecSpec execSpec, ByteArrayOutputStream stdout, ByteArrayOutputStream stderr,
+            boolean execSucceeded, Exception exception) {
+        // Add command line and stderr to make the error message more useful
+        // Chain to the original ExecException for complete stack trace
+        String msg
+        // The command line can be long, so highlight more important details below
+        if (execSucceeded) {
+            msg = 'Command Line Succeeded:\n'
+        } else {
+            msg = 'Command Line Failed:\n'
+        }
+        msg += execSpec.getCommandLine().join(' ') + '\n'
 
-        if (execSpec == null) {
-            log.debug('execSpec is null')
-            return
+        // Working Directory appears to always be set
+        if (execSpec.getWorkingDir() != null) {
+            msg += 'Working Dir:\n'
+            msg += execSpec.getWorkingDir().absolutePath + '\n'
         }
 
-        log.debug('Command Line:\n' + execSpec.getCommandLine().join(' '))
+        // Use 'Cause' instead of 'Caused by' to help distinguish from exceptions
+        if (exception != null) {
+            msg += 'Cause:\n'
+            msg += exception.toString() + '\n'
+        }
 
-        String stdoutStr = stdout.toString()
-        String stderrStr = stderr.toString()
-        if (!stdoutStr.empty) {
-            log.debug(stdoutStr)
-        }
-        if (!stderrStr.empty) {
-            log.debug(stderrStr)
-        }
+        // Stdout and stderr
+        msg += stdOutAndErrToLogString(stdout, stderr)
+        return msg
     }
 
     static String stdOutAndErrToLogString(ByteArrayOutputStream stdout, ByteArrayOutputStream stderr) {
