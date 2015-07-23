@@ -31,12 +31,12 @@ find the latest version number of the plugin:
 
     // Plugin settings:
     j2objcConfig {
-        xcodeProjectDir "${projectDir}/../ios"   // Xcode workspace directory
-        xcodeTarget "IosApp"                     // Xcode application target name
-    
+        xcodeProjectDir "../ios"   // Xcode workspace directory
+        xcodeTarget "IosApp"       // iOS app target name
+
         // Other Settings:
         // https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcConfig.groovy#L25
-        
+
         // You must include this call at the end of j2objcConfig, regardless of settings
         finalConfigure()
     }
@@ -48,7 +48,7 @@ Within the Android application's project `build.gradle`, make it dependent on th
         compile project(':shared')
     }
 
-#### NOTE: Open `.xcworkspace` in Xcode
+#### NOTE: Open .xcworkspace in Xcode
 
 When using the j2objcXcodeTask, open the `.xcworkspace` file in Xcode. If the `.xcodeproj` file
 is opened in Xcode then CocoaPods will fail. This will appear as an Xcode build time error:
@@ -58,7 +58,7 @@ is opened in Xcode then CocoaPods will fail. This will appear as an Xcode build 
 ### Folder Structure
 
 This is the suggested folder structure. It also shows a number of generated files and
-folders that aren't committed to your repository. Files are shown before folder, so it
+folders that aren't committed to your repository. Files are shown before folders, so it
 is not in strict alphabetical order.
 
     workspace

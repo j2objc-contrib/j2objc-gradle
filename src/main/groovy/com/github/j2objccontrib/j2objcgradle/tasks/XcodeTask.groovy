@@ -185,12 +185,18 @@ class XcodeTask extends DefaultTask {
         if (getXcodeProjectDir() == null ||
             getXcodeTarget() == null) {
             String message =
-                    'Xcode settings need to be configured in this project\'s build.gradle:\n' +
-                    '\n' +
-                    'j2objcConfig {\n' +
-                    '    xcodeProjectDir \'../ios\'\n' +
-                    '    xcodeTarget \'<TARGET_NAME>\'\n' +
-                    '}\n'
+                    "Xcode settings need to be configured in this project's build.gradle.\n" +
+                    "The directory should point to the location containing your Xcode project,\n" +
+                    "including the .xccodeproj and .xcworkspace files. The target is the name,\n" +
+                    "of the iOS app within Xcode (not the tests or watch extension targets).\n" +
+                    "\n" +
+                    "j2objcConfig {\n" +
+                    "    xcodeProjectDir '../ios'\n" +
+                    "    xcodeTarget 'IOS-APP-TARGET'\n" +
+                    "}\n" +
+                    "\n" +
+                    "Also see the guidelines for the folder structure:\n" +
+                    "https://github.com/j2objc-contrib/j2objc-gradle#folder-structure"
             throw new InvalidUserDataException(message)
         }
     }
