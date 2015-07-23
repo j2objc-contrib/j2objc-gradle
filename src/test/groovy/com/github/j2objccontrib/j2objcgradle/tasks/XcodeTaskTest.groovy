@@ -275,7 +275,7 @@ class XcodeTaskTest {
         // Expect exception suggesting to configure j2objcConfig:
         expectedException.expect(InvalidUserDataException.class)
         expectedException.expectMessage("xcodeProjectDir '../ios'")
-        expectedException.expectMessage("xcodeTarget 'TARGET_NAME'")
+        expectedException.expectMessage("xcodeTarget 'IOS-APP-TARGET'")
 
         j2objcXcode.verifyXcodeArgs()
     }
