@@ -19,6 +19,8 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 import groovy.mock.interceptor.MockFor
 import groovy.util.logging.Slf4j
 import org.gradle.api.Project
+import org.gradle.api.internal.file.copy.DefaultCopySpec
+import org.gradle.api.tasks.WorkResult
 import org.gradle.process.ExecResult
 import org.gradle.process.ExecSpec
 import org.gradle.process.internal.ExecHandleBuilder
@@ -60,8 +62,11 @@ class MockProjectExec {
 
         // This intercepts all methods, stubbing out exec and passing through all other invokes
         project.metaClass.invokeMethod = { String name, Object[] args ->
-            if (name == 'exec') {
+            if (name == 'copy') {
+                return projectProxyInstance().copy((Closure) args.first())
+            } else if (name == 'exec') {
                 // Call the proxy object so that it can track verifications
+                println 'Proxy Exec'
                 return projectProxyInstance().exec((Closure) args.first())
             } else {
                 // This calls the delegate without causing infinite recursion
@@ -108,12 +113,42 @@ class MockProjectExec {
     }
 
     Project projectProxyInstance() {
-        proxyInstance = mockForProj.proxyInstance()
+        // proxyInstance is only created once and then reused forever
+        // Requires new MockProjectExec for another demand / verify configuration
+        if (proxyInstance == null) {
+            proxyInstance = mockForProj.proxyInstance()
+        }
         return ( Project ) proxyInstance
     }
 
-    void demandExecAndReturn(
-            List<String> expectedCommandLine) {
+    void verify() {
+        mockForProj.verify(proxyInstance)
+    }
+
+    void demandCopyAndReturn(String into, String... from) {
+
+        assert proxyInstance == null, "Demand calls must be prior to calling projectProxyInstance"
+
+        mockForProj.demand.copy { Closure closure ->
+
+            DefaultCopySpec copySpec = new DefaultCopySpec(null, null)
+            ConfigureUtil.configure(closure, copySpec)
+
+            // Exceeds access rights
+            assert into.equals((String) copySpec.destDir)
+
+            List<String> fromList = Arrays.asList(from)
+            Set<Object> sourcepaths = copySpec.getSourcePaths()
+            sourcepaths.each { Object obj ->
+                assert fromList.contains(obj.toString())
+            }
+            assert from.size() == sourcepaths.size()
+
+            return (WorkResult) null
+        }
+    }
+
+    void demandExecAndReturn(List<String> expectedCommandLine) {
         demandExecAndReturn(null, expectedCommandLine, null, null, null)
     }
 
@@ -122,7 +157,13 @@ class MockProjectExec {
             String stdout, String stderr,
             Exception exceptionToThrow) {
 
+        assert proxyInstance == null, "Demand calls must be prior to calling projectProxyInstance"
+
         mockForProj.demand.exec { Closure closure ->
+
+            ExecSpec execSpec = new ExecHandleBuilder()
+            // This prevents the test error: "Cannot convert relative path . to an absolute file."
+            execSpec.setWorkingDir('/INIT_WORKING_DIR')
 
             ConfigureUtil.configure(closure, execSpec)
 
@@ -160,9 +201,5 @@ class MockProjectExec {
 
             return (ExecResult) null
         }
-    }
-
-    void verify() {
-        mockForProj.verify(proxyInstance)
     }
 }

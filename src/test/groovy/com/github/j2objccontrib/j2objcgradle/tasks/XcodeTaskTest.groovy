@@ -77,13 +77,14 @@ class XcodeTaskTest {
 
     @Test
     void testXcodeConfig_Basic() {
-        Object unused
         String j2objcHome
         J2objcConfig j2objcConfig
         (proj, j2objcHome, j2objcConfig) =
                 TestingUtils.setupProject(new TestingUtils.ProjectConfig(
                         applyJavaPlugin: true,
                         createJ2objcConfig: true))
+
+        // TODO: should be '../ios' but that needs temp project to be subdirectory of temp dir
         // Absolute Path to avoid test error: "Cannot convert relative path ios to an absolute file."
         j2objcConfig.xcodeProjectDir = "${proj.projectDir}/ios"
         j2objcConfig.xcodeTarget = 'IosApp'
@@ -105,7 +106,11 @@ class XcodeTaskTest {
                 "target 'IosApp' do\n" +
                 "end")
 
+        // Demands for exec and copy
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
+        mockProjectExec.demandCopyAndReturn(
+                "${proj.projectDir}/build/j2objcResources",
+                "${proj.projectDir}/src/main/resources")
         mockProjectExec.demandExecAndReturn(
                 "${proj.projectDir}/ios",  // working directory
                 [
@@ -185,7 +190,7 @@ class XcodeTaskTest {
                 TestingUtils.setupProject(new TestingUtils.ProjectConfig(
                         applyJavaPlugin: true,
                         createJ2objcConfig: true))
-        // TODO: should be '../ios' but that needs temp project to be subdirectory of temp dir
+
         j2objcConfig.xcodeProjectDir = 'ios'
         j2objcConfig.xcodeTarget = 'IosApp'
 
@@ -194,17 +199,25 @@ class XcodeTaskTest {
         // Needed for Podfile
         proj.file(j2objcConfig.xcodeProjectDir).mkdir()
 
-        // Cast required as return type of create(...) is Task
         XcodeTask j2objcXcode =
                 (XcodeTask) proj.tasks.create(name: 'j2objcXcode', type: XcodeTask) {
                     srcGenDir = proj.file("${proj.buildDir}/j2objcSrcGen")
                 }
 
-        expectedException.expect(InvalidUserDataException.class)
-        expectedException.expectMessage('The Podfile must be created with this command')
-        expectedException.expectMessage("(cd ${proj.projectDir}/ios && pod init)")
+        MockProjectExec mockProjectExec = new MockProjectExec(proj, '/J2OBJC_HOME')
+        mockProjectExec.demandCopyAndReturn(
+                "${proj.projectDir}/build/j2objcResources",
+                "${proj.projectDir}/src/main/resources")
 
-        j2objcXcode.xcodeConfig()
+        try {
+            j2objcXcode.xcodeConfig()
+            assert false, 'Expected Exception'
+        } catch (InvalidUserDataException exception) {
+            assert exception.toString().contains('The Podfile must be created with this command')
+            assert exception.toString().contains("(cd ${proj.projectDir}/ios && pod init)")
+        }
+
+        mockProjectExec.verify()
     }
 
     @Test

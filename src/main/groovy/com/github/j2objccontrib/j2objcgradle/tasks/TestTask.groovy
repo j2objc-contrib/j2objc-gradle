@@ -26,6 +26,7 @@ import org.gradle.api.file.FileTree
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
@@ -56,10 +57,6 @@ class TestTask extends DefaultTask {
         return allFiles
     }
 
-    // Report of test failures
-    @OutputFile
-    File reportFile = project.file("${project.buildDir}/reports/${name}.out")
-
     // j2objcConfig dependencies for UP-TO-DATE checks
     @Input
     List<String> getTestArgs() { return J2objcConfig.from(project).testArgs }
@@ -70,17 +67,41 @@ class TestTask extends DefaultTask {
     @Input
     int getTestMinExpectedTests() { return J2objcConfig.from(project).testMinExpectedTests }
 
+    @InputFiles
+    // As tests may depend on resources
+    FileTree getMainResources() {
+        FileTree allResources = Utils.srcSet(project, 'main', 'resources')
+        allResources = allResources.plus(Utils.srcSet(project, 'test', 'resources'))
+        return allResources
+    }
+
+    // Report of test failures
+    @OutputFile
+    File reportFile = project.file("${project.buildDir}/reports/${name}.out")
+
+    @OutputDirectory
+    // Combines main/test resources and test executables
+    File getJ2objcTestContentDir() {
+        return new File(project.buildDir, 'j2objcTestContent')
+    }
 
     @TaskAction
     void test() {
-
-        String binary = testBinaryFile.path
-        logger.debug("Test Binary: $binary")
-
         // list of test names: ['com.example.dir.ClassOneTest', 'com.example.dir.ClassTwoTest']
         // depends on "--prefixes dir/prefixes.properties" in translateArgs
         Properties packagePrefixes = Utils.packagePrefixes(project, translateArgs)
         List<String> testNames = getTestNames(project, getTestSrcFiles(), packagePrefixes)
+
+        // Test executable must be run from the same directory as the resources
+        project.delete(getJ2objcTestContentDir())
+        Utils.copyResources(project, 'main', getJ2objcTestContentDir())
+        Utils.copyResources(project, 'test', getJ2objcTestContentDir())
+        Utils.projectCopy(project, {
+            from testBinaryFile
+            into getJ2objcTestContentDir()
+        })
+        File copiedTestBinary = new File(getJ2objcTestContentDir(), testBinaryFile.getName())
+        logger.debug("Test Binary: $copiedTestBinary")
 
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()
@@ -91,7 +112,7 @@ class TestTask extends DefaultTask {
 
         try {
             Utils.projectExec(project, stdout, stderr, testCountRegex, {
-                executable binary
+                executable copiedTestBinary
                 args 'org.junit.runner.JUnitCore'
 
                 getTestArgs().each { String testArg ->
