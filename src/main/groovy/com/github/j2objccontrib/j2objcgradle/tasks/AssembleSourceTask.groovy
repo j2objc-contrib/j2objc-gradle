@@ -87,7 +87,7 @@ class AssembleSourceTask extends DefaultTask {
         }
         // TODO: better if this was a sync operation as it does deletes automatically
         logger.debug("Deleting $name to fill with generated objc files... " + destDir.path)
-        project.delete destDir
+        Utils.projectDelete(project, destDir)
     }
 
     void copyMainSource() {

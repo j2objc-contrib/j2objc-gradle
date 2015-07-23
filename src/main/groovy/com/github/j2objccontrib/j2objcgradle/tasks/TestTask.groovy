@@ -93,7 +93,7 @@ class TestTask extends DefaultTask {
         List<String> testNames = getTestNames(project, getTestSrcFiles(), packagePrefixes)
 
         // Test executable must be run from the same directory as the resources
-        project.delete(getJ2objcTestContentDir())
+        Utils.projectDelete(project, getJ2objcTestContentDir())
         Utils.copyResources(project, 'main', getJ2objcTestContentDir())
         Utils.copyResources(project, 'test', getJ2objcTestContentDir())
         Utils.projectCopy(project, {
