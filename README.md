@@ -24,21 +24,18 @@ find the latest version number of the plugin:
     // File: shared/build.gradle
     plugins {
         id 'java'
-        // Modify with latest version:
-        // https://plugins.gradle.org/plugin/com.github.j2objccontrib.j2objcgradle
-        id 'com.github.j2objccontrib.j2objcgradle' version 'X.Y.Z-alpha'
+        id 'com.github.j2objccontrib.j2objcgradle' version '0.3.0-alpha'
     }
 
     // Plugin settings:
     j2objcConfig {
-        xcodeProjectDir "../ios"   // Xcode workspace directory
-        xcodeTarget "IosApp"       // iOS app target name
+        xcodeProjectDir '../ios'  // Xcode workspace directory
+        xcodeTarget 'IosApp'      // iOS app target name
 
         // Other Settings:
-        // https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcConfig.groovy#L25
+        // https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcConfig.groovy#L30
 
-        // You must include this call at the end of j2objcConfig, regardless of settings
-        finalConfigure()
+        finalConfigure()          // Must be last call to configuration
     }
 
 Within the Android application's project `build.gradle`, make it dependent on the `shared` project:
@@ -48,12 +45,14 @@ Within the Android application's project `build.gradle`, make it dependent on th
         compile project(':shared')
     }
 
-#### NOTE: Open .xcworkspace in Xcode
+
+### NOTE: Open .xcworkspace in Xcode
 
 When using the j2objcXcodeTask, open the `.xcworkspace` file in Xcode. If the `.xcodeproj` file
 is opened in Xcode then CocoaPods will fail. This will appear as an Xcode build time error:
 
     library not found for -lPods-*-j2objc-shared
+
 
 ### Folder Structure
 
@@ -97,25 +96,13 @@ These are the main tasks for the plugin:
     j2objcAssemble          - Builds debug/release libraries, packs targets in to fat libraries
     j2objcTest              - Runs all JUnit tests, as translated into Objective-C
     j2objcBuild             - Builds and tests all j2objc outputs.
-    j2objcXcode             - Configure Xcode to link to static library and header files
+    j2objcXcode             - Configure Xcode to link static library & header files, uses CocoaPods
 
 Note that you can use the Gradle shorthand of `$ gradlew jA` to do the `j2objcAssemble` task.
 The other shorthand expressions are `jCF, jTr, jA, jTe, jB and jX`.
 
 
-#### Task Enable and Disable
-
-You can disable tasks performed by the plugin using the following configuration block in your
-`build.gradle`. This is separate and alongside the j2objcConfig settings. For example, to
-disable the `j2objcTest` task, do the following:
-
-    j2objcTest {
-        enabled = false
-    }
-
-    j2objcConfig {
-        ...
-    }
+### Faster Development Cycle
 
 If you are developing in a tight modify-compile-test loop and using only debug binaries, you
 may want to disable the release build temporarily by adding to your `local.properties` file:
@@ -124,31 +111,14 @@ may want to disable the release build temporarily by adding to your `local.prope
 
 This should cut the j2objc build time up to 50%.  You can also do this for `j2objc.debugEnabled`.
 
-#### j2objcCycleFinder
-
-This task is disabled by default as it requires greater sophistication to use. It runs the
-`cycle_finder` tool in the J2ObjC release to detect memory cycles in your application.
-Objects that are part of a memory cycle on iOS won't be deleted as it doesn't support
-garbage collection.
-
-The basic setup will implicitly check for 40 memory cycles - this is the expected number
-of erroneous matches with `jre_emul` library for j2objc version 0.9.6.1. This may cause
-issues if this number changes with future versions of j2objc libraries.
-
-    j2objcCycleFinder {
-        enabled = true
-    }
-
-Also see FAQ's [Advanced Cycle Finder Setup](FAQ.md#Advanced-Cycle-Finder-Setup).
-
-
-### Contributing
-See [CONTRIBUTING.md](CONTRIBUTING.md#quick-start).
-
 
 ### FAQ
 
 See [FAQ.md](FAQ.md).
+
+
+### Contributing
+See [CONTRIBUTING.md](CONTRIBUTING.md#quick-start).
 
 
 ### License
