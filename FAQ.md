@@ -100,6 +100,24 @@ sourceSets {
 ```
 
 
+### How do I develop with Swift?
+
+To work with Swift in Xcode, you need to configure a [bridging header](https://developer.apple.com/library/ios/documentation/Swift/Conceptual/BuildingCocoaApps/MixandMatch.html#//apple_ref/doc/uid/TP40014216-CH10-XID_81).
+Within that bridging header, include the file needed for using the JRE and any classes that you'd like
+to access from Swift code.
+
+```
+// File: IOS-APP-bridging-header.h
+
+// Required for Swift initialization of Java objects (they all inherit from JavaObject)
+#import "JreEmulation.h"
+
+// Swift accessible j2objc translated classes, referenced from `shared/build/j2objcOutputs/src/main/objc`
+#import "MyClassOne.h"
+#import "MyClassTwo.h"
+```
+
+
 ### How do I enable ARC for my Objective-C classes?
 
 Add the following to your configuration block. [See](https://developer.apple.com/library/mac/releasenotes/ObjectiveC/RN-TransitioningToARC/Introduction/Introduction.html#//apple_ref/doc/uid/TP40011226-CH1-SW15).
