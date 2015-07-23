@@ -27,6 +27,7 @@ project that uses the plugin:
 1. Add the `buildscript` and `apply plugin` lines then update X.Y.Z based on "version = 'X.Y.Z-alpha'"
 in j2objc-gradle/build.gradle
 
+```
     // File: shared/build.gradle
 
     //plugins {
@@ -41,6 +42,7 @@ in j2objc-gradle/build.gradle
     }
     apply plugin: 'java'
     apply plugin: 'com.github.j2objccontrib.j2objcgradle'
+```
 
 Note that when rapidly developing and testing changes to the plugin by building your own project,
 avoid using the Gradle daemon as issues sometimes arise with the daemon using an old version

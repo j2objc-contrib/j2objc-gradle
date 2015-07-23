@@ -27,7 +27,24 @@ import org.gradle.api.tasks.util.PatternSet
 import org.gradle.util.ConfigureUtil
 
 /**
- * Further configuration uses the following fields, setting them in j2objcConfig within build.gradle
+ * j2objcConfig is used to configure the plugin with the project's build.gradle.
+ *
+ * All paths are resolved using Gradle's <a href="https://docs.gradle.org/current/javadoc/org/gradle/api/Project.html#file(java.lang.Object)">project.file(...)</a>
+ *
+ *
+ * Basic Example:
+ *
+ * j2objcConfig {
+ *     xcodeProjectDir '../ios'
+ *     xcodeTarget 'IosApp'
+ *     finalConfigure()
+ * }
+ *
+ *
+ * Complex Example:
+ *
+ * TODO...
+ *
  */
 @CompileStatic
 class J2objcConfig {
