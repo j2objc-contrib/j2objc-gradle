@@ -20,6 +20,8 @@ import groovy.mock.interceptor.MockFor
 import groovy.util.logging.Slf4j
 import org.gradle.api.Project
 import org.gradle.process.ExecResult
+import org.gradle.process.ExecSpec
+import org.gradle.process.internal.ExecHandleBuilder
 import org.gradle.util.ConfigureUtil
 
 /**
@@ -41,12 +43,15 @@ class MockProjectExec {
     private static final String projectDirStd = '/PROJECT_DIR'
 
     private MockFor mockForProj = new MockFor(Project)
-    private MockExec mockExec = new MockExec()
+    private ExecSpec execSpec = new ExecHandleBuilder()
     private GroovyObject proxyInstance
 
     MockProjectExec(Project project, String j2objcHome) {
         this.project = project
         this.j2objcHome = j2objcHome
+
+        // This prevents the test error: "Cannot convert relative path . to an absolute file."
+        execSpec.setWorkingDir('/INIT_WORKING_DIR')
 
         // TODO: find a more elegant way to do this that doesn't require intercepting all methods
         // http://stackoverflow.com/questions/31129003/mock-gradle-project-exec-using-metaprogramming
@@ -119,28 +124,33 @@ class MockProjectExec {
 
         mockForProj.demand.exec { Closure closure ->
 
-            ConfigureUtil.configure(closure, mockExec)
+            ConfigureUtil.configure(closure, execSpec)
 
-            assert expectedCommandLine[0] == mockExec.executable.replace(j2objcHome, j2objcHomeStd)
+            assert expectedCommandLine[0] == execSpec.getExecutable().replace(j2objcHome, j2objcHomeStd)
             expectedCommandLine.remove(0)
 
-            List<String> canonicalizedArgs = mockExec.args.collect { String arg ->
+            List<String> canonicalizedArgs = execSpec.getArgs().collect { String arg ->
                 return arg
                         .replace(j2objcHome, j2objcHomeStd)
                         .replace(project.projectDir.path, projectDirStd)
             }
             assert expectedCommandLine == canonicalizedArgs
-            assert expectWorkingDir == mockExec.workingDir
+            if (expectWorkingDir == null) {
+                // Check that it wasn't modified unexpectedly
+                assert '/INIT_WORKING_DIR' == execSpec.getWorkingDir().absolutePath
+            } else {
+                assert expectWorkingDir == execSpec.getWorkingDir().absolutePath
+            }
 
             if (stdout) {
-                mockExec.standardOutput.write(stdout.getBytes('utf-8'))
-                mockExec.standardOutput.flush()
+                execSpec.getStandardOutput().write(stdout.getBytes('utf-8'))
+                execSpec.getStandardOutput().flush()
                 // warn is needed to output to stdout in unit tests
                 log.warn(stdout)
             }
             if (stderr) {
-                mockExec.errorOutput.write(stderr.getBytes('utf-8'))
-                mockExec.errorOutput.flush()
+                execSpec.getErrorOutput().write(stderr.getBytes('utf-8'))
+                execSpec.getErrorOutput().flush()
                 log.error(stderr)
             }
 
@@ -154,46 +164,5 @@ class MockProjectExec {
 
     void verify() {
         mockForProj.verify(proxyInstance)
-    }
-
-    // Basically mocks Gradle's AbstractExecTask
-    // TODO: implements ExecSpec
-    private class MockExec {
-        String workingDir
-        String executable
-        List<String> args = new ArrayList<>()
-        OutputStream errorOutput
-        OutputStream standardOutput
-
-        void executable(Object executable) {
-            this.executable = (String) executable
-        }
-
-        void args(Object... args) {
-            args.each { Object arg ->
-                String newArgStr = (String) arg
-                this.args.add(newArgStr)
-            }
-        }
-
-        List<String> getCommandLine() {
-            return args
-        }
-
-        void setStandardOutput(OutputStream standardOutput) {
-            this.standardOutput = standardOutput
-        }
-
-        void setErrorOutput(OutputStream errorOutput) {
-            this.errorOutput = errorOutput
-        }
-
-        void setWorkingDir(String workingDir) {
-            this.workingDir = workingDir
-        }
-
-        String toString() {
-            return "$executable ${args.join(' ')}"
-        }
     }
 }
