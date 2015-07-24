@@ -26,7 +26,9 @@ import org.gradle.process.ExecSpec
 import org.gradle.process.internal.ExecHandleBuilder
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.ExpectedException
 
 /**
  * Utils tests.
@@ -34,6 +36,9 @@ import org.junit.Test
 class UtilsTest {
 
     private Project proj
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @Before
     void setUp() {
@@ -217,6 +222,137 @@ class UtilsTest {
     // TODO: testFilterJ2objcOutputForErrorLines()
 
     @Test
+    void testMatchRegexOutputStreams_Fails() {
+        ByteArrayOutputStream ostream = new ByteArrayOutputStream()
+        ostream.write('written'.getBytes('utf-8'))
+
+        assert null == Utils.matchRegexOutputs(ostream, ostream, /(NoMatch)/)
+    }
+
+    @Test
+    void testMatchRegexOutputStreams_MatchString() {
+        ByteArrayOutputStream stdout = new ByteArrayOutputStream()
+        ByteArrayOutputStream stderr = new ByteArrayOutputStream()
+        stdout.write('written-stdout'.getBytes('utf-8'))
+        stderr.write('written-stderr'.getBytes('utf-8'))
+
+        assert null != Utils.matchRegexOutputs(stdout, stderr, /(std+out)/).equals('stdout')
+        assert null != Utils.matchRegexOutputs(stdout, stderr, /(std+err)/).equals('stderr')
+    }
+
+    @Test
+    void testMatchRegexOutputStreams_MatchNumber() {
+        ByteArrayOutputStream ostream = new ByteArrayOutputStream()
+        ostream.write('OK (15 tests)'.getBytes('utf-8'))
+
+        String countStr = Utils.matchRegexOutputs(ostream, ostream, /OK \((\d+) tests?\)/)
+        assert 15 == countStr.toInteger()
+    }
+
+    @Test
+    void testEscapeSlashyString() {
+        String regex = /forward-slash:\/,newline:\n,multi-digit:\d+/
+        assert "/forward-slash:\\/,newline:\\n,multi-digit:\\d+/" == Utils.escapeSlashyString(regex)
+    }
+
+    @Test
+    void testProjectExecLog() {
+        ExecSpec execSpec = new ExecHandleBuilder()
+        execSpec.setExecutable('/EXECUTABLE')
+        execSpec.args('ARG_1')
+        execSpec.args('ARG_2')
+        execSpec.args('ARG_3', 'ARG_4')
+
+        ByteArrayOutputStream stdout = new ByteArrayOutputStream()
+        ByteArrayOutputStream stderr = new ByteArrayOutputStream()
+        stdout.write('written-stdout'.getBytes('utf-8'))
+        stderr.write('written-stderr'.getBytes('utf-8'))
+
+        // Command Succeeded
+        execSpec.setWorkingDir('/WORKING_DIR')
+        String execLogSuccess = Utils.projectExecLog(execSpec, stdout, stderr, true, null)
+        String expectedLogSuccess =
+                'Command Line Succeeded:\n' +
+                '/EXECUTABLE ARG_1 ARG_2 ARG_3 ARG_4\n' +
+                'Working Dir:\n' +
+                '/WORKING_DIR\n' +
+                'Standard Output:\n' +
+                'written-stdout\n' +
+                'Error Output:\n' +
+                'written-stderr'
+        assert expectedLogSuccess.equals(execLogSuccess)
+
+        // Command Failed
+        // Normally this should be a distinct test but this avoid duplicating the setup code
+        Exception cause = new InvalidUserDataException("I'm the cause of it all!")
+        String execLogFailure = Utils.projectExecLog(execSpec, stdout, stderr, false, cause)
+        String expectedLogFailure =
+                'Command Line Failed:\n' +
+                '/EXECUTABLE ARG_1 ARG_2 ARG_3 ARG_4\n' +
+                'Working Dir:\n' +
+                '/WORKING_DIR\n' +
+                'Cause:\n' +
+                'org.gradle.api.InvalidUserDataException: I\'m the cause of it all!\n' +
+                'Standard Output:\n' +
+                'written-stdout\n' +
+                'Error Output:\n' +
+                'written-stderr'
+        assert expectedLogFailure.equals(execLogFailure)
+    }
+
+    @Test
+    // Tests intercepting and verifying call to project.copy(...)
+    void testProjectCopy_MockProjectExec() {
+
+        MockProjectExec mockProjectExec = new MockProjectExec(proj, '/J2OBJC_HOME')
+        mockProjectExec.demandCopyAndReturn(
+                '/DEST-DIR',
+                '/INPUT-DIR-1', '/INPUT-DIR-2')
+
+        Utils.projectCopy(proj, {
+            from '/INPUT-DIR-1', '/INPUT-DIR-2'
+            into '/DEST-DIR'
+        })
+
+        mockProjectExec.verify()
+    }
+
+    @Test
+    // Tests intercepting and verifying call to project.exec(...)
+    void testProjectCopy_MockProjectExecTwoCalls() {
+        MockProjectExec mockProjectExec = new MockProjectExec(proj, '/J2OBJC_HOME')
+        mockProjectExec.demandCopyAndReturn(
+                '/DEST-1',
+                '/INPUT-1A', '/INPUT-1B')
+        mockProjectExec.demandCopyAndReturn(
+                '/DEST-2',
+                '/INPUT-2A', '/INPUT-2B')
+
+        Utils.projectCopy(proj, {
+            into '/DEST-1'
+            from '/INPUT-1A', '/INPUT-1B'
+        })
+        Utils.projectCopy(proj, {
+            into '/DEST-2'
+            from '/INPUT-2A', '/INPUT-2B'
+        })
+
+        mockProjectExec.verify()
+    }
+
+    @Test
+    // Tests intercepting and verifying call to project.delete(path1, path2)
+    void testProjectDelete_MockProjectExec() {
+        MockProjectExec mockProjectExec = new MockProjectExec(proj, '/J2OBJC_HOME')
+
+        mockProjectExec.demandDeleteAndReturn('/PATH1', '/PATH2')
+
+        Utils.projectDelete(proj, '/PATH1', '/PATH2')
+
+        mockProjectExec.verify()
+    }
+
+    @Test
     void testProjectExec_StdOut() {
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()
@@ -364,119 +500,22 @@ class UtilsTest {
     }
 
     @Test
-    void testMatchRegexOutputStreams_Fails() {
-        ByteArrayOutputStream ostream = new ByteArrayOutputStream()
-        ostream.write('written'.getBytes('utf-8'))
-
-        assert null == Utils.matchRegexOutputs(ostream, ostream, /(NoMatch)/)
-    }
-
-    @Test
-    void testMatchRegexOutputStreams_MatchString() {
-        ByteArrayOutputStream stdout = new ByteArrayOutputStream()
-        ByteArrayOutputStream stderr = new ByteArrayOutputStream()
-        stdout.write('written-stdout'.getBytes('utf-8'))
-        stderr.write('written-stderr'.getBytes('utf-8'))
-
-        assert null != Utils.matchRegexOutputs(stdout, stderr, /(std+out)/).equals('stdout')
-        assert null != Utils.matchRegexOutputs(stdout, stderr, /(std+err)/).equals('stderr')
-    }
-
-    @Test
-    void testMatchRegexOutputStreams_MatchNumber() {
-        ByteArrayOutputStream ostream = new ByteArrayOutputStream()
-        ostream.write('OK (15 tests)'.getBytes('utf-8'))
-
-        String countStr = Utils.matchRegexOutputs(ostream, ostream, /OK \((\d+) tests?\)/)
-        assert 15 == countStr.toInteger()
-    }
-
-    @Test
-    void testEscapeSlashyString() {
-        String regex = /forward-slash:\/,newline:\n,multi-digit:\d+/
-        assert "/forward-slash:\\/,newline:\\n,multi-digit:\\d+/" == Utils.escapeSlashyString(regex)
-    }
-
-    @Test
-    void testProjectExecLog() {
-        ExecSpec execSpec = new ExecHandleBuilder()
-        execSpec.setExecutable('/EXECUTABLE')
-        execSpec.args('ARG_1')
-        execSpec.args('ARG_2')
-        execSpec.args('ARG_3', 'ARG_4')
-
-        ByteArrayOutputStream stdout = new ByteArrayOutputStream()
-        ByteArrayOutputStream stderr = new ByteArrayOutputStream()
-        stdout.write('written-stdout'.getBytes('utf-8'))
-        stderr.write('written-stderr'.getBytes('utf-8'))
-
-        // Command Succeeded
-        execSpec.setWorkingDir('/WORKING_DIR')
-        String execLogSuccess = Utils.projectExecLog(execSpec, stdout, stderr, true, null)
-        String expectedLogSuccess =
-                'Command Line Succeeded:\n' +
-                '/EXECUTABLE ARG_1 ARG_2 ARG_3 ARG_4\n' +
-                'Working Dir:\n' +
-                '/WORKING_DIR\n' +
-                'Standard Output:\n' +
-                'written-stdout\n' +
-                'Error Output:\n' +
-                'written-stderr'
-        assert expectedLogSuccess.equals(execLogSuccess)
-
-        // Command Failed
-        // Normally this should be a distinct test but this avoid duplicating the setup code
-        Exception cause = new InvalidUserDataException("I'm the cause of it all!")
-        String execLogFailure = Utils.projectExecLog(execSpec, stdout, stderr, false, cause)
-        String expectedLogFailure =
-                'Command Line Failed:\n' +
-                '/EXECUTABLE ARG_1 ARG_2 ARG_3 ARG_4\n' +
-                'Working Dir:\n' +
-                '/WORKING_DIR\n' +
-                'Cause:\n' +
-                'org.gradle.api.InvalidUserDataException: I\'m the cause of it all!\n' +
-                'Standard Output:\n' +
-                'written-stdout\n' +
-                'Error Output:\n' +
-                'written-stderr'
-        assert expectedLogFailure.equals(execLogFailure)
-    }
-
-    @Test
-    // Tests intercepting and verifying call to project.copy(...)
-    void testProjectCopy_MockProjectExec() {
-
+    // Common sequence is delete destDir, fill with required files, then execute
+    void testProjectDeleteCopyCallSequence() {
         MockProjectExec mockProjectExec = new MockProjectExec(proj, '/J2OBJC_HOME')
-        mockProjectExec.demandCopyAndReturn(
-                '/DEST-DIR',
-                '/INPUT-DIR-1', '/INPUT-DIR-2')
 
+        mockProjectExec.demandDeleteAndReturn('/DELETE-1', '/DELETE-2')
+        mockProjectExec.demandCopyAndReturn('/COPY-DEST', '/COPY-SRC-1', '/COPY-SRC-2')
+        mockProjectExec.demandExecAndReturn(['echo', 'EXEC-CALL'])
+
+        Utils.projectDelete(proj, '/DELETE-1', '/DELETE-2')
         Utils.projectCopy(proj, {
-            from '/INPUT-DIR-1', '/INPUT-DIR-2'
-            into '/DEST-DIR'
+            into '/COPY-DEST'
+            from '/COPY-SRC-1', '/COPY-SRC-2'
         })
-
-        mockProjectExec.verify()
-    }
-
-    @Test
-    // Tests intercepting and verifying call to project.exec(...)
-    void testProjectCopy_MockProjectExecTwoCalls() {
-        MockProjectExec mockProjectExec = new MockProjectExec(proj, '/J2OBJC_HOME')
-        mockProjectExec.demandCopyAndReturn(
-                '/DEST-1',
-                '/INPUT-1A', '/INPUT-1B')
-        mockProjectExec.demandCopyAndReturn(
-                '/DEST-2',
-                '/INPUT-2A', '/INPUT-2B')
-
-        Utils.projectCopy(proj, {
-            into '/DEST-1'
-            from '/INPUT-1A', '/INPUT-1B'
-        })
-        Utils.projectCopy(proj, {
-            into '/DEST-2'
-            from '/INPUT-2A', '/INPUT-2B'
+        Utils.projectExec(proj, null, null, null, {
+            executable 'echo'
+            args 'EXEC-CALL'
         })
 
         mockProjectExec.verify()

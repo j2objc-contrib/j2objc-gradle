@@ -216,18 +216,19 @@ class TestTaskTest {
     }
 
     private void demandCopyForJ2objcTestContent(MockProjectExec mockProjectExec) {
+        // Delete j2objcTestResources
+        mockProjectExec.demandDeleteAndReturn(
+                "$proj.projectDir/build/j2objcTestContent")
+        // Copy main resources, test resources and test binary to j2objcTestResources
         mockProjectExec.demandCopyAndReturn(
                 "$proj.projectDir/build/j2objcTestContent",
-                "$proj.projectDir/src/main/resources",
-        )
+                "$proj.projectDir/src/main/resources")
         mockProjectExec.demandCopyAndReturn(
                 "$proj.projectDir/build/j2objcTestContent",
-                "$proj.projectDir/src/test/resources",
-        )
+                "$proj.projectDir/src/test/resources")
         mockProjectExec.demandCopyAndReturn(
                 "$proj.projectDir/build/j2objcTestContent",
-                "$proj.projectDir/build/binaries/testJ2objcExecutable/debug/testJ2objc",
-        )
+                "$proj.projectDir/build/binaries/testJ2objcExecutable/debug/testJ2objc")
     }
 
     // TODO: test_Simple() - with some real unit tests

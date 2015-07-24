@@ -244,71 +244,6 @@ class Utils {
         return null
     }
 
-    /**
-     * Executes command line and returns result.
-     *
-     * Throws exception if command fails or non-null regex doesn't match stdout or stderr.
-     * The exceptions have detailed information on command line, stdout, stderr and failure cause.
-     *
-     * @param proj Runs proj.exec {...} method
-     * @param stdout To capture standard output
-     * @param stderr To capture standard output
-     * @param matchRegexOutputsRequired Throws exception if stdout/stderr don't match regex.
-     *        Matches each OutputStream separately, not in combination. Ignored if null.
-     * @param closure ExecSpec type for proj.exec {...} method
-     * @return ExecResult from the method
-     */
-    // See http://melix.github.io/blog/2014/01/closure_param_inference.html
-    //
-    // TypeCheckingMode.SKIP allows Project.exec to be mocked via metaclass in TestingUtils.groovy.
-    // ClosureParams allows type checking to enforce that the first param ('it') to the Closure is
-    // an ExecSpec. DelegatesTo allows type checking to enforce that the delegate is ExecSpec.
-    // Together this emulates the functionality of ExecSpec.with(Closure).
-    //
-    // We are using a non-API-documented assumption that the delegate is an ExecSpec.  If the
-    // implementation changes, this will fail at runtime.
-    // TODO: In Gradle 2.5, we can switch to strongly-typed Actions, like:
-    // https://docs.gradle.org/2.5/javadoc/org/gradle/api/Project.html#copy(org.gradle.api.Action)
-    @CompileStatic(TypeCheckingMode.SKIP)
-    static ExecResult projectExec(
-            Project proj,
-            ByteArrayOutputStream stdout,
-            ByteArrayOutputStream stderr,
-            @Nullable String matchRegexOutputsRequired,
-            @ClosureParams(value = SimpleType.class, options = "org.gradle.process.ExecSpec")
-            @DelegatesTo(ExecSpec)
-                    Closure closure) {
-
-        ExecSpec execSpec = null
-        ExecResult execResult
-        boolean execSucceeded = false
-
-        try {
-            execResult = proj.exec {
-                execSpec = delegate as ExecSpec
-                (execSpec).with closure
-            }
-            execSucceeded = true
-            if (matchRegexOutputsRequired) {
-                if (!matchRegexOutputs(stdout, stderr, matchRegexOutputsRequired)) {
-                    // Exception thrown here to output command line
-                    throw new InvalidUserDataException(
-                            'Unable to find expected expected output in stdout or stderr\n' +
-                            'Failed Regex Match: ' + escapeSlashyString(matchRegexOutputsRequired))
-                }
-            }
-
-        } catch (Exception exception) {
-            // ExecException is most common, which indicates "non-zero exit"
-            String exceptionMsg = projectExecLog(execSpec, stdout, stderr, execSucceeded, exception)
-            throw new InvalidUserDataException(exceptionMsg, exception)
-        }
-
-        log.debug(projectExecLog(execSpec, stdout, stderr, execSucceeded, null))
-
-        return execResult
-    }
-
     @VisibleForTesting
     static String projectExecLog(
             ExecSpec execSpec, ByteArrayOutputStream stdout, ByteArrayOutputStream stderr,
@@ -365,7 +300,15 @@ class Utils {
         })
     }
 
-    // See projectExec for explanation of the annotations.
+    /**
+     * Copy content to directory by calling project.copy(closure)
+     *
+     * Must be called instead of project.copy(...) to allow mocking of project calls in testing.
+     *
+     * @param proj Calls proj.copy {...} method
+     * @param closure CopySpec closure
+     */
+    // See projectExec for explanation of the code
     @CompileStatic(TypeCheckingMode.SKIP)
     static WorkResult projectCopy(Project proj,
                                   @ClosureParams(value = SimpleType.class, options = "org.gradle.api.file.CopySpec")
@@ -374,5 +317,85 @@ class Utils {
         proj.copy {
             (delegate as CopySpec).with closure
         }
+    }
+
+    /**
+     * Delete a directory by calling project.delete(...)
+     *
+     * Must be called instead of project.delete(...) to allow mocking of project calls in testing.
+     *
+     * @param proj Calls proj.delete(...) method
+     * @param paths Variable length list of paths to be deleted, can be String or File
+     */
+    // See projectExec for explanation of the code
+    @CompileStatic(TypeCheckingMode.SKIP)
+    static boolean projectDelete(Project proj, Object... paths) {
+        return proj.delete(paths)
+    }
+
+    /**
+     * Executes command line and returns result by calling project.exec(...)
+     *
+     * Throws exception if command fails or non-null regex doesn't match stdout or stderr.
+     * The exceptions have detailed information on command line, stdout, stderr and failure cause.
+     * Must be called instead of project.exec(...) to allow mocking of project calls in testing.
+     *
+     * @param proj Calls proj.exec {...} method
+     * @param stdout To capture standard output
+     * @param stderr To capture standard output
+     * @param matchRegexOutputsRequired Throws exception if stdout/stderr don't match regex.
+     *        Matches each OutputStream separately, not in combination. Ignored if null.
+     * @param closure ExecSpec type for proj.exec {...} method
+     * @return ExecResult from the method
+     */
+    // See http://melix.github.io/blog/2014/01/closure_param_inference.html
+    //
+    // TypeCheckingMode.SKIP allows Project.exec to be mocked via metaclass in TestingUtils.groovy.
+    // ClosureParams allows type checking to enforce that the first param ('it') to the Closure is
+    // an ExecSpec. DelegatesTo allows type checking to enforce that the delegate is ExecSpec.
+    // Together this emulates the functionality of ExecSpec.with(Closure).
+    //
+    // We are using a non-API-documented assumption that the delegate is an ExecSpec.  If the
+    // implementation changes, this will fail at runtime.
+    // TODO: In Gradle 2.5, we can switch to strongly-typed Actions, like:
+    // https://docs.gradle.org/2.5/javadoc/org/gradle/api/Project.html#copy(org.gradle.api.Action)
+    @CompileStatic(TypeCheckingMode.SKIP)
+    static ExecResult projectExec(
+            Project proj,
+            ByteArrayOutputStream stdout,
+            ByteArrayOutputStream stderr,
+            @Nullable String matchRegexOutputsRequired,
+            @ClosureParams(value = SimpleType.class, options = "org.gradle.process.ExecSpec")
+            @DelegatesTo(ExecSpec)
+                    Closure closure) {
+
+        ExecSpec execSpec = null
+        ExecResult execResult
+        boolean execSucceeded = false
+
+        try {
+            execResult = proj.exec {
+                execSpec = delegate as ExecSpec
+                (execSpec).with closure
+            }
+            execSucceeded = true
+            if (matchRegexOutputsRequired) {
+                if (!matchRegexOutputs(stdout, stderr, matchRegexOutputsRequired)) {
+                    // Exception thrown here to output command line
+                    throw new InvalidUserDataException(
+                            'Unable to find expected expected output in stdout or stderr\n' +
+                            'Failed Regex Match: ' + escapeSlashyString(matchRegexOutputsRequired))
+                }
+            }
+
+        } catch (Exception exception) {
+            // ExecException is most common, which indicates "non-zero exit"
+            String exceptionMsg = projectExecLog(execSpec, stdout, stderr, execSucceeded, exception)
+            throw new InvalidUserDataException(exceptionMsg, exception)
+        }
+
+        log.debug(projectExecLog(execSpec, stdout, stderr, execSucceeded, null))
+
+        return execResult
     }
 }

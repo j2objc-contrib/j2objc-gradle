@@ -62,10 +62,12 @@ class MockProjectExec {
 
         // This intercepts all methods, stubbing out exec and passing through all other invokes
         project.metaClass.invokeMethod = { String name, Object[] args ->
-            if (name == 'copy') {
+            // Call the proxy object so that it can track verifications
+            if (name == 'delete') {
+                return projectProxyInstance().delete(args.first())
+            } else if (name == 'copy') {
                 return projectProxyInstance().copy((Closure) args.first())
             } else if (name == 'exec') {
-                // Call the proxy object so that it can track verifications
                 println 'Proxy Exec'
                 return projectProxyInstance().exec((Closure) args.first())
             } else {
@@ -112,7 +114,7 @@ class MockProjectExec {
                   "$metaMethod")
     }
 
-    Project projectProxyInstance() {
+    private Project projectProxyInstance() {
         // proxyInstance is only created once and then reused forever
         // Requires new MockProjectExec for another demand / verify configuration
         if (proxyInstance == null) {
@@ -122,7 +124,7 @@ class MockProjectExec {
     }
 
     void verify() {
-        mockForProj.verify(proxyInstance)
+        mockForProj.verify(projectProxyInstance())
     }
 
     void demandCopyAndReturn(String into, String... from) {
@@ -145,6 +147,29 @@ class MockProjectExec {
             assert from.size() == sourcepaths.size()
 
             return (WorkResult) null
+        }
+    }
+
+    void demandDeleteAndReturn(String... expectedPaths) {
+        mockForProj.demand.delete { Object[] args ->
+
+            // Convert args to list of path strings
+            List<String> pathsList = new ArrayList<String>()
+            args.each { Object obj ->
+                if (obj instanceof String) {
+                    pathsList.add((String) obj)
+                } else if (obj instanceof File) {
+                    pathsList.add(obj.getAbsolutePath())
+                } else {
+                    assert false, "Not implemented for type: ${obj.class}, ${obj}"
+                }
+            }
+
+            List<Object> expectedPathsList = Arrays.asList(expectedPaths)
+            assert expectedPathsList.equals(pathsList)
+
+            // Assume that something was deleted
+            return true
         }
     }
 
