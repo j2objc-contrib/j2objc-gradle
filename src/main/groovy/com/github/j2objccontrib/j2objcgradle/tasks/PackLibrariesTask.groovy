@@ -34,29 +34,31 @@ class PackLibrariesTask extends DefaultTask {
 
     // Generated ObjC binaries
     @InputFiles
-    ConfigurableFileCollection getInputLibraries() {
+    ConfigurableFileCollection getLibrariesFiles() {
         String staticLibraryPath = "${project.buildDir}/binaries/${project.name}-j2objcStaticLibrary"
         return project.files(getSupportedArchs().collect { String arch ->
             "$staticLibraryPath/$arch$buildType/lib${project.name}-j2objc.a"
         })
     }
 
-    @OutputDirectory
-    File getOutputLibDir() {
-        return project.file("${project.buildDir}/packedBinaries/${project.name}-j2objcStaticLibrary/ios$buildType")
-    }
-
-    // Debug or Release for each library
+    // Debug or Release
     @Input
     String buildType
 
     @Input
     List<String> getSupportedArchs() { return J2objcConfig.from(project).supportedArchs }
 
+
+    @OutputDirectory
+    File getOutputLibDirFile() {
+        return project.file("${project.buildDir}/packedBinaries/${project.name}-j2objcStaticLibrary/ios$buildType")
+    }
+
+
     @TaskAction
     void packLibraries() {
-        Utils.projectDelete(project, getOutputLibDir())
-        getOutputLibDir().mkdirs()
+        Utils.projectDelete(project, getOutputLibDirFile())
+        getOutputLibDirFile().mkdirs()
 
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()
@@ -67,9 +69,9 @@ class PackLibrariesTask extends DefaultTask {
                 args 'lipo'
 
                 args '-create'
-                args '-output', "${outputLibDir}/lib${project.name}-j2objc.a"
+                args '-output', "${outputLibDirFile}/lib${project.name}-j2objc.a"
 
-                getInputLibraries().each { File libFile ->
+                getLibrariesFiles().each { File libFile ->
                     args libFile.absolutePath
                 }
 

@@ -278,6 +278,12 @@ class UtilsTest {
     }
 
     @Test
+    void testTrimTrailingForwardSlash() {
+        assert '/path/dir' == Utils.trimTrailingForwardSlash('/path/dir')
+        assert '/path/dir' == Utils.trimTrailingForwardSlash('/path/dir/')
+    }
+
+    @Test
     void testEscapeSlashyString() {
         String regex = /forward-slash:\/,newline:\n,multi-digit:\d+/
         assert "/forward-slash:\\/,newline:\\n,multi-digit:\\d+/" == Utils.escapeSlashyString(regex)

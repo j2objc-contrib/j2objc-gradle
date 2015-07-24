@@ -66,25 +66,10 @@ class J2objcConfig {
         nativeCompilation = new NativeCompilation(project)
 
         // Provide defaults for assembly output locations.
-        destSrcDir = "${project.buildDir}/j2objcOutputs/src/main/objc"
-        destSrcDirTest = "${project.buildDir}/j2objcOutputs/src/test/objc"
+        destSrcMainDir = "${project.buildDir}/j2objcOutputs/src/main"
+        destSrcTestDir = "${project.buildDir}/j2objcOutputs/src/test"
         destLibDir = "${project.buildDir}/j2objcOutputs/lib"
     }
-
-    /**
-     * Where to assemble generated main source files.
-     * <p/>
-     * Defaults to $buildDir/j2objcOutputs/src/main/objc
-     */
-    String destSrcDir = null
-
-    /**
-     * Where to assemble generated test source files.
-     * <p/>
-     * Can be the same directory as destDir
-     * Defaults to $buildDir/j2objcOutputs/src/test/objc
-     */
-    String destSrcDirTest = null
 
     /**
      * Where to assemble generated main libraries.
@@ -92,6 +77,42 @@ class J2objcConfig {
      * Defaults to $buildDir/j2objcOutputs/lib
      */
     String destLibDir = null
+
+    /**
+     * Where to assemble generated main source and resources files.
+     * <p/>
+     * Defaults to $buildDir/j2objcOutputs/src/main/objc
+     */
+    String destSrcMainDir = null
+
+    /**
+     * Where to assemble generated test source and resources files.
+     * <p/>
+     * Can be the same directory as destDir
+     * Defaults to $buildDir/j2objcOutputs/src/test/objc
+     */
+    String destSrcTestDir = null
+
+    // Private helper methods
+    // Should use instead of accessing client set 'dest' strings
+    File getDestLibDirFile() {
+        return project.file(destLibDir)
+    }
+    File getDestSrcDirFile(String sourceSetName, String fileType) {
+        assert sourceSetName in ['main', 'test']
+        assert fileType in ['objc', 'resources']
+
+        File destSrcDir = null
+        if (sourceSetName == 'main') {
+            destSrcDir = project.file(destSrcMainDir)
+        } else if (sourceSetName == 'test') {
+            destSrcDir = project.file(destSrcTestDir)
+        } else {
+            assert false, "Unsupported sourceSetName: $sourceSetName"
+        }
+
+        return project.file(new File(destSrcDir, fileType))
+    }
 
     /**
      * Generated source files directories, e.g. from dagger annotations.
@@ -460,12 +481,17 @@ class J2objcConfig {
     // XCODE
     /**
      * Directory of the target Xcode project.
+     *
+     * Suggested location is '../ios'
+     * See J2ObjC Plugin <a href="https://github.com/j2objc-contrib/j2objc-gradle/blob/master/README.md#folder-structure">Folder Structure</a>
+     *
      */
     String xcodeProjectDir = null
     /**
-     * Xcode target the generated files should be linked to.
+     * Xcode app target the generated library should be linked to.
      */
     String xcodeTarget = null
+
 
     protected boolean finalConfigured = false
     /**
@@ -480,6 +506,10 @@ class J2objcConfig {
     void finalConfigure() {
         nativeCompilation.apply(project.file("${project.buildDir}/j2objcSrcGen"))
         finalConfigured = true
+
+        assert destLibDir != null
+        assert destSrcMainDir != null
+        assert destSrcTestDir != null
 
         // For convenience, disable all debug and/or release tasks if the user desires.
         // Note all J2objcPlugin-created tasks are of the form `j2objc.*(Debug|Release)?`

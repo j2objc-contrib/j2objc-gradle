@@ -108,7 +108,7 @@ class Utils {
         return result
     }
 
-    // MUST be used only in @Input getJ2objcHome() methods to ensure UP-TO-DATE checks are correct
+    // MUST be used only in @Input getJ2objcHome() methods to ensure up-to-date checks are correct
     // @Input getJ2objcHome() method can be used freely inside the task action
     static String j2objcHome(Project proj) {
         String result = getLocalProperty(proj, 'home')
@@ -239,6 +239,15 @@ class Utils {
             paths += file.path
         }
         return paths.join(':')
+    }
+
+    static String trimTrailingForwardSlash(String path) {
+        assert path != null
+        if (path.endsWith('/')) {
+            // Remove last character
+            return path[0..-2]
+        }
+        return path
     }
 
     // Convert regex to string for display, wrapping it with /.../

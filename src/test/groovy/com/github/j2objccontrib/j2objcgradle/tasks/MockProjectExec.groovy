@@ -71,7 +71,6 @@ class MockProjectExec {
             } else if (name == 'copy') {
                 return projectProxyInstance().copy((Closure) args.first())
             } else if (name == 'exec') {
-                println 'Proxy Exec'
                 return projectProxyInstance().exec((Closure) args.first())
             } else {
                 // This calls the delegate without causing infinite recursion

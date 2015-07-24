@@ -69,11 +69,6 @@ class TranslateTask extends DefaultTask {
         return allFiles
     }
 
-    // Generated ObjC files
-    @OutputDirectory
-    File srcGenDir
-
-    // j2objcConfig dependencies for UP-TO-DATE checks
     @Input
     String getJ2objcHome() { return Utils.j2objcHome(project) }
 
@@ -94,6 +89,11 @@ class TranslateTask extends DefaultTask {
 
     @Input
     boolean getFilenameCollisionCheck() { return J2objcConfig.from(project).filenameCollisionCheck }
+
+
+    // Generated ObjC files
+    @OutputDirectory
+    File srcGenDir
 
 
     @TaskAction

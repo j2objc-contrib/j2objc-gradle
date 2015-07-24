@@ -17,6 +17,7 @@
 package com.github.j2objccontrib.j2objcgradle
 
 import com.github.j2objccontrib.j2objcgradle.tasks.AssembleLibrariesTask
+import com.github.j2objccontrib.j2objcgradle.tasks.AssembleResourcesTask
 import com.github.j2objccontrib.j2objcgradle.tasks.AssembleSourceTask
 import com.github.j2objccontrib.j2objcgradle.tasks.CycleFinderTask
 import com.github.j2objccontrib.j2objcgradle.tasks.PackLibrariesTask
@@ -130,14 +131,13 @@ class J2objcPlugin implements Plugin<Project> {
             // all the other verification tasks, now including 'j2objcTest'.
             lateDependsOn(project, 'check', 'j2objcTest')
 
-
+            // Pack Libraries
             tasks.create(name: 'j2objcPackLibrariesDebug', type: PackLibrariesTask,
                     dependsOn: 'j2objcBuildObjcDebug') {
                 group 'build'
                 description 'Packs multiple architectures into a single debug static library'
                 buildType = 'Debug'
             }
-
             tasks.create(name: 'j2objcPackLibrariesRelease', type: PackLibrariesTask,
                     dependsOn: 'j2objcBuildObjcRelease') {
                 group 'build'
@@ -145,6 +145,12 @@ class J2objcPlugin implements Plugin<Project> {
                 buildType = 'Release'
             }
 
+            // Assemble
+            tasks.create(name: 'j2objcAssembleResources', type: AssembleResourcesTask,
+                    dependsOn: ['j2objcPreBuild']) {
+                group 'build'
+                description 'Copies mains and test resources to assembly directories'
+            }
             tasks.create(name: 'j2objcAssembleSource', type: AssembleSourceTask,
                     dependsOn: ['j2objcTranslate']) {
                 group 'build'
@@ -156,24 +162,25 @@ class J2objcPlugin implements Plugin<Project> {
                 group 'build'
                 description 'Copies final generated source and debug libraries to assembly directories'
                 buildType = 'Debug'
-                libDir = file("${buildDir}/binaries/${project.name}-j2objcStaticLibrary")
-                packedLibDir = file("${buildDir}/packedBinaries/${project.name}-j2objcStaticLibrary")
+                srcLibDir = file("${buildDir}/binaries/${project.name}-j2objcStaticLibrary")
+                srcPackedLibDir = file("${buildDir}/packedBinaries/${project.name}-j2objcStaticLibrary")
             }
             tasks.create(name: 'j2objcAssembleRelease', type: AssembleLibrariesTask,
                     dependsOn: ['j2objcPackLibrariesRelease', 'j2objcAssembleSource']) {
                 group 'build'
                 description 'Copies final generated source and release libraries to assembly directories'
                 buildType = 'Release'
-                libDir = file("${buildDir}/binaries/${project.name}-j2objcStaticLibrary")
-                packedLibDir = file("${buildDir}/packedBinaries/${project.name}-j2objcStaticLibrary")
+                srcLibDir = file("${buildDir}/binaries/${project.name}-j2objcStaticLibrary")
+                srcPackedLibDir = file("${buildDir}/packedBinaries/${project.name}-j2objcStaticLibrary")
             }
             tasks.create(name: 'j2objcAssemble', type: DefaultTask,
-                    dependsOn: ['j2objcAssembleDebug', 'j2objcAssembleRelease']) {
+                    dependsOn: ['j2objcAssembleDebug', 'j2objcAssembleRelease', 'j2objcAssembleResources']) {
                 group 'build'
                 description "Marker task for all assembly tasks that take part in regular j2objc builds"
             }
             lateDependsOn(project, 'assemble', 'j2objcAssemble')
 
+            // Build
             tasks.create(name: 'j2objcBuildDebug', type: DefaultTask,
                     dependsOn: ['j2objcAssembleDebug', 'j2objcTestDebug']) {
                 group 'build'
@@ -198,7 +205,6 @@ class J2objcPlugin implements Plugin<Project> {
                     dependsOn: 'j2objcAssemble') {
                 // This is not in the build group because you do not need to do it on every build.
                 description 'Depends on j2objc translation, create a Pod file link it to Xcode project'
-                srcGenDir = j2objcSrcGenDir
             }
         }
     }
@@ -206,7 +212,7 @@ class J2objcPlugin implements Plugin<Project> {
     // Has task named afterTaskName depend on the task named beforeTaskName, regardless of
     // whether afterTaskName has been created yet or not.
     // The before task must already exist.
-    private void lateDependsOn(Project proj, String afterTaskName, String beforeTaskName) {
+    private static void lateDependsOn(Project proj, String afterTaskName, String beforeTaskName) {
         assert null != proj.tasks.findByName(beforeTaskName)
         // You can't just call tasks.findByName on afterTaskName - for certain tasks like 'assemble' for
         // reasons unknown, the Java plugin creates - right there! - the task; this prevents

@@ -25,44 +25,40 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 
 /**
- * Assemble task copies generated libraries to assembly directories for
+ * Assemble Libraries Task copies generated libraries to assembly directories for
  * use by an iOS application.
  */
 @CompileStatic
 class AssembleLibrariesTask extends DefaultTask {
+
     // Generated ObjC binaries
     @InputDirectory
-    File libDir
+    File srcLibDir
 
     @InputDirectory
-    File packedLibDir
+    File srcPackedLibDir
 
-    @OutputDirectory
-    File getDestLibDir() {
-        return project.file(getDestLibDirPath())
-    }
-
-    @Input
     // Debug or Release
+    @Input
     String buildType
 
-    // j2objcConfig dependencies for UP-TO-DATE checks
 
-    // We keep these strings as @Input properties in addition to the @OutputDirectory methods above because,
-    // for example, whether or not the main source and test source are identical affects execution of this task.
-    @Input
-    String getDestLibDirPath() { return J2objcConfig.from(project).destLibDir }
+    @OutputDirectory
+    File getDestLibDirFile() { return J2objcConfig.from(project).getDestLibDirFile() }
+
 
     @TaskAction
     void assembleLibraries() {
         // We don't need to clear out the library path, our libraries can co-exist
         // with other libraries if the user wishes them to.
 
+        assert (buildType in ['Debug', 'Release'])
+
         Utils.projectCopy(project, {
             includeEmptyDirs = true
-            from libDir
-            from packedLibDir
-            into destLibDir
+            from srcLibDir
+            from srcPackedLibDir
+            into getDestLibDirFile()
             include "*$buildType/*.a"
         })
     }

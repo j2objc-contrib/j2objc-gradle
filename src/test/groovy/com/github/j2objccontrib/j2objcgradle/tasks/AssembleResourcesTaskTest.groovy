@@ -17,19 +17,14 @@
 package com.github.j2objccontrib.j2objcgradle.tasks
 
 import com.github.j2objccontrib.j2objcgradle.J2objcConfig
-import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
-import org.gradle.api.file.FileCollection
-import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.ExpectedException
 
 /**
  * TestTask tests.
  */
-class AssembleLibrariesTaskTest {
+class AssembleResourcesTaskTest {
 
     private Project proj
     private String j2objcHome
@@ -44,25 +39,24 @@ class AssembleLibrariesTaskTest {
     }
 
     @Test
-    void testAssembleLibraries() {
+    void testAssembleResources_Basic() {
         // Expected Activity
         MockProjectExec mockProjectExec = new MockProjectExec(proj, '/J2OBJC_HOME')
-        mockProjectExec.demandCopyAndReturn({
-            includeEmptyDirs = true
-            from "$proj.projectDir/build/binaries/$proj.name-j2objcStaticLibrary"
-            from "$proj.projectDir/build/packedBinaries/$proj.name-j2objcStaticLibrary"
-            into "$proj.projectDir/build/j2objcOutputs/lib"
-            include '*Debug/*.a'
-        })
+        mockProjectExec.demandDeleteAndReturn(
+                "${proj.projectDir}/build/j2objcOutputs/src/main/resources")
+        mockProjectExec.demandCopyAndReturn(
+                "${proj.projectDir}/build/j2objcOutputs/src/main/resources",
+                "${proj.projectDir}/src/main/resources")
+        mockProjectExec.demandDeleteAndReturn(
+                "${proj.projectDir}/build/j2objcOutputs/src/test/resources")
+        mockProjectExec.demandCopyAndReturn(
+                "${proj.projectDir}/build/j2objcOutputs/src/test/resources",
+                "${proj.projectDir}/src/test/resources")
 
-        AssembleLibrariesTask j2objcAssembleLibraries =
-                (AssembleLibrariesTask) proj.tasks.create(name: 'j2objcAL', type: AssembleLibrariesTask) {
-                    buildType = 'Debug'
-                    srcLibDir = proj.file("$proj.buildDir/binaries/$proj.name-j2objcStaticLibrary")
-                    srcPackedLibDir = proj.file("$proj.buildDir/packedBinaries/$proj.name-j2objcStaticLibrary")
-                }
+        AssembleResourcesTask j2objcAssembleResources =
+                (AssembleResourcesTask) proj.tasks.create(name: 'j2objcAR', type: AssembleResourcesTask)
 
-        j2objcAssembleLibraries.assembleLibraries()
+        j2objcAssembleResources.assembleResources()
 
         mockProjectExec.verify()
     }
