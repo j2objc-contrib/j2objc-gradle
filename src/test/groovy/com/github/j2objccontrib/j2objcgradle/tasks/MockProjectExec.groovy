@@ -17,8 +17,11 @@
 package com.github.j2objccontrib.j2objcgradle.tasks
 
 import groovy.mock.interceptor.MockFor
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 import groovy.util.logging.Slf4j
 import org.gradle.api.Project
+import org.gradle.api.file.CopySpec
 import org.gradle.api.internal.file.copy.DefaultCopySpec
 import org.gradle.api.tasks.WorkResult
 import org.gradle.process.ExecResult
@@ -127,24 +130,52 @@ class MockProjectExec {
         mockForProj.verify(projectProxyInstance())
     }
 
-    void demandCopyAndReturn(String into, String... from) {
-
+    void demandCopyAndReturn(String intoParam, String... fromParam) {
         assert proxyInstance == null, "Demand calls must be prior to calling projectProxyInstance"
+
+        demandCopyAndReturn({
+            into intoParam
+            fromParam.each { String fromStr ->
+                from fromStr
+            }
+        })
+    }
+
+    // CopySpec as parameter
+    void demandCopyAndReturn(
+            @ClosureParams(value = SimpleType.class, options = "org.gradle.api.file.CopySpec")
+            @DelegatesTo(CopySpec)
+                   Closure expectedClosure) {
 
         mockForProj.demand.copy { Closure closure ->
 
             DefaultCopySpec copySpec = new DefaultCopySpec(null, null)
             ConfigureUtil.configure(closure, copySpec)
 
-            // Exceeds access rights
-            assert into.equals((String) copySpec.destDir)
+            DefaultCopySpec expectedSpec = new DefaultCopySpec(null, null)
+            ConfigureUtil.configure(expectedClosure, expectedSpec)
 
-            List<String> fromList = Arrays.asList(from)
-            Set<Object> sourcepaths = copySpec.getSourcePaths()
-            sourcepaths.each { Object obj ->
-                assert fromList.contains(obj.toString())
+            // destDir - exceeds access rights
+            assert ((String) expectedSpec.destDir).equals((String) copySpec.destDir)
+
+            // includeEmptyDirs
+            assert expectedSpec.getIncludeEmptyDirs() == copySpec.getIncludeEmptyDirs()
+
+            // includes
+            assert expectedSpec.getIncludes().equals(copySpec.getIncludes())
+
+            // includes
+            assert expectedSpec.getExcludes().equals(copySpec.getExcludes())
+
+            // sourcepaths
+            // equals between Set<Object> doesn't work, so compare List<String>
+            List<String> expectedSourcepaths = expectedSpec.getSourcePaths().collect { Object obj ->
+                return obj.toString()
             }
-            assert from.size() == sourcepaths.size()
+            List<String> sourcepaths = copySpec.getSourcePaths().collect { Object obj ->
+                return obj.toString()
+            }
+            assert expectedSourcepaths == sourcepaths
 
             return (WorkResult) null
         }

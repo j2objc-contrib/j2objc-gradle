@@ -58,7 +58,7 @@ class AssembleSourceTask extends DefaultTask {
     String getDestSrcDirTestPath() { return J2objcConfig.from(project).destSrcDirTest }
 
     @TaskAction
-    void destCopy() {
+    void assembleSource() {
         clearDestSrcDirWithChecks(destSrcDir, 'destSrcDir')
         copyMainSource()
 
