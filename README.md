@@ -93,10 +93,10 @@ These are the main tasks for the plugin:
 
     j2objcCycleFinder       - Find cycles that can cause memory leaks, see notes below
     j2objcTranslate         - Translates to Objective-C
-    j2objcAssemble          - Builds debug/release libraries, packs targets in to fat libraries
-    j2objcTest              - Runs all JUnit tests, as translated into Objective-C
-    j2objcBuild             - Builds and tests all j2objc outputs.
-    j2objcXcode             - Configure Xcode to link static library & header files, uses CocoaPods
+    j2objcAssemble          - Outputs packed libraries, source & resources to build/j2objcOutputs
+    j2objcTest              - Runs all JUnit tests in the translated code
+    j2objcBuild             - Runs j2objcTest and j2objcAssemble, doesn't run j2objcXcode
+    j2objcXcode             - Xcode updated with libraries, headers & resources (uses CocoaPods)
 
 Note that you can use the Gradle shorthand of `$ gradlew jA` to do the `j2objcAssemble` task.
 The other shorthand expressions are `jCF, jTr, jA, jTe, jB and jX`.
