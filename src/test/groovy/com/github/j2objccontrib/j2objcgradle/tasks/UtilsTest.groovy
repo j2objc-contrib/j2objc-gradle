@@ -98,6 +98,34 @@ class UtilsTest {
     }
 
     @Test
+    public void testGetLocalProperty_RequestInvalidKey() {
+        File localProperties = proj.file('local.properties')
+        localProperties.write('#IGNORE')
+
+        expectedException.expect(InvalidUserDataException.class)
+        expectedException.expectMessage('Requesting invalid property: requested-invalid-key')
+        // Check list of valid keys is suggested by checking for a single entry:
+        expectedException.expectMessage('debug.enabled')
+
+        Utils.getLocalProperty(proj, 'requested-invalid-key')
+    }
+
+    @Test
+    public void testGetLocalProperty_LocalPropertiesInvalidKey() {
+        File localProperties = proj.file('local.properties')
+        localProperties.write('j2objc.written-invalid-key')
+
+        expectedException.expect(InvalidUserDataException.class)
+        expectedException.expectMessage('Invalid j2objc property: j2objc.written-invalid-key')
+        expectedException.expectMessage("From local.properties: $proj.projectDir/local.properties")
+        // Check list of valid keys is suggested by checking for a single entry:
+        expectedException.expectMessage('debug.enabled')
+
+        // Request a valid key
+        Utils.getLocalProperty(proj, 'debug.enabled')
+    }
+
+    @Test
     public void testJ2objcHome_LocalProperties() {
         // Write j2objc path to local.properties file within the project
         String j2objcHomeWritten = File.createTempDir('J2OBJC_HOME', '').path

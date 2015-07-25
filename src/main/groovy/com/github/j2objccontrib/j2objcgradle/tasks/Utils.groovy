@@ -62,7 +62,25 @@ class Utils {
         }
     }
 
+    // Add valid keys here
+    // Use camelCase and order alphabetically
+    private static final List<String> PROPERTIES_VALID_KEYS =
+            Collections.unmodifiableList(Arrays.asList(
+        'debug.enabled',
+        'home',
+        'release.enabled'
+    ))
+
+    private static final String PROPERTY_KEY_PREFIX = 'j2objc.'
+
     static String getLocalProperty(Project proj, String key, String defaultValue = null) {
+
+        // Check for requesting invalid key
+        if (!(key in PROPERTIES_VALID_KEYS)) {
+            throw new InvalidUserDataException(
+                    "Requesting invalid property: $key\n" +
+                    "Valid Keys: $PROPERTIES_VALID_KEYS")
+        }
         File localPropertiesFile = new File(proj.rootDir, 'local.properties')
         String result = defaultValue
         if (localPropertiesFile.exists()) {
@@ -70,7 +88,22 @@ class Utils {
             localPropertiesFile.withInputStream {
                 localProperties.load it
             }
-            result = localProperties.getProperty('j2objc.' + key, defaultValue)
+
+            // Check valid key in local.properties for everything with PROPERTY_KEY_PREFIX
+            localProperties.keys().each { String propKey ->
+                if (propKey.startsWith(PROPERTY_KEY_PREFIX)) {
+                    String withoutPrefix =
+                            propKey.substring(PROPERTY_KEY_PREFIX.length(), propKey.length())
+                    if (!(withoutPrefix in PROPERTIES_VALID_KEYS)) {
+                        throw new InvalidUserDataException(
+                                "Invalid j2objc property: $propKey\n" +
+                                "From local.properties: $localPropertiesFile.absolutePath\n" +
+                                "Valid Keys: $PROPERTIES_VALID_KEYS")
+                    }
+                }
+            }
+
+            result = localProperties.getProperty(PROPERTY_KEY_PREFIX + key, defaultValue)
         }
         return result
     }

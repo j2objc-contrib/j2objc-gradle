@@ -487,8 +487,8 @@ class J2objcConfig {
         // so these patterns find all such tasks.
 
         // Disable only if explicitly present and not true.
-        boolean debugEnabled = Boolean.parseBoolean(Utils.getLocalProperty(project, 'debugEnabled', 'true'))
-        boolean releaseEnabled = Boolean.parseBoolean(Utils.getLocalProperty(project, 'releaseEnabled', 'true'))
+        boolean debugEnabled = Boolean.parseBoolean(Utils.getLocalProperty(project, 'debug.enabled', 'true'))
+        boolean releaseEnabled = Boolean.parseBoolean(Utils.getLocalProperty(project, 'release.enabled', 'true'))
         project.tasks.all { Task task ->
             String name = task.name
             if (name.contains('j2objc') || name.contains('J2objc')) {
