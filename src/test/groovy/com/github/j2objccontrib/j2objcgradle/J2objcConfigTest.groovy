@@ -16,6 +16,8 @@
 
 package com.github.j2objccontrib.j2objcgradle
 
+import groovy.transform.CompileStatic
+import groovy.transform.TypeCheckingMode
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
@@ -26,6 +28,7 @@ import org.junit.Test
 /**
  * J2objcConfig tests.
  */
+@CompileStatic
 class J2objcConfigTest {
 
     private Project proj
@@ -77,6 +80,7 @@ class J2objcConfigTest {
     }
 
     @Test
+    @CompileStatic(TypeCheckingMode.SKIP)
     void testTranslateArgs() {
         J2objcConfig ext = new J2objcConfig(proj)
 

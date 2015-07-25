@@ -83,7 +83,7 @@ class TestingUtils {
         J2objcConfig j2objcConfig = null
         if (config.applyJ2objcPlugin) {
             proj.pluginManager.apply(J2objcPlugin)
-            j2objcConfig = proj.extensions.getByName('j2objcConfig')
+            j2objcConfig = (J2objcConfig) proj.extensions.getByName('j2objcConfig')
         } else if (config.createJ2objcConfig) {
             // can't use the config from the J2objcPlugin:
             j2objcConfig = proj.extensions.create('j2objcConfig', J2objcConfig, proj)
@@ -94,7 +94,6 @@ class TestingUtils {
             File reportsDir = new File(proj.buildDir, "reports")
             assert reportsDir.mkdirs()
         }
-
 
         return [proj, j2objcHome, j2objcConfig]
     }
