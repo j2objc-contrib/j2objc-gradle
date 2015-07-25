@@ -42,6 +42,10 @@ class TestTask extends DefaultTask {
     @InputFile
     File testBinaryFile
 
+    // 'debug' or 'release'
+    @Input
+    String buildType
+
     @InputFiles
     FileTree getTestSrcFiles() {
         // Note that neither testPattern nor translatePattern need to be @Input methods because they are solely
@@ -82,8 +86,9 @@ class TestTask extends DefaultTask {
 
     @OutputDirectory
     // Combines main/test resources and test executables
-    File getJ2objcTestContentDir() {
-        return new File(project.buildDir, 'j2objcTestContent')
+    File getJ2objcTestDirFile() {
+        assert buildType in ['debug', 'release']
+        return new File(project.buildDir, "j2objcTest/$buildType")
     }
 
 
@@ -95,14 +100,13 @@ class TestTask extends DefaultTask {
         List<String> testNames = getTestNames(project, getTestSrcFiles(), packagePrefixes)
 
         // Test executable must be run from the same directory as the resources
-        Utils.projectDelete(project, getJ2objcTestContentDir())
-        Utils.copyResources(project, 'main', getJ2objcTestContentDir())
-        Utils.copyResources(project, 'test', getJ2objcTestContentDir())
+        Utils.syncResourcesTo(project, ['main', 'test'], getJ2objcTestDirFile())
         Utils.projectCopy(project, {
             from testBinaryFile
-            into getJ2objcTestContentDir()
+            into getJ2objcTestDirFile()
         })
-        File copiedTestBinary = new File(getJ2objcTestContentDir(), testBinaryFile.getName())
+
+        File copiedTestBinary = new File(getJ2objcTestDirFile(), testBinaryFile.getName())
         logger.debug("Test Binary: $copiedTestBinary")
 
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()

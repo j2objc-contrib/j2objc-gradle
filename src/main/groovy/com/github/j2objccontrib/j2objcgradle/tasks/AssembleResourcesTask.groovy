@@ -25,8 +25,8 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 
 /**
- * Assemble Sources Task copies resources to assembly directories for
- * use by an iOS application.
+ * Assemble Resources Task copies main and test resources to separate
+ * assembly directories for use by an iOS application.
  */
 @CompileStatic
 class AssembleResourcesTask extends DefaultTask {
@@ -53,18 +53,7 @@ class AssembleResourcesTask extends DefaultTask {
     void assembleResources() {
         assert getDestSrcMainResDirFile().absolutePath !=
                getDestSrcTestResDirFile().absolutePath
-        copyResources('main', getDestSrcMainResDirFile())
-        copyResources('test', getDestSrcTestResDirFile())
-    }
-
-    void copyResources(String sourceSetName, File destDir) {
-        // TODO: use Sync task for greater speed
-        Utils.projectDelete(project, destDir)
-        Utils.projectCopy(project, {
-            Utils.srcSet(project, sourceSetName, 'resources').srcDirs.each { File resourceDir ->
-                from resourceDir
-            }
-            into destDir
-        })
+        Utils.syncResourcesTo(project, ['main'], getDestSrcMainResDirFile())
+        Utils.syncResourcesTo(project, ['test'], getDestSrcTestResDirFile())
     }
 }

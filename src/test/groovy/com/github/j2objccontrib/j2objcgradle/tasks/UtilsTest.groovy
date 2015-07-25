@@ -335,8 +335,26 @@ class UtilsTest {
     }
 
     @Test
+    void testSyncResourcesTo() {
+        proj.pluginManager.apply(JavaPlugin)
+        MockProjectExec mockProjectExec = new MockProjectExec(proj, '/J2OBJC_HOME')
+        mockProjectExec.demandDeleteAndReturn(
+                "$proj.projectDir/SYNC_DIR")
+        mockProjectExec.demandMkDirAndReturn(
+                "$proj.projectDir/SYNC_DIR")
+        mockProjectExec.demandCopyAndReturn(
+                "$proj.projectDir/SYNC_DIR",
+                "$proj.projectDir/src/main/resources",
+                "$proj.projectDir/src/test/resources")
+
+        Utils.syncResourcesTo(proj, ['main', 'test'], proj.file('SYNC_DIR'))
+
+        mockProjectExec.verify()
+    }
+
+    @Test
     // Tests intercepting and verifying call to project.copy(...)
-    void testProjectCopy_MockProjectExec() {
+    void testProjectCopy() {
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, '/J2OBJC_HOME')
         mockProjectExec.demandCopyAndReturn(
@@ -353,7 +371,7 @@ class UtilsTest {
 
     @Test
     // Tests intercepting and verifying call to project.exec(...)
-    void testProjectCopy_MockProjectExecTwoCalls() {
+    void testProjectCopy_TwoCalls() {
         MockProjectExec mockProjectExec = new MockProjectExec(proj, '/J2OBJC_HOME')
         mockProjectExec.demandCopyAndReturn(
                 '/DEST-1',
@@ -376,7 +394,7 @@ class UtilsTest {
 
     @Test
     // Tests intercepting and verifying call to project.delete(path1, path2)
-    void testProjectDelete_MockProjectExec() {
+    void testProjectDelete() {
         MockProjectExec mockProjectExec = new MockProjectExec(proj, '/J2OBJC_HOME')
 
         mockProjectExec.demandDeleteAndReturn('/PATH1', '/PATH2')
@@ -498,8 +516,7 @@ class UtilsTest {
     }
 
     @Test
-    // Tests intercepting and verifying call to project.exec(...)
-    void testProjectExec_MockProjectExec() {
+    void testProjectExec_ThrowException() {
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()
 
