@@ -54,23 +54,20 @@ class PackLibrariesTask extends DefaultTask {
     List<String> getSupportedArchs() { return J2objcConfig.from(project).supportedArchs }
 
     @TaskAction
-    void lipoLibraries() {
-        if (getOutputLibDir().exists()) {
-            // Clear it out.
-            getOutputLibDir().deleteDir()
-            getOutputLibDir().mkdirs()
-        }
+    void packLibraries() {
+        Utils.projectDelete(project, getOutputLibDir())
+        getOutputLibDir().mkdirs()
 
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()
-        logger.debug("PackLibrariesTask - projectExec - $name:")
 
         try {
             Utils.projectExec(project, stdout, stderr, null, {
                 executable 'xcrun'
-
                 args 'lipo'
-                args '-create', '-output', "${outputLibDir}/lib${project.name}-j2objc.a"
+
+                args '-create'
+                args '-output', "${outputLibDir}/lib${project.name}-j2objc.a"
 
                 getInputLibraries().each { File libFile ->
                     args libFile.absolutePath
