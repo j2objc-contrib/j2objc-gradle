@@ -113,10 +113,7 @@ class TranslateTask extends DefaultTask {
             // if the user requests it with the UNSAFE_incrementalBuildClosure argument.
             // TODO: One correct way to incrementally compile with --build-closure would be to use
             // allInputFiles someway, but this will require some research.
-            if (srcGenDir.exists()) {
-                srcGenDir.deleteDir()
-                srcGenDir.mkdirs()
-            }
+            Utils.projectClearDir(project, srcGenDir)
             srcFilesChanged = originalSrcFiles
         } else {
             boolean nonSourceFileChanged = false
@@ -194,10 +191,7 @@ class TranslateTask extends DefaultTask {
                 // A change outside of the source set directories has occurred, so an incremental build isn't possible.
                 // The most common such change is in the JAR for a dependent library, for example if Java project
                 // that this project depends on had its source changed and was recompiled.
-                if (srcGenDir.exists()) {
-                    srcGenDir.deleteDir()
-                    srcGenDir.mkdirs()
-                }
+                Utils.projectClearDir(project, srcGenDir)
                 srcFilesChanged = originalSrcFiles
             }
         }

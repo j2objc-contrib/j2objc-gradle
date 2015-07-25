@@ -128,7 +128,7 @@ class MockProjectExec {
     }
 
     void verify() {
-        mockForProj.verify(projectProxyInstance())
+        mockForProj.verify((GroovyObject) projectProxyInstance())
     }
 
     void demandCopyAndReturn(String intoParam, String... fromParam) {
@@ -206,6 +206,16 @@ class MockProjectExec {
 
             // Assume that something was deleted
             return true
+        }
+    }
+
+    void demandDeleteThenMkDirAndReturn(String expectedPath) {
+
+        mockForProj.demand.delete { Object path ->
+            assert expectedPath == getAbsolutePath(path)
+        }
+        mockForProj.demand.mkdir { Object path ->
+            assert expectedPath == getAbsolutePath(path)
         }
     }
 
