@@ -33,9 +33,9 @@ Make sure your arguments are separate strings, not a single space-concatenated s
 
 ### Why is my clean build failing?
 
-This is a [known issue](https://github.com/j2objc-contrib/j2objc-gradle/issues/306) if you don't
-have any tests.
-If you are doing `./gradlew clean build`, try instead `./gradlew clean && ./gradlew build`.
+This is a [known issue](https://github.com/j2objc-contrib/j2objc-gradle/issues/306)
+if you don't have any tests. If you are doing `./gradlew clean build`, try instead
+`./gradlew clean && ./gradlew build`.
 
 When you don't have any test source files, The plugin creates a placeholder to force the
 creation of a test binary; this is done during project configuration phase, but `clean` deletes
@@ -44,10 +44,10 @@ this file before `build` can use it.
 
 ### How do I include Java files from additional source directories?
 
-In order to include source files from sources different than ``src/main/java`` you have to
+In order to include source files from sources different than `src/main/java` you have to
 [modify the Java plugin's sourceSet(s)](https://docs.gradle.org/current/userguide/java_plugin.html#N11FD1).
-For example, if you want to include files from ``src-gen/base`` both into your JAR and (translated) into
-your Objective C libraries, then add to your ``build.gradle``:
+For example, if you want to include files from `src-gen/base` both into your JAR and (translated) into
+your Objective C libraries, then add to your `shared/build.gradle`:
 
     sourceSets {
         main {
@@ -64,16 +64,16 @@ To work with Swift in Xcode, you need to configure a [bridging header](https://d
 Within that bridging header, include the file needed for using the JRE and any classes that you'd like
 to access from Swift code.
 
-```
-// File: IOS-APP-bridging-header.h
+    // File: ios/IOS-APP/IOS-APP-bridging-header.h
 
-// Required for Swift initialization of Java objects (they all inherit from JavaObject)
-#import "JreEmulation.h"
+    // J2ObjC requirement for Java Runtime Environment
+    // Included from /J2OBJC_HOME/include
+    #import "JreEmulation.h"
 
-// Swift accessible j2objc translated classes, referenced from `shared/build/j2objcOutputs/src/main/objc`
-#import "MyClassOne.h"
-#import "MyClassTwo.h"
-```
+    // Swift accessible J2ObjC translated classes
+    // Included from `shared/build/j2objcOutputs/src/main/objc`
+    #import "MyClassOne.h"
+    #import "MyClassTwo.h"
 
 
 ### How do I enable ARC for my Objective-C classes?
@@ -89,7 +89,7 @@ Add the following to your configuration block. [See](https://developer.apple.com
 ### How do I call finalConfigure()?
 
 You must always call `finalConfigure()` at the end of `j2objcConfig {...}` within your project's
-`build.gradle` file. You need to include an otherwise empty j2objcConfig { } block with this
+`build.gradle` file. You need to include an otherwise empty `j2objcConfig {...}` block with this
 call even if you do not need to customize any other `j2objConfig` option.
 
     j2objcConfig {
@@ -106,60 +106,71 @@ See: [How do I enable ARC for my Objective-C classes?](#how-do-i-enable-arc-for-
 ### How do I disable a plugin task?
 
 You can disable tasks performed by the plugin using the following configuration block in your
-`build.gradle`. This is separate and alongside the j2objcConfig settings. For example, to
+`build.gradle`. This is separate and alongside the `j2objcConfig` settings. For example, to
 disable the `j2objcTest` task, do the following:
 
+    // File: shared/build.gradle
     j2objcTest {
         enabled = false
     }
-
     j2objcConfig {
         ...
     }
 
 
-### How do I setup multiple related J2ObjC or native projects?
+### How do I setup dependencies with J2ObjC?
 
-You can express three kinds of dependencies within j2objcConfig:
+See the following FAQ answers...
 
-1. The common case is that Java and j2objc Project B depends on Java and J2ObjC Project A,
-and you need the Project B J2ObjC generated library to depend on the Project A J2ObjC
-generated library. In this case add to B.gradle:
 
-```
+### How do I setup a dependency on a Gradle Java project?
+
+If project `shared` depends on Gradle Java Project A, and you want J2Objc generated Project
+`shared` to depend on J2ObjC generated Project A. Add to `shared/build.gradle`:
+
+    // File: shared/build.gradle
     j2objcConfig {
         dependsOnJ2objc project(':A')
     }
-```
 
-This kind of dependency should be inferred automatically from the corresponding Java
-dependency in the future.
+Project A needs to have the J2objc Gradle Plugin applied and the `j2objcConfig` with the
+`finalConfigure()` call. This applies transitively, so in turn it may need `dependsOnJ2objc`
+again. Alternatively you can try building using `--build-closure` (TODO: need item on this).
+The library will be linked in and the headers available for inclusion. Project A will be
+built first.
 
-2. Java and j2objc project B depends on a
-[custom native library](https://docs.gradle.org/current/userguide/nativeBinaries.html#N15F82)
-called someLibrary in native project A.  Add to B.gradle:
+In the future, this kind of dependency should be inferred automatically from the corresponding
+Java dependency - [issue 41](https://github.com/j2objc-contrib/j2objc-gradle/issues/41).
 
-```
-    j2objcConfig {
-        extraNativeLib project: ':A', library: 'someLibrary', linkage: 'static'
-    }
-```
 
-3. Java and j2objc project B depends on library libpreBuilt pre-built outside of
-Gradle in directory /lib/SOMEPATH, with corresponding headers in /include/SOMEPATH.
-Add to B.gradle:
+### How do I setup a dependency on a prebuilt native library?
 
-```
+For a Java and J2ObjC project `shared` that depends on library libpreBuilt pre-built outside
+of Gradle in directory /lib/SOMEPATH, with corresponding headers in /include/SOMEPATH.
+Add to `shared/build.gradle`:
+
+    // File: shared/build.gradle
     j2objcConfig {
         extraObjcCompilerArgs '-I/include/SOMEPATH'
         extraLinkerArgs '-L/lib/SOMEPATH'
         extraLinkerArgs '-lpreBuilt'
     }
-```
 
-In (1) and (2), A's library will be linked in and A's headers will be available for inclusion, and
-B will automatically build after A.  (3) is not supported by Gradle's dependency management
-capabilities; you must ensure preBuilt's binary and headers are available before project B is built.
+The library will be linked in and the headers available for inclusion. All prebuilt libraries
+must be fat binaries with the architectures defined by `supportedArchs` in
+[j2objcConfig.groovy](https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcConfig.groovy).
+
+
+### How do I setup a dependency on a Gradle native library project?
+
+If project `shared` depends on a
+[custom native library](https://docs.gradle.org/current/userguide/nativeBinaries.html#N15F82)
+called someLibrary from native project A. Add to `shared/build.gradle`:
+
+    // File: shared/build.gradle
+    j2objcConfig {
+        extraNativeLib project: ':A', library: 'someLibrary', linkage: 'static'
+    }
 
 
 ### Cycle Finder Basic Setup
@@ -173,6 +184,7 @@ The basic setup will implicitly check for 40 memory cycles - this is the expecte
 of erroneous matches with `jre_emul` library for J2ObjC version 0.9.6.1. This may cause
 issues if this number changes with future versions of J2ObjC libraries.
 
+    // File: shared/build.gradle
     j2objcCycleFinder {
         enabled = true
     }
@@ -194,10 +206,11 @@ and building the J2ObjC source:
 
     `(cd jre_emul && make java_sources_manifest)`
 
-3. Configure j2objcConfig in build.gradle so CycleFinder uses the annotated J2ObjC source
-and whitelist. Note how this gives and expected cycles of zero.
+3. Configure j2objcConfig in `shared/build.gradle` so CycleFinder uses the annotated J2ObjC
+source and whitelist. Note how this gives and expected cycles of zero.
 
 ```
+    // File: shared/build.gradle
     j2objcConfig {
         cycleFinderArgs '--whitelist', 'J2OBJC_REPO/jre_emul/cycle_whitelist.txt'
         cycleFinderArgs '--sourcefilelist', 'J2OBJC_REPO/jre_emul/build_result/java_sources.mf'
