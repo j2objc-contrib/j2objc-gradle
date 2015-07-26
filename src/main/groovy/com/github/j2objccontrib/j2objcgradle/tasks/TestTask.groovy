@@ -57,7 +57,6 @@ class TestTask extends DefaultTask {
         return allFiles
     }
 
-    // j2objcConfig dependencies for UP-TO-DATE checks
     @Input
     List<String> getTestArgs() { return J2objcConfig.from(project).testArgs }
 
@@ -67,15 +66,17 @@ class TestTask extends DefaultTask {
     @Input
     int getTestMinExpectedTests() { return J2objcConfig.from(project).testMinExpectedTests }
 
+    // As tests can depend on resources
+    // TODO: switch to calling `inputs.dir(source set srcDirs)`
     @InputFiles
-    // As tests may depend on resources
-    FileTree getMainResources() {
+    FileTree getMainResourcesFiles() {
         FileTree allResources = Utils.srcSet(project, 'main', 'resources')
         allResources = allResources.plus(Utils.srcSet(project, 'test', 'resources'))
         return allResources
     }
 
-    // Report of test failures
+
+    // Output required for task up-to-date checks
     @OutputFile
     File reportFile = project.file("${project.buildDir}/reports/${name}.out")
 
@@ -84,6 +85,7 @@ class TestTask extends DefaultTask {
     File getJ2objcTestContentDir() {
         return new File(project.buildDir, 'j2objcTestContent')
     }
+
 
     @TaskAction
     void test() {

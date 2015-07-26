@@ -36,7 +36,7 @@ import org.gradle.api.tasks.TaskAction
 class CycleFinderTask extends DefaultTask {
 
     @InputFiles
-    FileTree getSrcFiles() {
+    FileTree getSrcInputFiles() {
         // Note that translatePattern does not need to be an @Input because it is
         // solely an input to this method, which is already an input (via @InputFiles).
         FileTree allFiles = Utils.srcSet(project, 'main', 'java')
@@ -54,17 +54,13 @@ class CycleFinderTask extends DefaultTask {
         // Only care about changes in the generatedSourceDirs paths and not the contents
         // Assumes that any changes in generated code causes change in non-generated @Input
         return new UnionFileCollection([
-                getSrcFiles(),
+                getSrcInputFiles(),
                 project.files(getTranslateClasspaths()),
                 project.files(getTranslateSourcepaths()),
                 project.files(getGeneratedSourceDirs())
         ])
     }
 
-    @OutputFile
-    File reportFile = project.file("${project.buildDir}/reports/${name}.out")
-
-    // j2objcConfig dependencies for UP-TO-DATE checks
     @Input
     int getCycleFinderExpectedCycles() { return J2objcConfig.from(project).cycleFinderExpectedCycles }
 
@@ -90,6 +86,11 @@ class CycleFinderTask extends DefaultTask {
     boolean getFilenameCollisionCheck() { return J2objcConfig.from(project).filenameCollisionCheck }
 
 
+    // Output required for task up-to-date checks
+    @OutputFile
+    File getReportFile() { project.file("${project.buildDir}/reports/${name}.out") }
+
+
     @TaskAction
     void cycleFinder() {
         String cycleFinderExec = "${getJ2objcHome()}/cycle_finder"
@@ -100,7 +101,7 @@ class CycleFinderTask extends DefaultTask {
             windowsOnlyArgs.add("${getJ2objcHome()}/lib/cycle_finder.jar".toString())
         }
 
-        FileCollection fullSrcFiles = getSrcFiles()
+        FileCollection fullSrcFiles = getSrcInputFiles()
         // TODO: extract common methods of Translate and Cycle Finder
         // TODO: Need to understand why generated source dirs are treated differently by CycleFinder
         // vs. translate task.  Here they are directly passed to the binary, but in translate
@@ -195,7 +196,7 @@ class CycleFinderTask extends DefaultTask {
         }
 
         // Only write output if task is successful
-        reportFile.write(Utils.stdOutAndErrToLogString(stdout, stderr))
-        logger.debug("CycleFinder Output: ${reportFile.path}")
+        getReportFile().write(Utils.stdOutAndErrToLogString(stdout, stderr))
+        logger.debug("CycleFinder Output: ${getReportFile().path}")
     }
 }

@@ -24,7 +24,6 @@ import org.gradle.api.InvalidUserDataException
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
@@ -41,63 +40,60 @@ import org.gradle.api.tasks.TaskAction
 @CompileStatic
 class XcodeTask extends DefaultTask {
 
-    // Generated ObjC source files
+    // Generated ObjC source files and main resources
+    // TODO: is this more than needed? Task only cares about directory location, not contents.
     @InputDirectory
-    File srcGenDir
+    File getDestSrcMainObjDirFile() {
+        return J2objcConfig.from(project).getDestSrcDirFile('main', 'objc')
+    }
+    @InputDirectory
+    File getDestSrcMainResourcesDirFile() {
+        return J2objcConfig.from(project).getDestSrcDirFile('main', 'resources')
+    }
 
-    // PodName, such as j2objc-shared
+    @Input
+    String getJ2objcHome() { return Utils.j2objcHome(project) }
+
+    @Input
+    File getDestLibDirFile() { return J2objcConfig.from(project).getDestLibDirFile() }
+
+    @Input @Optional
+    String getXcodeProjectDir() { return J2objcConfig.from(project).xcodeProjectDir }
+    @Input @Optional
+    String getXcodeTarget() { return J2objcConfig.from(project).xcodeTarget }
+
     @Input
     String getPodNameDebug() { "j2objc-${project.name}-debug" }
     @Input
     String getPodNameRelease() { "j2objc-${project.name}-release" }
 
-    // j2objcConfig dependencies for UP-TO-DATE checks
-    @Input
-    String getJ2objcHome() { return Utils.j2objcHome(project) }
 
-    @Input @Optional
-    String getXcodeProjectDir() { return J2objcConfig.from(project).xcodeProjectDir }
-
-    @Input @Optional
-    String getXcodeTarget() { return J2objcConfig.from(project).xcodeTarget }
-
-    // CocoaPods podspec file that's used by the Podfile
+    // CocoaPods podspec files that are referenced by the Podfile
     @OutputFile
     File getPodspecDebug() { new File(project.buildDir, "${getPodNameDebug()}.podspec") }
     @OutputFile
     File getPodspecRelease() { new File(project.buildDir, "${getPodNameRelease()}.podspec") }
 
+
     @OutputFile
-    // Cast to string to avoid Groovy throwing exception on ambiguous method call: issue #226
-    File getPodFile() {
+    File getPodfileFile() {
         verifyXcodeArgs()
-        // xcodeProjectDir is relative to projectDir if it's not an absolute path
-        File xcodeProjectDir = project.file(getXcodeProjectDir())
-        return new File(xcodeProjectDir, 'Podfile')
+        return project.file(new File(getXcodeProjectDir(), '/Podfile'))
     }
 
-    @OutputDirectory
-    File getJ2objcResourcesDir() {
-        return new File(project.buildDir, 'j2objcResources')
-    }
 
     @TaskAction
     void xcodeConfig() {
 
         verifyXcodeArgs()
 
-        // Resource Folder is copied to buildDir where it's accessed by the pod later
-        // TODO: is it necessary to copy the files or can they be referenced in place?
-        Utils.projectDelete(project, getJ2objcResourcesDir())
-        Utils.copyResources(project, 'main', getJ2objcResourcesDir())
-
         // podspec paths must be relative to podspec file, which is in buildDir
         // NOTE: toURI() adds trailing slash in production but not in unit tests
         URI buildDir = project.buildDir.toURI()
-        String j2objcResourcesRelativeToBuildDir = trimTrailingForwardSlash(
-                buildDir.relativize(getJ2objcResourcesDir().toURI()).toString())
-        String srcGenDirRelativeToBuildDir = trimTrailingForwardSlash(
-                buildDir.relativize(srcGenDir.toURI()).toString())
+        String mainObjcRelativeToBuildDir = Utils.trimTrailingForwardSlash(
+                buildDir.relativize(getDestSrcMainObjDirFile().toURI()).toString())
+        String mainResourcesRelativeToBuildDir = Utils.trimTrailingForwardSlash(
+                buildDir.relativize(getDestSrcMainResourcesDirFile().toURI()).toString())
 
         // TODO: make this an explicit @Input
         // Same for both debug and release builds
@@ -105,16 +101,15 @@ class XcodeTask extends DefaultTask {
 
         // podspec creation
         // TODO: allow custom list of libraries
-        // TODO: Need to specify the release and debug library search paths separately.
-        String libDirDebug = "${project.buildDir}/j2objcOutputs/lib/iosDebug"
-        String libDirRelease = "${project.buildDir}/j2objcOutputs/lib/iosRelease"
+        String libDirDebug = new File(getDestLibDirFile(), '/iosDebug').absolutePath
+        String libDirRelease = new File(getDestLibDirFile(), '/iosRelease').absolutePath
 
         String podspecContentsDebug =
                 genPodspec(getPodNameDebug(), libDirDebug, libName, getJ2objcHome(),
-                        srcGenDirRelativeToBuildDir, "$j2objcResourcesRelativeToBuildDir/**/*")
+                        mainObjcRelativeToBuildDir, mainResourcesRelativeToBuildDir)
         String podspecContentsRelease =
                 genPodspec(getPodNameRelease(), libDirRelease, libName, getJ2objcHome(),
-                        srcGenDirRelativeToBuildDir, "$j2objcResourcesRelativeToBuildDir/**/*")
+                        mainObjcRelativeToBuildDir, mainResourcesRelativeToBuildDir)
 
         logger.debug("Writing debug podspec... ${getPodspecDebug()}\n$podspecContentsDebug")
         getPodspecDebug().write(podspecContentsDebug)
@@ -122,7 +117,7 @@ class XcodeTask extends DefaultTask {
         getPodspecRelease().write(podspecContentsRelease)
 
         // link the podspec in pod file
-        File podFile = getPodFile()
+        File podFile = getPodfileFile()
         if (!podFile.exists()) {
             // TODO: offer to run the setup commands
             String xcodeAbsPath = project.file(getXcodeProjectDir()).absolutePath
@@ -203,15 +198,6 @@ class XcodeTask extends DefaultTask {
     }
 
     @VisibleForTesting
-    static String trimTrailingForwardSlash(String path) {
-        if (path.endsWith('/')) {
-            // Remove last character
-            return path[0..-2]
-        }
-        return path
-    }
-
-    @VisibleForTesting
     static void validatePodspecPath(String path, boolean relative) {
         if (path.contains('//')) {
             throw new InvalidUserDataException("Path shouldn't have '//': $path")
@@ -224,6 +210,9 @@ class XcodeTask extends DefaultTask {
         }
         if (!relative && !path.startsWith('/')) {
             throw new InvalidUserDataException("Path shouldn't be relative: $path")
+        }
+        if (path.endsWith('*')) {
+            throw new InvalidUserDataException("Only genPodspec(...) should add '*': $path")
         }
     }
 
@@ -248,10 +237,11 @@ class XcodeTask extends DefaultTask {
                "  spec.version = '1.0'\n" +
                "  spec.summary = 'Generated by the J2ObjC Gradle Plugin.'\n" +
                "  spec.public_header_files = '$publicHeadersDir/**/*.h'\n" +
-               "  spec.resources = '$resourceDir'\n" +
+               "  spec.resources = '$resourceDir/**/*'\n" +
                "  spec.requires_arc = true\n" +
-               "  spec.preserve_paths = '$publicHeadersDir/**/*.a'\n" +
-               "  spec.libraries = " +
+               // Avoid CocoaPods deleting files that don't match "*.h" in public_header_files
+               "  spec.preserve_paths = '$publicHeadersDir/**/*'\n" +
+               "  spec.libraries = " +  // continuation of same line
                "'ObjC', 'guava', 'javax_inject', 'jre_emul', 'jsr305', 'z', 'icucore', '$libName'\n" +
                "  spec.xcconfig = {\n" +
                "    'HEADER_SEARCH_PATHS' => '$j2objcHome/include',\n" +

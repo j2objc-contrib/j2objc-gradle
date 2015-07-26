@@ -38,10 +38,24 @@ class J2objcConfigTest {
     @Test
     void testConstructor() {
         J2objcConfig ext = new J2objcConfig(proj)
+        String projectDir = proj.projectDir.absolutePath
 
-        assert ext.destSrcDir == proj.buildDir.absolutePath + '/j2objcOutputs/src/main/objc'
-        assert ext.destSrcDirTest == proj.buildDir.absolutePath + '/j2objcOutputs/src/test/objc'
-        assert ext.destLibDir == proj.buildDir.absolutePath + '/j2objcOutputs/lib'
+        assert ext.destSrcMainDir == projectDir + '/build/j2objcOutputs/src/main'
+        assert ext.destSrcTestDir == projectDir + '/build/j2objcOutputs/src/test'
+        assert ext.destLibDir == projectDir + '/build/j2objcOutputs/lib'
+    }
+
+    @Test
+    // All variations of main/test and objc/resources
+    void testGetDestDirFile_AllVariations() {
+        J2objcConfig ext = new J2objcConfig(proj)
+        String pDir = proj.projectDir.absolutePath
+
+        assert pDir + '/build/j2objcOutputs/lib' == ext.getDestLibDirFile().absolutePath
+        assert pDir + '/build/j2objcOutputs/src/main/objc' == ext.getDestSrcDirFile('main', 'objc').absolutePath
+        assert pDir + '/build/j2objcOutputs/src/test/objc' == ext.getDestSrcDirFile('test', 'objc').absolutePath
+        assert pDir + '/build/j2objcOutputs/src/main/resources' == ext.getDestSrcDirFile('main', 'resources').absolutePath
+        assert pDir + '/build/j2objcOutputs/src/test/resources' == ext.getDestSrcDirFile('test', 'resources').absolutePath
     }
 
     @Test
