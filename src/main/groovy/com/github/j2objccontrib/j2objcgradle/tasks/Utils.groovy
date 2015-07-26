@@ -34,6 +34,7 @@ import org.gradle.api.tasks.WorkResult
 import org.gradle.process.ExecResult
 import org.gradle.process.ExecSpec
 import org.gradle.process.internal.ExecException
+import org.gradle.util.GradleVersion
 
 import java.util.regex.Matcher
 
@@ -47,6 +48,17 @@ import java.util.regex.Matcher
 class Utils {
     // TODO: ideally bundle j2objc binaries with plugin jar and load at runtime with
     // TODO: ClassLoader.getResourceAsStream(), extract, chmod and then execute
+
+    // Prevent construction of this class, confines usage to static methods
+    private Utils() { }
+
+    static void checkMinGradleVersion(GradleVersion gradleVersion) {
+        final GradleVersion minGradleVersion = GradleVersion.version('2.4')
+        if (gradleVersion.compareTo(minGradleVersion) < 0) {
+            throw new InvalidUserDataException(
+                    "J2ObjC Gradle Plugin requires minimum Gradle version: $minGradleVersion")
+        }
+    }
 
     static boolean isWindows() {
         return System.getProperty('os.name').toLowerCase().contains('windows')

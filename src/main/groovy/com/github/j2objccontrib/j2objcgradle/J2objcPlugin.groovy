@@ -30,6 +30,7 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.logging.LogLevel
+import org.gradle.util.GradleVersion
 
 /*
  * Main plugin class for creation of extension object and all the tasks.
@@ -40,6 +41,8 @@ class J2objcPlugin implements Plugin<Project> {
     void apply(Project project) {
         // This avoids a lot of "project." prefixes, such as "project.tasks.create"
         project.with {
+            Utils.checkMinGradleVersion(GradleVersion.current())
+
             extensions.create('j2objcConfig', J2objcConfig, project)
 
             afterEvaluate { Project evaluatedProject ->
