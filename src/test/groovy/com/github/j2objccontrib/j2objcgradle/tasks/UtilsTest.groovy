@@ -16,6 +16,7 @@
 
 package com.github.j2objccontrib.j2objcgradle.tasks
 
+import groovy.transform.CompileStatic
 import org.apache.commons.io.output.TeeOutputStream
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
@@ -33,6 +34,7 @@ import org.junit.rules.ExpectedException
 /**
  * Utils tests.
  */
+@CompileStatic
 class UtilsTest {
 
     private Project proj
@@ -182,7 +184,7 @@ class UtilsTest {
                 'src/test/resources/com/github/j2objccontrib/j2objcgradle/tasks/prefixes.properties')
 
         List<String> translateArgs = new ArrayList<String>()
-        translateArgs.add("--prefixes ${prefixesProp.absolutePath}")
+        translateArgs.add('--prefixes ' + prefixesProp.absolutePath)
         Properties properties = Utils.packagePrefixes(proj, translateArgs)
 
         Properties expected = new Properties()
@@ -202,7 +204,7 @@ class UtilsTest {
         List<String> translateArgs = new ArrayList<String>()
         // prefix is overwritten by prefixes.properties
         translateArgs.add('--prefix com.example.parent=ParentPrefixArg')
-        translateArgs.add("--prefixes ${prefixesProp.absolutePath}")
+        translateArgs.add('--prefixes ' + prefixesProp.absolutePath)
         // prefix overwrites prefixes.properties
         translateArgs.add('--prefix com.example.parent.subdir=SubdirPrefixArg')
 
@@ -261,11 +263,13 @@ class UtilsTest {
     void testMatchRegexOutputStreams_MatchString() {
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()
+
         stdout.write('written-stdout'.getBytes('utf-8'))
         stderr.write('written-stderr'.getBytes('utf-8'))
 
-        assert null != Utils.matchRegexOutputs(stdout, stderr, /(std+out)/).equals('stdout')
-        assert null != Utils.matchRegexOutputs(stdout, stderr, /(std+err)/).equals('stderr')
+        // Match each regex against both OutputStreams
+        assert 'stdout' == Utils.matchRegexOutputs(stdout, stderr, /(std+out)/)
+        assert 'stderr' == Utils.matchRegexOutputs(stdout, stderr, /(std+err)/)
     }
 
     @Test
