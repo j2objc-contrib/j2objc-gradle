@@ -136,7 +136,8 @@ class TestTask extends DefaultTask {
         } catch (Exception exception) {
             String message =
                     "The j2objcTest task failed. Given that the java plugin 'test' task\n" +
-                    "completed successfully, this is an error specific to the j2objc build.\n" +
+                    "completed successfully, this is an error specific to the J2ObjC Gradle\n" +
+                    "Plugin build.\n" +
                     "\n" +
                     "1) Check BOTH 'Standard Output' and 'Error Output' above for problems.\n" +
                     "\n" +

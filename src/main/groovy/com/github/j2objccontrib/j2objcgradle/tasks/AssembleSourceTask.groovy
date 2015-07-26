@@ -66,8 +66,8 @@ class AssembleSourceTask extends DefaultTask {
         // Warn if deleting non-generated objc files from destDir
         nonObjcDestFiles.each { File file ->
             String message =
-                    "Unexpected files in $name - this folder should contain ONLY j2objc\n" +
-                    "generated files Objective-C. The folder contents are deleted to remove\n" +
+                    "Unexpected files in $name - this folder should contain ONLY J2ObjC\n" +
+                    "generated Objective-C files. The folder contents are deleted to remove\n" +
                     "files that are nolonger generated. Please check the directory and remove\n" +
                     "any files that don't end with Objective-C extensions '.h' and '.m'.\n" +
                     "$name: ${destDir.path}\n" +

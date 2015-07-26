@@ -55,8 +55,8 @@ class Utils {
     static void throwIfNoJavaPlugin(Project proj) {
         if (!proj.plugins.hasPlugin('java')) {
             String message =
-                    "j2objc plugin didn't find the 'java' plugin in the '${proj.name}' project.\n" +
-                    "This is a requirement for using j2objc. Please see usage information at:\n" +
+                    "J2ObjC Gradle Plugin: missing 'java' plugin for '${proj.name}' project.\n" +
+                    "This is a requirement for using J2ObjC. Please see usage information at:\n" +
                     "https://github.com/j2objc-contrib/j2objc-gradle/#usage"
             throw new InvalidUserDataException(message)
         }
@@ -96,7 +96,7 @@ class Utils {
                             propKey.substring(PROPERTY_KEY_PREFIX.length(), propKey.length())
                     if (!(withoutPrefix in PROPERTIES_VALID_KEYS)) {
                         throw new InvalidUserDataException(
-                                "Invalid j2objc property: $propKey\n" +
+                                "Invalid J2ObjC Gradle Plugin property: $propKey\n" +
                                 "From local.properties: $localPropertiesFile.absolutePath\n" +
                                 "Valid Keys: $PROPERTIES_VALID_KEYS")
                     }
@@ -117,19 +117,19 @@ class Utils {
         }
         if (result == null) {
             String message =
-                    "j2objc home not set, this should be configured either:\n" +
+                    "J2ObjC Home not set, this should be configured either:\n" +
                     "1) in a 'local.properties' file in the project root directory as:\n" +
-                    "   j2objc.home=/PATH/TO/J2OBJC/DISTRIBUTION\n" +
+                    "   j2objc.home=/LOCAL_J2OBJC_PATH\n" +
                     "2) as the J2OBJC_HOME system environment variable\n" +
                     "\n" +
                     "If both are configured the value in the properties file will be used.\n" +
                     "\n" +
-                    "It must be the path of the unzipped j2objc distribution. Download releases here:\n" +
+                    "It must be the path of the unzipped J2ObjC distribution. Download releases here:\n" +
                     "https://github.com/google/j2objc/releases"
             throw new InvalidUserDataException(message)
         }
         if (!proj.file(result).exists()) {
-            String message = "j2objc directory not found, expected location: ${result}"
+            String message = "J2OjcC Home directory not found, expected location: ${result}"
             throw new InvalidUserDataException(message)
         }
         // Trailing slashes cause problems with string concatenation logic.

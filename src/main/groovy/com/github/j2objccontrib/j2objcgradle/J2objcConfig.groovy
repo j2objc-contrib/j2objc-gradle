@@ -312,9 +312,9 @@ class J2objcConfig {
         project.evaluationDependsOn beforeProject.path
 
         if (!beforeProject.plugins.hasPlugin(J2objcPlugin)) {
-            String message = "$beforeProject does not use the j2objc plugin.\n" +
+            String message = "$beforeProject does not use the J2ObjC Gradle Plugin.\n" +
                           "dependsOnJ2objcLib can be used only with another project that\n" +
-                          "itself uses the j2objc plugin."
+                          "itself uses the J2ObjC Gradle Plugin."
             throw new InvalidUserDataException(message)
         }
 
