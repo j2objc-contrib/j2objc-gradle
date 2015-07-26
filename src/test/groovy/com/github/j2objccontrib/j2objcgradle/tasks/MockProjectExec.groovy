@@ -66,12 +66,14 @@ class MockProjectExec {
         // This intercepts all methods, stubbing out exec and passing through all other invokes
         project.metaClass.invokeMethod = { String name, Object[] args ->
             // Call the proxy object so that it can track verifications
-            if (name == 'delete') {
-                return projectProxyInstance().delete(args.first())
-            } else if (name == 'copy') {
+            if (name == 'copy') {
                 return projectProxyInstance().copy((Closure) args.first())
+            } else if (name == 'delete') {
+                return projectProxyInstance().delete(args.first())
             } else if (name == 'exec') {
                 return projectProxyInstance().exec((Closure) args.first())
+            } else if (name == 'mkdir') {
+                return projectProxyInstance().mkdir(args.first())
             } else {
                 // This calls the delegate without causing infinite recursion
                 // http://stackoverflow.com/a/10126006/1509221
@@ -180,19 +182,23 @@ class MockProjectExec {
         }
     }
 
+    static String getAbsolutePathFromObject(Object path) {
+        if (path instanceof String) {
+            return (String) path
+        } else if (path instanceof File) {
+            return ((File) path).getAbsolutePath()
+        }
+        assert false, "Not implemented for type: ${path.class}, ${path}"
+        return null
+    }
+
     void demandDeleteAndReturn(String... expectedPaths) {
         mockForProj.demand.delete { Object[] args ->
 
             // Convert args to list of path strings
             List<String> pathsList = new ArrayList<String>()
             args.each { Object obj ->
-                if (obj instanceof String) {
-                    pathsList.add((String) obj)
-                } else if (obj instanceof File) {
-                    pathsList.add(obj.getAbsolutePath())
-                } else {
-                    assert false, "Not implemented for type: ${obj.class}, ${obj}"
-                }
+                pathsList.add(getAbsolutePathFromObject(obj))
             }
 
             List<Object> expectedPathsList = Arrays.asList(expectedPaths)
@@ -255,6 +261,13 @@ class MockProjectExec {
             }
 
             return (ExecResult) null
+        }
+    }
+
+    void demandMkDirAndReturn(String expectedPath) {
+        mockForProj.demand.mkdir { Object path ->
+            assert expectedPath.equals(getAbsolutePathFromObject(path))
+            return project.file(path)
         }
     }
 }

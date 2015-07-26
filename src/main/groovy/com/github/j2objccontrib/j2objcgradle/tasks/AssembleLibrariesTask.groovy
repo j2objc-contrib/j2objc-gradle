@@ -31,7 +31,7 @@ import org.gradle.api.tasks.TaskAction
 @CompileStatic
 class AssembleLibrariesTask extends DefaultTask {
 
-    // Generated ObjC binaries
+    // Generated ObjC libraries
     @InputDirectory
     File srcLibDir
 
@@ -52,7 +52,7 @@ class AssembleLibrariesTask extends DefaultTask {
         // We don't need to clear out the library path, our libraries can co-exist
         // with other libraries if the user wishes them to.
 
-        assert (buildType in ['Debug', 'Release'])
+        assert buildType in ['Debug', 'Release']
 
         Utils.projectCopy(project, {
             includeEmptyDirs = true

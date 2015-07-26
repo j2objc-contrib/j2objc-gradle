@@ -333,10 +333,17 @@ class Utils {
                (exception?.getCause() instanceof ExecException)
     }
 
-    static WorkResult copyResources(Project proj, String sourceSetName, File destDir) {
+    // Sync main and or test resources, deleting destination directory and then recreating it
+    // TODO: make the sync more efficient, e.g. Gradle Sync task or rsync
+    static WorkResult syncResourcesTo(Project proj, List<String> sourceSetNames, File destDir) {
+        projectDelete(proj, destDir)
+        projectMkDir(proj, destDir)
         return projectCopy(proj, {
-            srcSet(proj, sourceSetName, 'resources').srcDirs.each {
-                from it
+            sourceSetNames.each { String sourceSetName ->
+                assert sourceSetName in ['main', 'test']
+                srcSet(proj, sourceSetName, 'resources').srcDirs.each {
+                    from it
+                }
             }
             into destDir
         })
@@ -439,5 +446,19 @@ class Utils {
         log.debug(projectExecLog(execSpec, stdout, stderr, execSucceeded, null))
 
         return execResult
+    }
+
+    /**
+     * Delete a directory by calling project.mkdir(...)
+     *
+     * Must be called instead of project.mkdir(...) to allow mocking of project calls in testing.
+     *
+     * @param proj Calls proj.mkdir(...) method
+     * @param paths Variable length list of paths to be deleted, can be String or File
+     */
+    // See projectExec for explanation of the code
+    @CompileStatic(TypeCheckingMode.SKIP)
+    static boolean projectMkDir(Project proj, Object path) {
+        return proj.mkdir(path)
     }
 }

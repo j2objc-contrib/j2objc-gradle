@@ -98,6 +98,7 @@ class TestTaskTest {
 
         j2objcTest = (TestTask) proj.tasks.create(name: 'j2objcTest', type: TestTask) {
             testBinaryFile = proj.file("${proj.buildDir}/binaries/testJ2objcExecutable/debug/testJ2objc")
+            buildType = 'debug'
         }
     }
 
@@ -108,12 +109,11 @@ class TestTaskTest {
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
 
-        // TODO: demandDelete...(getJ2objcTestContentDir())
-        demandCopyForJ2objcTestContent(mockProjectExec)
+        demandCopyForJ2objcTest(mockProjectExec)
         mockProjectExec.demandExecAndReturn(
                 null,
                 [
-                        "${proj.buildDir}/j2objcTestContent/testJ2objc",
+                        "${proj.buildDir}/j2objcTest/debug/testJ2objc",
                         "org.junit.runner.JUnitCore",
                 ],
                 'OK (0 test)',  // NOTE: 'test' is singular for stdout
@@ -136,11 +136,11 @@ class TestTaskTest {
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
         j2objcConfig.testMinExpectedTests = 0
 
-        demandCopyForJ2objcTestContent(mockProjectExec)
+        demandCopyForJ2objcTest(mockProjectExec)
         mockProjectExec.demandExecAndReturn(
                 null,
                 [
-                        "${proj.buildDir}/j2objcTestContent/testJ2objc",
+                        "${proj.buildDir}/j2objcTest/debug/testJ2objc",
                         "org.junit.runner.JUnitCore",
                 ],
                 'OK (0 test)',  // NOTE: 'test' is singular for stdout
@@ -157,11 +157,11 @@ class TestTaskTest {
         setupTask()
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
-        demandCopyForJ2objcTestContent(mockProjectExec)
+        demandCopyForJ2objcTest(mockProjectExec)
         mockProjectExec.demandExecAndReturn(
                 null,
                 [
-                        "${proj.buildDir}/j2objcTestContent/testJ2objc",
+                        "${proj.buildDir}/j2objcTest/debug/testJ2objc",
                         "org.junit.runner.JUnitCore",
                 ],
                 'OK (1 test)',  // NOTE: 'test' is singular for stdout
@@ -178,11 +178,11 @@ class TestTaskTest {
         setupTask()
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
-        demandCopyForJ2objcTestContent(mockProjectExec)
+        demandCopyForJ2objcTest(mockProjectExec)
         mockProjectExec.demandExecAndReturn(
                 null,
                 [
-                        "${proj.buildDir}/j2objcTestContent/testJ2objc",
+                        "${proj.buildDir}/j2objcTest/debug/testJ2objc",
                         "org.junit.runner.JUnitCore",
                 ],
                 'IGNORE\nOK (2 tests)\nIGNORE',  // stdout
@@ -199,11 +199,11 @@ class TestTaskTest {
         setupTask()
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
-        demandCopyForJ2objcTestContent(mockProjectExec)
+        demandCopyForJ2objcTest(mockProjectExec)
         mockProjectExec.demandExecAndReturn(
                 null,
                 [
-                        "${proj.buildDir}/j2objcTestContent/testJ2objc",
+                        "${proj.buildDir}/j2objcTest/debug/testJ2objc",
                         "org.junit.runner.JUnitCore",
                 ],
                 'OK (2 testXXXX)',  // NOTE: invalid stdout fails matchRegexOutputs
@@ -215,19 +215,19 @@ class TestTaskTest {
         mockProjectExec.verify()
     }
 
-    private void demandCopyForJ2objcTestContent(MockProjectExec mockProjectExec) {
-        // Delete j2objcTestResources
+    private void demandCopyForJ2objcTest(MockProjectExec mockProjectExec) {
+        // Delete test directory
         mockProjectExec.demandDeleteAndReturn(
-                "$proj.projectDir/build/j2objcTestContent")
-        // Copy main resources, test resources and test binary to j2objcTestResources
+                "$proj.projectDir/build/j2objcTest/debug")
+        // Copy main resources, test resources and test binary to test directory
+        mockProjectExec.demandMkDirAndReturn(
+                "$proj.projectDir/build/j2objcTest/debug")
         mockProjectExec.demandCopyAndReturn(
-                "$proj.projectDir/build/j2objcTestContent",
-                "$proj.projectDir/src/main/resources")
-        mockProjectExec.demandCopyAndReturn(
-                "$proj.projectDir/build/j2objcTestContent",
+                "$proj.projectDir/build/j2objcTest/debug",
+                "$proj.projectDir/src/main/resources",
                 "$proj.projectDir/src/test/resources")
         mockProjectExec.demandCopyAndReturn(
-                "$proj.projectDir/build/j2objcTestContent",
+                "$proj.projectDir/build/j2objcTest/debug",
                 "$proj.projectDir/build/binaries/testJ2objcExecutable/debug/testJ2objc")
     }
 

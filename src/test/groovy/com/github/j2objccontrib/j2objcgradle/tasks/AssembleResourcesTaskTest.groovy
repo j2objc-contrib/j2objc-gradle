@@ -42,12 +42,20 @@ class AssembleResourcesTaskTest {
     void testAssembleResources_Basic() {
         // Expected Activity
         MockProjectExec mockProjectExec = new MockProjectExec(proj, '/J2OBJC_HOME')
+
+        // Main
         mockProjectExec.demandDeleteAndReturn(
+                "${proj.projectDir}/build/j2objcOutputs/src/main/resources")
+        mockProjectExec.demandMkDirAndReturn(
                 "${proj.projectDir}/build/j2objcOutputs/src/main/resources")
         mockProjectExec.demandCopyAndReturn(
                 "${proj.projectDir}/build/j2objcOutputs/src/main/resources",
                 "${proj.projectDir}/src/main/resources")
+
+        // Test
         mockProjectExec.demandDeleteAndReturn(
+                "${proj.projectDir}/build/j2objcOutputs/src/test/resources")
+        mockProjectExec.demandMkDirAndReturn(
                 "${proj.projectDir}/build/j2objcOutputs/src/test/resources")
         mockProjectExec.demandCopyAndReturn(
                 "${proj.projectDir}/build/j2objcOutputs/src/test/resources",
