@@ -383,6 +383,24 @@ class Utils {
     }
 
     /**
+     * Delete a directory and recreate it using project.delete(...) and project.mkdir(...)
+     *
+     * Must be called instead of project.delete(...) to allow mocking of project calls in testing.
+     * May fail in the case where the parent directory doesn't exist. This is because it uses
+     * Project.mkdir(...) instead of File.mkdirs(...). Note that if the parameter is an
+     * @OutputDirectory, then the directory is automatically created before the task runs.
+     *
+     * @param proj Calls proj.delete(...) method and then project.mkdir(...)
+     * @param paths Variable length list of paths to be deleted, can be String or File
+     */
+    // See projectExec for explanation of the code
+    @CompileStatic(TypeCheckingMode.SKIP)
+    static boolean projectClearDir(Project proj, File path) {
+        proj.delete(path)
+        proj.mkdir(path)
+    }
+
+    /**
      * Executes command line and returns result by calling project.exec(...)
      *
      * Throws exception if command fails or non-null regex doesn't match stdout or stderr.
