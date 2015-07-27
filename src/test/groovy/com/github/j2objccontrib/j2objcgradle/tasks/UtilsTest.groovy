@@ -26,6 +26,7 @@ import org.gradle.api.plugins.JavaPlugin
 import org.gradle.process.ExecSpec
 import org.gradle.process.internal.ExecHandleBuilder
 import org.gradle.testfixtures.ProjectBuilder
+import org.gradle.util.GradleVersion
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -45,6 +46,20 @@ class UtilsTest {
     @Before
     void setUp() {
         proj = ProjectBuilder.builder().build()
+    }
+
+    @Test
+    void testCheckMinGradleVersion_valid() {
+        Utils.checkMinGradleVersion(GradleVersion.version('2.4'))
+        Utils.checkMinGradleVersion(GradleVersion.version('2.4.1'))
+        Utils.checkMinGradleVersion(GradleVersion.version('2.5'))
+        Utils.checkMinGradleVersion(GradleVersion.version('3.0'))
+        Utils.checkMinGradleVersion(GradleVersion.version('10.0'))
+    }
+
+    @Test(expected=InvalidUserDataException)
+    void testCheckMinGradleVersion_invalid() {
+        Utils.checkMinGradleVersion(GradleVersion.version('2.3'))
     }
 
     @Test
@@ -118,7 +133,7 @@ class UtilsTest {
         localProperties.write('j2objc.written-invalid-key')
 
         expectedException.expect(InvalidUserDataException.class)
-        expectedException.expectMessage('Invalid j2objc property: j2objc.written-invalid-key')
+        expectedException.expectMessage('Invalid J2ObjC Gradle Plugin property: j2objc.written-invalid-key')
         expectedException.expectMessage("From local.properties: $proj.projectDir/local.properties")
         // Check list of valid keys is suggested by checking for a single entry:
         expectedException.expectMessage('debug.enabled')
