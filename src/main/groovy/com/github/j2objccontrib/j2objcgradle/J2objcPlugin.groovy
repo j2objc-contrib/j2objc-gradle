@@ -95,7 +95,7 @@ class J2objcPlugin implements Plugin<Project> {
             tasks.create(name: 'j2objcTranslate', type: TranslateTask,
                     dependsOn: 'j2objcCycleFinder') {
                 group 'build'
-                description "Translates all the java source files in to Objective-C using j2objc"
+                description "Translates all the java source files in to Objective-C using 'j2objc'"
                 additionalSrcFiles = files(
                         fileTree(dir: "build/source/apt",
                                 include: "**/*.java")
@@ -127,7 +127,7 @@ class J2objcPlugin implements Plugin<Project> {
             tasks.create(name: 'j2objcTest', type: DefaultTask,
                     dependsOn: ['j2objcTestDebug', 'j2objcTestRelease']) {
                 group 'build'
-                description "Marker task for all test tasks that take part in regular j2objc builds"
+                description "Marker task for all test tasks that take part in regular J2ObjC builds"
             }
             // 'check' task is added by 'java' plugin, it depends on 'test' and
             // all the other verification tasks, now including 'j2objcTest'.

@@ -1,14 +1,16 @@
-# j2objc-gradle
-Gradle Plugin for [J2ObjC](https://github.com/google/j2objc), which is an open-source tool
-from Google that translates Java source code to Objective-C for the iOS (iPhone/iPad) platform.
-The plugin is not affiliated with Google but was developed by former Google Engineers and others.
-J2ObjC enables Java source to be part of an iOS application's build, as no editing of the
-generated files is necessary. The goal is to write an app's non-UI code (such as application
+# J2ObjC Gradle Plugin
+
+This is the Gradle Plugin for [J2ObjC](https://github.com/google/j2objc), which is an open-source
+tool from Google that translates Java source code to Objective-C for the iOS (iPhone/iPad)
+platform. The plugin is not affiliated with Google but was developed by former Google Engineers
+and others. J2ObjC enables Java source to be part of an iOS application's build, as no editing of
+the generated files is necessary. The goal is to write an app's non-UI code (such as application
 logic and data models) in Java, which is then shared by web apps (using GWT), Android apps,
 and iOS apps.
 
 
 ### Usage
+
 At HEAD, this plugin is in a state of significant flux as we refactor it into a first-class
 Gradle plugin for our beta. You may wish to wait for the beta release as we may make backwards
 incompatible changes before that point.
@@ -109,7 +111,7 @@ may want to disable the release build temporarily by adding to your `local.prope
 
     j2objc.release.enabled=false
 
-This should cut the j2objc build time up to 50%.  You can also do this for `j2objc.debug.enabled`.
+This should cut the J2ObjC build time up to 50%.  You can also do this for `j2objc.debug.enabled`.
 
 
 ### FAQ

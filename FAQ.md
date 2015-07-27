@@ -14,7 +14,7 @@ You have to first create the [Gradle wrapper](https://docs.gradle.org/current/us
 Go to your project folder and do ``gradle wrapper``. Refresh your Eclipse project.
 
 
-### How do I properly pass multiple arguments to j2objc?
+### How do I properly pass multiple arguments to J2ObjC?
 
 Make sure your arguments are separate strings, not a single space-concatenated string.
 
@@ -118,11 +118,11 @@ disable the `j2objcTest` task, do the following:
     }
 
 
-### How do I setup multiple related j2objc or native projects?
+### How do I setup multiple related J2ObjC or native projects?
 
 You can express three kinds of dependencies within j2objcConfig:
 
-1. The common case is that Java and j2objc Project B depends on Java and j2objc Project A,
+1. The common case is that Java and j2objc Project B depends on Java and J2ObjC Project A,
 and you need the Project B J2ObjC generated library to depend on the Project A J2ObjC
 generated library. In this case add to B.gradle:
 
@@ -170,8 +170,8 @@ Objects that are part of a memory cycle on iOS won't be deleted as it doesn't su
 garbage collection.
 
 The basic setup will implicitly check for 40 memory cycles - this is the expected number
-of erroneous matches with `jre_emul` library for j2objc version 0.9.6.1. This may cause
-issues if this number changes with future versions of j2objc libraries.
+of erroneous matches with `jre_emul` library for J2ObjC version 0.9.6.1. This may cause
+issues if this number changes with future versions of J2ObjC libraries.
 
     j2objcCycleFinder {
         enabled = true
@@ -186,7 +186,7 @@ This uses a specially annotated version of the `jre_emul` source that marks all 
 erroneously matched cycles such that they can be ignored. It requires downloading
 and building the J2ObjC source:
 
-1. Download the j2objc source to a directory (hereafter J2OJBC_REPO):
+1. Download the J2ObjC source to a directory (hereafter J2OJBC_REPO):
 
     https://github.com/google/j2objc
 
