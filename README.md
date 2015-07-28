@@ -1,12 +1,13 @@
 # J2ObjC Gradle Plugin
 
-This is the Gradle Plugin for [J2ObjC](https://github.com/google/j2objc), which is an open-source
-tool from Google that translates Java source code to Objective-C for the iOS (iPhone/iPad)
-platform. The plugin is not affiliated with Google but was developed by former Google Engineers
-and others. J2ObjC enables Java source to be part of an iOS application's build, as no editing of
-the generated files is necessary. The goal is to write an app's non-UI code (such as application
-logic and data models) in Java, which is then shared by web apps (using GWT), Android apps,
-and iOS apps.
+Gradle Plugin for [J2ObjC](https://github.com/google/j2objc),
+which is an open-source tool from Google that translates
+Java source code to Objective-C for the iOS (iPhone/iPad) platform. The plugin is
+not affiliated with Google but was developed by former Google Engineers and others.
+J2ObjC enables Java source to be part of an iOS application's build, no editing
+of the generated files is necessary. The goal is to write an app's non-UI code
+(such as application logic and data models) in Java, which is then shared by
+Android apps (natively Java), web apps (using GWT), and iOS apps (using J2ObjC).
 
 
 ### Usage
@@ -23,15 +24,15 @@ Android application. This if beneficial for separation between the application m
 and user interface and a project which can easily be used server side as well.
 
 The Android app, shared Java project and Xcode should be sibling directories, i.e children
-of the same root level folder. Suggested names are `android, shared & ios` respectivey.
-See the section below on [Folder Structure](#folder-structure).
+of the same root level folder. Suggested folder names are `'android', 'shared' and 'ios'`
+respectivey. See the section below on [Folder Structure](#folder-structure).
 
 Configure `shared/build.gradle` in your Java only project:
 
     // File: shared/build.gradle
     plugins {
         id 'java'
-        id 'com.github.j2objccontrib.j2objcgradle' version '0.3.0-alpha'
+        id 'com.github.j2objccontrib.j2objcgradle' version '0.4.0-alpha'
     }
 
     // Plugin settings:
@@ -39,12 +40,10 @@ Configure `shared/build.gradle` in your Java only project:
         xcodeProjectDir '../ios'  // Xcode workspace directory (suggested name)
         xcodeTarget 'IOS-APP'     // iOS app target name (replace with existing app name)
 
-        // Other Settings:
-        // https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcConfig.groovy#L30
-
         finalConfigure()          // Must be last call to configuration
     }
 
+Info on additional `j2objcConfig` settings are in (J2objcConfig.groovy)[https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcConfig.groovy#L30].
 Within the Android application's `android/build.gradle`, make it dependent on
 the `shared` project:
 
@@ -70,8 +69,7 @@ directory. It is integrated with Gradle's Java build plugin and may be run as fo
 
     ./gradlew shared:build
 
-To update an existing Xcode project to load the libraries and header files, use this
-additional command:
+To update the existing Xcode project to load the libraries and header files:
 
     ./gradlew shared:j2objcXcode
 

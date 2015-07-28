@@ -37,13 +37,14 @@ version = '0.4.0-alpha'
 pluginBundle {
     website = 'https://www.github.com/j2objc-contrib/j2objc-gradle/'
     vcsUrl = 'https://github.com/j2objc-contrib/j2objc-gradle'
-    description = 'Gradle Plugin for J2ObjC, which is an open-source tool from Google that translates ' +
-                  'Java source code to Objective-C for the iOS (iPhone/iPad) platform. The plugin is ' +
-                  'not affiliated with Google but was developed by former Google Engineers and others. ' +
-                  'J2ObjC enables Java source to be part of an iOS application\'s build, as no editing ' +
-                  'of the generated files is necessary. The goal is to write an app\'s non-UI code ' +
-                  '(such as application logic and data models) in Java, which is then shared by web ' +
-                  'apps (using GWT), Android apps, and iOS apps.'
+    description =
+            "Gradle Plugin for J2ObjC, which is an open-source tool from Google that translates " +
+            "Java source code to Objective-C for the iOS (iPhone/iPad) platform. The plugin is " +
+            "not affiliated with Google but was developed by former Google Engineers and others. " +
+            "J2ObjC enables Java source to be part of an iOS application's build, no editing " +
+            "of the generated files is necessary. The goal is to write an app's non-UI code " +
+            "(such as application logic and data models) in Java, which is then shared by " +
+            "Android apps, web apps (using GWT), and iOS apps (using J2ObjC)."
     tags = ['android', 'java', 'j2objc', 'ios', 'iphone', 'objective-c', 'xcode']
 
     plugins {
