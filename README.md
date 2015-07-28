@@ -37,15 +37,15 @@ Configure `shared/build.gradle` in your Java only project:
 
     // Plugin settings:
     j2objcConfig {
-        xcodeProjectDir '../ios'  // Xcode workspace directory (suggested name)
+        xcodeProjectDir '../ios'  // Xcode workspace directory (suggested directory name)
         xcodeTarget 'IOS-APP'     // iOS app target name (replace with existing app name)
 
         finalConfigure()          // Must be last call to configuration
     }
 
-Info on additional `j2objcConfig` settings are in (J2objcConfig.groovy)[https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcConfig.groovy#L30].
-Within the Android application's `android/build.gradle`, make it dependent on
-the `shared` project:
+Info on additional `j2objcConfig` settings are in [J2objcConfig.groovy](https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcConfig.groovy#L30).
+
+Within the Android application's `android/build.gradle`, make it dependent on the `shared` project:
 
     // File: android/build.gradle
     dependencies {
@@ -56,7 +56,7 @@ the `shared` project:
 ### J2ObjC Installation
 
 Download the latest version from the [J2ObjC Releases](https://github.com/google/j2objc/releases).
-Find the local.properties in your root folder and add the path to the unzipped folder:
+Find (or add) the local.properties in your root folder and add the path to the unzipped folder:
 
     // File: local.properties
     j2objc.home=/J2OBJC_HOME
