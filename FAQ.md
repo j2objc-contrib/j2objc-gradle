@@ -136,8 +136,9 @@ disable the `j2objcTest` task, do the following:
 See the following FAQ answers...
 
 
-### How do I setup a dependency on a Gradle Java project?
+### How do I setup a dependency on a Java project?
 
+The Java project must use the [Gradle Java Plugin](https://docs.gradle.org/current/userguide/java_plugin.html).
 If project `shared` depends on Gradle Java Project A, and you want J2Objc generated Project
 `shared` to depend on J2ObjC generated Project A. Add to `shared/build.gradle`:
 
@@ -146,9 +147,9 @@ If project `shared` depends on Gradle Java Project A, and you want J2Objc genera
         dependsOnJ2objc project(':A')
     }
 
-Project A needs to have the J2objc Gradle Plugin applied and the `j2objcConfig` with the
-`finalConfigure()` call. This applies transitively, so in turn it may need `dependsOnJ2objc`
-again. Alternatively you can try building using `--build-closure` (TODO: need item on this).
+Project A needs to have the J2objc Gradle Plugin applied along with `j2objcConfig {...}`.
+This applies transitively, so in turn it may need `dependsOnJ2objc` again.
+Alternatively you can try building using `--build-closure` (TODO: need item on this).
 The library will be linked in and the headers available for inclusion. Project A will be
 built first.
 
@@ -174,11 +175,11 @@ must be fat binaries with the architectures defined by `supportedArchs` in
 [j2objcConfig.groovy](https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcConfig.groovy).
 
 
-### How do I setup a dependency on a Gradle native library project?
+### How do I setup a dependency on a native library project?
 
-If project `shared` depends on a
-[custom native library](https://docs.gradle.org/current/userguide/nativeBinaries.html#N15F82)
-called someLibrary from native project A. Add to `shared/build.gradle`:
+The dependency must use the Gradle [custom native library](https://docs.gradle.org/current/userguide/nativeBinaries.html#N15F82)
+If project `shared` depends on a called someLibrary from native project A.
+Add to `shared/build.gradle`:
 
     // File: shared/build.gradle
     j2objcConfig {

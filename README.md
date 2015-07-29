@@ -12,20 +12,20 @@ Android apps (natively Java), web apps (using GWT), and iOS apps (using J2ObjC).
 
 ### Usage
 
-At HEAD, this plugin is in a state of significant flux as we refactor it into a first-class
-Gradle plugin for our beta. You may wish to wait for the beta release as we may make backwards
-incompatible changes before that point.
+At HEAD, this plugin is in a state of flux as we refactor it into a first-class
+Gradle plugin for our beta. You may wish to wait for the beta release as we may make
+backwards incompatible changes before that point.
 
 You should start with a clean java only project without any android dependencies.
 It is suggested that the project is named `shared`. It must be buildable using the standard
 [Gradle Java plugin](https://docs.gradle.org/current/userguide/java_plugin.html).
 Starting as an empty project allows you to gradually shift over code from an existing
-Android application. This if beneficial for separation between the application model
-and user interface and a project which can easily be used server side as well.
+Android application. This is beneficial for separation between the application model
+and user interface. It also allows the shared project to be easily used server side as well.
 
 The Android app, shared Java project and Xcode should be sibling directories, i.e children
 of the same root level folder. Suggested folder names are `'android', 'shared' and 'ios'`
-respectivey. See the section below on [Folder Structure](#folder-structure).
+respectively. See the section below on [Folder Structure](#folder-structure).
 
 Configure `shared/build.gradle` in your Java only project:
 
@@ -65,7 +65,8 @@ Find (or add) the local.properties in your root folder and add the path to the u
 ### Build Commands
 
 The plugin will output the generated source and libaries to the `build/j2objcOutputs`
-directory. It is integrated with Gradle's Java build plugin and may be run as follows:
+directory and run all tests. It is integrated with Gradle's Java build plugin and may
+be run as follows:
 
     ./gradlew shared:build
 
@@ -83,7 +84,7 @@ Typically they should both be used together:
 When using the `j2objcTask`, open the `.xcworkspace` file in Xcode. If the `.xcodeproj` file
 is opened in Xcode then CocoaPods will fail. This will appear as an Xcode build time error:
 
-    library not found for -lPods-*-j2objc-shared
+    library not found for -lPods-IOS-APP-j2objc-shared
 
 Also see the FAQ note on [developing with Swift](https://github.com/j2objc-contrib/j2objc-gradle/blob/master/FAQ.md#how-do-i-develop-with-swift).
 
@@ -95,7 +96,7 @@ following to your root level `local.properties` file:
 
     j2objc.release.enabled=false
 
-This is helpful for a tight modify-compile-test loop and using only debug binaries.
+This is helpful for a tight modify-compile-test loop using only debug binaries.
 You can also do this for `j2objc.debug.enabled`.
 
 
@@ -152,12 +153,12 @@ shown before folders, so it is not in strict alphabetical order.
 
 These are the main tasks for the plugin:
 
-    j2objcCycleFinder       - Find cycles that can cause memory leaks, see notes below
-    j2objcTranslate         - Translates to Objective-C
-    j2objcAssemble          - Outputs packed libraries, source & resources to build/j2objcOutputs
-    j2objcTest              - Runs all JUnit tests in the translated code
-    j2objcBuild             - Runs j2objcTest and j2objcAssemble, doesn't run j2objcXcode
-    j2objcXcode             - Xcode updated with libraries, headers & resources (uses CocoaPods)
+    j2objcCycleFinder - Find cycles that can cause memory leaks, see notes below
+    j2objcTranslate   - Translates Java source to Objective-C
+    j2objcAssemble    - Outputs packed libraries, source & resources to build/j2objcOutputs
+    j2objcTest        - Runs all JUnit tests in the translated code
+    j2objcBuild       - Runs j2objcTest and j2objcAssemble, doesn't run j2objcXcode
+    j2objcXcode       - Xcode updated with libraries, headers & resources (uses CocoaPods)
 
 Running the `build` task from the Gradle Java plugin will automatically run the j2objcBuild command
 and all the previous tasks (which it depends on). Only the `j2objcXcode` task needs to be manually
@@ -171,6 +172,7 @@ See [FAQ.md](FAQ.md).
 
 
 ### Contributing
+
 See [CONTRIBUTING.md](CONTRIBUTING.md#quick-start).
 
 
