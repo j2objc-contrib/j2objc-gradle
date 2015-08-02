@@ -37,7 +37,7 @@ This is a [known issue](https://github.com/j2objc-contrib/j2objc-gradle/issues/3
 if you don't have any tests. If you are doing `./gradlew clean build`, try instead
 `./gradlew clean && ./gradlew build`.
 
-When you don't have any test source files, The plugin creates a placeholder to force the
+When you don't have any test source files, the plugin creates a placeholder to force the
 creation of a test binary; this is done during project configuration phase, but `clean` deletes
 this file before `build` can use it.
 
@@ -97,6 +97,19 @@ call even if you do not need to customize any other `j2objConfig` option.
         finalConfigure()
     }
 
+
+### Why is my Android build so much slower after adding j2objc?
+
+Depending on your Android Studio 'run configuration', you may be building more of your Gradle
+project than is neccessary.  For example if your run configuration includes a general 'Make'
+task before running, it will build all your gradle projects, including the j2objc parts.
+Instead make sure your run configuration only performs the `:android:assembleDebug` task:
+
+<img width="664" alt="Run Configuration" src="https://cloud.githubusercontent.com/assets/11729521/9024382/95a511a4-3881-11e5-8525-9e4256990614.png">
+
+At the command line, if you want to use the debug version of your android app,
+make sure you are running `./gradlew :android:assembleDebug` and not for example
+`./gradlew build`.
 
 ### Error: implicit declaration of function 'JreRelease' is invalid in C99 [-Werror,-Wimplicit-function-declaration] JreRelease(this$0_)
 
