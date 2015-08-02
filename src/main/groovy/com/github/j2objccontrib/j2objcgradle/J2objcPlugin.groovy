@@ -81,22 +81,11 @@ class J2objcPlugin implements Plugin<Project> {
                 description "Marker task for all tasks that must be complete before j2objc building"
             }
 
-            // j2objcCycleFinder is disabled by default as it's complex to use and understand.
-            // TODO: consider enabling by default if it's possible to make it easier to use.
-            // To enable the j2objcCycleFinder task, add the following to build.gradle:
-            // j2objcCycleFinder { enabled = true }
-            tasks.create(name: 'j2objcCycleFinder', type: CycleFinderTask,
-                    dependsOn: 'j2objcPreBuild') {
-                group 'build'
-                description "Run the cycle_finder tool on all Java source files"
-                enabled false
-            }
-
             // TODO @Bruno "build/source/apt" must be project.j2objcConfig.generatedSourceDirs no idea how to set it
             // there
             // Dependency may be added in project.plugins.withType for Java or Android plugin
             tasks.create(name: 'j2objcTranslate', type: TranslateTask,
-                    dependsOn: 'j2objcCycleFinder') {
+                    dependsOn: 'j2objcPreBuild') {
                 group 'build'
                 description "Translates all the java source files in to Objective-C using 'j2objc'"
                 additionalSrcFiles = files(
@@ -107,6 +96,16 @@ class J2objcPlugin implements Plugin<Project> {
                 srcGenDir = j2objcSrcGenDir
             }
 
+            // j2objcCycleFinder is disabled by default as it's complex to use and understand.
+            // TODO: consider enabling by default if it's possible to make it easier to use.
+            // To enable the j2objcCycleFinder task, add the following to build.gradle:
+            // j2objcCycleFinder { enabled = true }
+            tasks.create(name: 'j2objcCycleFinder', type: CycleFinderTask,
+                    dependsOn: 'j2objcPreBuild') {
+                group 'build'
+                description "Run the cycle_finder tool on all Java source files"
+                enabled false
+            }
             // Note the '(debug|release)TestJ2objcExecutable' tasks are dynamically created by the Objective-C plugin.
             // It is specified by the testJ2objc native component in NativeCompilation.groovy.
             // TODO: copy and run debug and release tests within j2objcTestContent at the
@@ -128,7 +127,7 @@ class J2objcPlugin implements Plugin<Project> {
                 testBinaryFile = file("${buildDir}/binaries/testJ2objcExecutable/release/testJ2objc")
             }
             tasks.create(name: 'j2objcTest', type: DefaultTask,
-                    dependsOn: ['j2objcTestDebug', 'j2objcTestRelease']) {
+                    dependsOn: ['j2objcCycleFinder', 'j2objcTestDebug', 'j2objcTestRelease']) {
                 group 'build'
                 description "Marker task for all test tasks that take part in regular J2ObjC builds"
             }
