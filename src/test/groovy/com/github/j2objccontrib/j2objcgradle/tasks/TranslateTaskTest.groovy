@@ -50,25 +50,62 @@ class TranslateTaskTest {
         }
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
-        mockProjectExec.demandExecAndReturn(
-                [
-                        '/J2OBJC_HOME/j2objc',
-                        '-d', '/PROJECT_DIR/build/j2objcSrcGen',
-                        '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java',
-                        '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/PROJECT_DIR/build/classes'
-                ])
+        mockProjectExec.demandExecAndReturn([
+                '/J2OBJC_HOME/j2objc',
+                '-d', '/PROJECT_DIR/build/j2objcSrcGen',
+                '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java',
+                '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/PROJECT_DIR/build/classes'
+        ])
 
+        j2objcTranslate.translate(genNonIncrementalInputs())
+
+        mockProjectExec.verify()
+    }
+
+    @Test
+    void translate_J2objcConfig() {
+        TranslateTask j2objcTranslate = (TranslateTask) proj.tasks.create(
+                name: 'j2objcTranslate', type: TranslateTask) {
+            srcGenDir = proj.file("${proj.buildDir}/j2objcSrcGen")
+        }
+        // Tests multiple values with absolute and relative paths
+        j2objcConfig.generatedSourceDirs('/ABS-GENPATH1', 'REL-GENPATH2')
+        j2objcConfig.translateSourcepaths('/ABS-SOURCEPATH1', 'REL-SOURCEPATH2')
+        j2objcConfig.translateClasspaths('/ABS-CLASSPATH1', 'REL-CLASSPATH2')
+        j2objcConfig.translateJ2objcLibs = ['J2OBJC-LIB1', 'J2OBJC-LIB2']
+        j2objcConfig.translateArgs('-ARG1', '-ARG2')
+        // TODO: add testing for translatePattern
+        // j2objcConfig.translatePattern {
+        //     exclude '**/Example.java'
+        // }
+
+        MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
+        mockProjectExec.demandExecAndReturn([
+                '/J2OBJC_HOME/j2objc',
+                '-d', '/PROJECT_DIR/build/j2objcSrcGen',
+                '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java:/ABS-SOURCEPATH1:/PROJECT_DIR/REL-SOURCEPATH2:/ABS-GENPATH1:/PROJECT_DIR/REL-GENPATH2',
+                '-classpath', '/ABS-CLASSPATH1:/PROJECT_DIR/REL-CLASSPATH2:/J2OBJC_HOME/lib/J2OBJC-LIB1:/J2OBJC_HOME/lib/J2OBJC-LIB2:/PROJECT_DIR/build/classes',
+                '-ARG1', '-ARG2',
+        ])
+
+        j2objcTranslate.translate(genNonIncrementalInputs())
+
+        mockProjectExec.verify()
+    }
+
+
+    // Utility Method
+    private static IncrementalTaskInputs genNonIncrementalInputs() {
         IncrementalTaskInputs incrementalTaskInputs = new IncrementalTaskInputs() {
             @Override
             boolean isIncremental() { return false }
+
             @Override
-            void outOfDate(Action<? super InputFileDetails> outOfDateAction) { }
+            void outOfDate(Action<? super InputFileDetails> outOfDateAction) {}
+
             @Override
-            void removed(Action<? super InputFileDetails> removedAction) { }
+            void removed(Action<? super InputFileDetails> removedAction) {}
         }
-
-        j2objcTranslate.translate(incrementalTaskInputs)
-
-        mockProjectExec.verify()
+        return incrementalTaskInputs
     }
 }
