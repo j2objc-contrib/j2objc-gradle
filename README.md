@@ -70,11 +70,11 @@ be run as follows:
 
     ./gradlew shared:build
 
-To update the existing Xcode project to load the libraries and header files:
+During development, to build the libraries and update Xcode (skipping the tests):
 
     ./gradlew shared:j2objcXcode
 
-Typically they should both be used together:
+For a complete build, run both:
 
     ./gradlew shared:build shared:j2objcXcode
 

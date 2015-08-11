@@ -124,7 +124,8 @@ class CycleFinderTask extends DefaultTask {
                 project.files(Utils.j2objcLibs(getJ2objcHome(), getTranslateJ2objcLibs()))
         ])
         // TODO: comment explaining ${project.buildDir}/classes
-        String classpathArg = Utils.joinedPathArg(classpathFiles) + ":${project.buildDir}/classes"
+        String classpathArg = Utils.joinedPathArg(classpathFiles) +
+                              File.pathSeparator + "${project.buildDir}/classes"
 
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()

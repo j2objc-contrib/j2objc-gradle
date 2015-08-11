@@ -250,7 +250,8 @@ class Utils {
         files.each { File file ->
             paths += file.path
         }
-        return paths.join(':')
+        // OS specific separator, i.e. ":" on OS X and ";" on Windows
+        return paths.join(File.pathSeparator)
     }
 
     static String trimTrailingForwardSlash(String path) {

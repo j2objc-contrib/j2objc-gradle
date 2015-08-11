@@ -125,11 +125,12 @@ String message = "the count is negative"  // WRONG - only needed for $var interp
 ```
 
 * Regexes should be written and displayed as
-[http://docs.groovy-lang.org/latest/html/documentation/#_slashy_string](Slashy Strings):
+[Slashy Strings](http://docs.groovy-lang.org/latest/html/documentation/#_slashy_string):
 ```
-String regex = /dot-star:.*,forward-slash:\/,newline:\n/
+String regex = /dot-star:.*, forward-slash:\/, newline:\n/
 logger.debug('Regex is: ' + Utils.escapedSlashyString(regex))
-// Debug log: '/dot-star:.*,forward-slash:\/,newline:\n/'
+
+// Debug log: '/dot-star:.*, forward-slash:\/, newline:\n/'
 ```
 
 
