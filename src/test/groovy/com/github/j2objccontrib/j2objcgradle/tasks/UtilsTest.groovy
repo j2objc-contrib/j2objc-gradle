@@ -257,10 +257,11 @@ class UtilsTest {
 
     @Test
     public void testJoinedPathArg() {
-        FileCollection fileCollection = proj.files("file1", "file2", "/absoluteFile")
+        FileCollection fileCollection = proj.files("relative_file1", "relative_file2", "/absoluteFile")
         String joinedPathArg = Utils.joinedPathArg(fileCollection)
 
-        String expected = "${proj.projectDir}/file1:${proj.projectDir}/file2:/absoluteFile"
+        String expected = "${proj.projectDir}/relative_file1:${proj.projectDir}/relative_file2:/absoluteFile"
+        expected = expected.replaceAll(':', File.pathSeparator)
         assert expected == joinedPathArg
     }
 
@@ -304,8 +305,8 @@ class UtilsTest {
 
     @Test
     void testEscapeSlashyString() {
-        String regex = /forward-slash:\/,newline:\n,multi-digit:\d+/
-        assert "/forward-slash:\\/,newline:\\n,multi-digit:\\d+/" == Utils.escapeSlashyString(regex)
+        String regex = /forward-slash:\/, newline:\n, multi-digit:\d+/
+        assert "/forward-slash:\\/, newline:\\n, multi-digit:\\d+/" == Utils.escapeSlashyString(regex)
     }
 
     @Test

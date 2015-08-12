@@ -243,8 +243,12 @@ class MockProjectExec {
 
             List<String> canonicalizedArgs = execSpec.getArgs().collect { String arg ->
                 return arg
+                        // Use '/J2OBJC_HOME' in unit tests
                         .replace(j2objcHome, j2objcHomeStd)
+                        // Use '/PROJECT_DIR' in unit tests
                         .replace(project.projectDir.path, projectDirStd)
+                        // Use ':' as path separator in unit tests, converted to ';' for Windows
+                        .replace(':', File.pathSeparator)
             }
             assert expectedCommandLine == canonicalizedArgs
             if (expectWorkingDir == null) {
