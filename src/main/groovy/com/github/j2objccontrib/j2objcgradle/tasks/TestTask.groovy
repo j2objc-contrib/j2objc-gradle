@@ -188,7 +188,7 @@ class TestTask extends DefaultTask {
                 "    testMinExpectedTests ${testCount}\n" +
                 "}\n"
         if (getTestMinExpectedTests() == 0) {
-            logger.warn "Min Test check disabled due to: 'testMinExpectedTests 0'"
+            logger.warn("Min Test check disabled due to: 'testMinExpectedTests 0'")
         } else if (testCount < getTestMinExpectedTests()) {
             if (testCount == 0) {
                 message =

@@ -53,6 +53,18 @@ Within the Android application's `android/build.gradle`, make it dependent on th
     }
 
 
+### Minimum Requirements
+
+Gradle 2.4 is required for the compilation support within Gradle. The other necessities
+are the [J2objc Requirements](http://j2objc.org/#requirements).
+
+    * Gradle 2.4
+    * JDK 1.7 or higher
+    * Mac workstation or laptop
+    * Mac OS X 10.9 or higher
+    * Xcode 6 or higher
+
+
 ### J2ObjC Installation
 
 Download the latest version from the [J2ObjC Releases](https://github.com/google/j2objc/releases).

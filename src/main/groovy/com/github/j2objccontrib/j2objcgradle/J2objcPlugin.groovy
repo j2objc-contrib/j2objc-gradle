@@ -26,6 +26,7 @@ import com.github.j2objccontrib.j2objcgradle.tasks.TranslateTask
 import com.github.j2objccontrib.j2objcgradle.tasks.Utils
 import com.github.j2objccontrib.j2objcgradle.tasks.XcodeTask
 import org.gradle.api.DefaultTask
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -42,6 +43,11 @@ class J2objcPlugin implements Plugin<Project> {
         // This avoids a lot of "project." prefixes, such as "project.tasks.create"
         project.with {
             Utils.checkMinGradleVersion(GradleVersion.current())
+
+            if (Utils.isWindows()) {
+                logger.warn('Windows is officially unsupported:\n' +
+                            'https://github.com/j2objc-contrib/j2objc-gradle/blob/master/FAQ.md#can-i-develop-on-windows')
+            }
 
             extensions.create('j2objcConfig', J2objcConfig, project)
 
