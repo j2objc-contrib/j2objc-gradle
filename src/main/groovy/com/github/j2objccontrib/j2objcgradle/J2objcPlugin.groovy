@@ -26,7 +26,6 @@ import com.github.j2objccontrib.j2objcgradle.tasks.TranslateTask
 import com.github.j2objccontrib.j2objcgradle.tasks.Utils
 import com.github.j2objccontrib.j2objcgradle.tasks.XcodeTask
 import org.gradle.api.DefaultTask
-import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -112,6 +111,10 @@ class J2objcPlugin implements Plugin<Project> {
                 description "Run the cycle_finder tool on all Java source files"
                 enabled false
             }
+
+            // NOTE: When adding new tasks, consider whether they fall under 'translate-only' mode, and
+            // filter them in J2objcConfig.finalConfigure otherwise.
+
             // Note the '(debug|release)TestJ2objcExecutable' tasks are dynamically created by the Objective-C plugin.
             // It is specified by the testJ2objc native component in NativeCompilation.groovy.
             // TODO: copy and run debug and release tests within j2objcTestContent at the
