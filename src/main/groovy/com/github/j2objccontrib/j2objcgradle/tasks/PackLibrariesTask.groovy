@@ -19,6 +19,7 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 import com.github.j2objccontrib.j2objcgradle.J2objcConfig
 import groovy.transform.CompileStatic
 import org.gradle.api.DefaultTask
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
@@ -59,6 +60,12 @@ class PackLibrariesTask extends DefaultTask {
     void packLibraries() {
         Utils.projectDelete(project, getOutputLibDirFile())
         getOutputLibDirFile().mkdirs()
+
+        if (Utils.isWindows()) {
+            throw new InvalidUserDataException(
+                    'Windows is officially unsupported. The packLibraries task can only be run on Mac OS X:\n' +
+                    'https://github.com/j2objc-contrib/j2objc-gradle/blob/master/FAQ.md#can-i-develop-on-windows')
+        }
 
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()

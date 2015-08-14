@@ -235,3 +235,19 @@ source and whitelist. Note how this gives and expected cycles of zero.
 For more details:
 - http://j2objc.org/docs/Cycle-Finder-Tool.html
 - https://groups.google.com/forum/#!msg/j2objc-discuss/2fozbf6-liM/R83v7ffX5NMJ
+
+
+### Can I develop on Windows?
+
+Development is officially supported only on Mac OS X. This matches the
+[J2ObjC Requirements](http://j2objc.org/#requirements).
+In practice, the j2objcCycleFinder and j2objcTranslate tasks may work, though it is
+strongly suggested to use this for experimentation only and do all proper development
+on OS X. The team will reject any bugs related to systems that don't meet the
+[minimum requirements](README.md#minimum-requirements).
+
+To experiment on Windows (skipping the unsupported tasks), the following may work:
+
+    ./gradlew shared:j2objcAssembleSource shared:j2objcAssembleResources
+
+Please note that this will not build the packed libraries or update your Xcode project.
