@@ -221,7 +221,9 @@ and building the J2ObjC source:
     `(cd jre_emul && make java_sources_manifest)`
 
 3. Configure j2objcConfig in `shared/build.gradle` so CycleFinder uses the annotated J2ObjC
-source and whitelist. Note how this gives and expected cycles of zero.
+source and whitelist. Note how this specifies an expected cycle count of zero, as the JRE cycles
+are already accounted for in the generated whitelist.  If however, you have additional cycles
+you expect, you should use that number instead of zero.
 
 ```
     // File: shared/build.gradle
