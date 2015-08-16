@@ -29,28 +29,32 @@ respectively. See the section below on [Folder Structure](#folder-structure).
 
 Configure `shared/build.gradle` in your Java only project:
 
-    // File: shared/build.gradle
-    plugins {
-        id 'java'
-        id 'com.github.j2objccontrib.j2objcgradle' version '0.4.0-alpha'
-    }
+```gradle
+// File: shared/build.gradle
+plugins {
+    id 'java'
+    id 'com.github.j2objccontrib.j2objcgradle' version '0.4.0-alpha'
+}
 
-    // Plugin settings:
-    j2objcConfig {
-        xcodeProjectDir '../ios'  // Xcode workspace directory (suggested directory name)
-        xcodeTarget 'IOS-APP'     // iOS app target name (replace with existing app name)
+// Plugin settings:
+j2objcConfig {
+    xcodeProjectDir '../ios'  // Xcode workspace directory (suggested directory name)
+    xcodeTarget 'IOS-APP'     // iOS app target name (replace with existing app name)
 
-        finalConfigure()          // Must be last call to configuration
-    }
+    finalConfigure()          // Must be last call to configuration
+}
+```
 
 Info on additional `j2objcConfig` settings are in [J2objcConfig.groovy](https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcConfig.groovy#L30).
 
 Within the Android application's `android/build.gradle`, make it dependent on the `shared` project:
 
-    // File: android/build.gradle
-    dependencies {
-        compile project(':shared')
-    }
+```gradle
+// File: android/build.gradle
+dependencies {
+    compile project(':shared')
+}
+```
 
 
 ### Minimum Requirements
@@ -70,8 +74,10 @@ are the [J2objc Requirements](http://j2objc.org/#requirements).
 Download the latest version from the [J2ObjC Releases](https://github.com/google/j2objc/releases).
 Find (or add) the local.properties in your root folder and add the path to the unzipped folder:
 
-    // File: local.properties
-    j2objc.home=/J2OBJC_HOME
+```properties
+// File: local.properties
+j2objc.home=/J2OBJC_HOME
+```
 
 
 ### Build Commands
