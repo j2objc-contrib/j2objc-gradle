@@ -80,7 +80,8 @@ class Utils {
             Collections.unmodifiableList(Arrays.asList(
         'debug.enabled',
         'home',
-        'release.enabled'
+        'release.enabled',
+        'translateOnlyMode'
     ))
 
     private static final String PROPERTY_KEY_PREFIX = 'j2objc.'

@@ -212,6 +212,12 @@ class J2objcConfig {
         appendArgs(this.translateSourcepaths, 'translateSourcepaths', translateSourcepaths)
     }
 
+    /**
+     * True iff only translation (and cycle finding, if applicable) should be attempted,
+     * skipping all compilation, linking, and testing tasks.
+     */
+    boolean translateOnlyMode = false
+
 
     // Do not use groovydoc, this option should remain undocumented.
     // WARNING: Do not use this unless you know what you are doing.
@@ -511,16 +517,20 @@ class J2objcConfig {
         assert destSrcMainDir != null
         assert destSrcTestDir != null
 
-        // For convenience, disable all debug and/or release tasks if the user desires.
-        // Note all J2objcPlugin-created tasks are of the form `j2objc.*(Debug|Release)?`
-        // however Native plugin-created tasks (on our behalf) are of the form `.*((D|d)ebug|(R|r)elease).*(j|J)2objc.*'
-        // so these patterns find all such tasks.
 
         // Disable only if explicitly present and not true.
         boolean debugEnabled = Boolean.parseBoolean(Utils.getLocalProperty(project, 'debug.enabled', 'true'))
         boolean releaseEnabled = Boolean.parseBoolean(Utils.getLocalProperty(project, 'release.enabled', 'true'))
+        // Enable only if explicitly present in either the project config OR the local config.
+        boolean translateOnlyMode = this.translateOnlyMode ||
+                                    Boolean.parseBoolean(Utils.getLocalProperty(project, 'translateOnlyMode', 'false'))
+
         project.tasks.all { Task task ->
             String name = task.name
+            // For convenience, disable all debug and/or release tasks if the user desires.
+            // Note all J2objcPlugin-created tasks are of the form `j2objc.*(Debug|Release)?`
+            // however Native plugin-created tasks (on our behalf) are of the form `.*((D|d)ebug|(R|r)elease).*(j|J)2objc.*'
+            // so these patterns find all such tasks.
             if (name.contains('j2objc') || name.contains('J2objc')) {
                 if (!debugEnabled && (name.contains('debug') || name.contains('Debug'))) {
                     task.enabled = false
@@ -529,7 +539,19 @@ class J2objcConfig {
                     task.enabled = false
                 }
             }
+
+            // Support translation-only mode.
+            if (translateOnlyMode) {
+                // First pattern matches all native-compilation tasks.
+                // Second pattern matches plugin-specific tasks beyond translation.
+                if ((name =~ /^.*((J|j)2objc(Executable|StaticLibrary|SharedLibrary|Objc))$/).matches() ||
+                    (name =~ /^j2objc(Assemble|PackLibraries|Test)(Debug|Release)$/).matches()) {
+                    task.enabled = false
+                }
+            }
         }
+
+
     }
     boolean isFinalConfigured() {
         return finalConfigured

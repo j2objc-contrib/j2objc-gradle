@@ -266,10 +266,12 @@ Development is officially supported only on Mac OS X. This matches the
 In practice, the j2objcCycleFinder and j2objcTranslate tasks may work, though it is
 strongly suggested to use this for experimentation only and do all proper development
 on OS X. The team will reject any bugs related to systems that don't meet the
-[minimum requirements](README.md#minimum-requirements).
+[minimum requirements](README.md#minimum-requirements). You can attempt just
+j2objcCycleFinder and j2objcTranslate by adding the following line to your local.properties
+file only on Windows machines.
 
-To experiment on Windows (skipping the unsupported tasks), the following may work:
-
-    ./gradlew shared:j2objcAssembleSource shared:j2objcAssembleResources
+```properties
+    j2objc.translateOnlyMode=true
+```
 
 Please note that this will not build the packed libraries or update your Xcode project.
