@@ -18,17 +18,19 @@ Go to your project folder and do ``gradle wrapper``. Refresh your Eclipse projec
 
 Make sure your arguments are separate strings, not a single space-concatenated string.
 
-    j2objcConfig {
-        // CORRECT
-        translateArgs '-use-arc'
-        translateArgs '-prefixes', 'file.prefixes'
+```gradle
+j2objcConfig {
+    // CORRECT
+    translateArgs '-use-arc'
+    translateArgs '-prefixes', 'file.prefixes'
 
-        // CORRECT
-        translateArgs '-use-arc', '-prefixes', 'file.prefixes'
+    // CORRECT
+    translateArgs '-use-arc', '-prefixes', 'file.prefixes'
 
-        // WRONG
-        translateArgs '-use-arc -prefixes file.prefixes'
-    }
+    // WRONG
+    translateArgs '-use-arc -prefixes file.prefixes'
+}
+```
 
 
 ### Why is my clean build failing?
@@ -49,13 +51,15 @@ In order to include source files from sources different than `src/main/java` you
 For example, if you want to include files from `src-gen/base` both into your JAR and (translated) into
 your Objective C libraries, then add to your `shared/build.gradle`:
 
-    sourceSets {
-        main {
-            java {
-                srcDir 'src-gen/base'
-            }
+```gradle
+sourceSets {
+    main {
+        java {
+            srcDir 'src-gen/base'
         }
     }
+}
+```
 
 
 ### How do I develop with Swift?
@@ -64,26 +68,30 @@ To work with Swift in Xcode, you need to configure a [bridging header](https://d
 Within that bridging header, include the file needed for using the JRE and any classes that you'd like
 to access from Swift code.
 
-    // File: ios/IOS-APP/IOS-APP-bridging-header.h
+```objective-c
+// File: ios/IOS-APP/IOS-APP-bridging-header.h
 
-    // J2ObjC requirement for Java Runtime Environment
-    // Included from /J2OBJC_HOME/include
-    #import "JreEmulation.h"
+// J2ObjC requirement for Java Runtime Environment
+// Included from /J2OBJC_HOME/include
+#import "JreEmulation.h"
 
-    // Swift accessible J2ObjC translated classes
-    // Included from `shared/build/j2objcOutputs/src/main/objc`
-    #import "MyClassOne.h"
-    #import "MyClassTwo.h"
+// Swift accessible J2ObjC translated classes
+// Included from `shared/build/j2objcOutputs/src/main/objc`
+#import "MyClassOne.h"
+#import "MyClassTwo.h"
+```
 
 
 ### How do I enable ARC for my Objective-C classes?
 
 Add the following to your configuration block. [See](https://developer.apple.com/library/mac/releasenotes/ObjectiveC/RN-TransitioningToARC/Introduction/Introduction.html#//apple_ref/doc/uid/TP40011226-CH1-SW15).
 
-    j2objcConfig {
-       translateArgs '-use-arc'
-       extraObjcCompilerArgs '-fobjc-arc'
-    }
+```gradle
+j2objcConfig {
+   translateArgs '-use-arc'
+   extraObjcCompilerArgs '-fobjc-arc'
+}
+```
 
 
 ### How do I call finalConfigure()?
@@ -92,10 +100,12 @@ You must always call `finalConfigure()` at the end of `j2objcConfig {...}` withi
 `build.gradle` file. You need to include an otherwise empty `j2objcConfig {...}` block with this
 call even if you do not need to customize any other `j2objConfig` option.
 
-    j2objcConfig {
-        ...
-        finalConfigure()
-    }
+```gradle
+j2objcConfig {
+    ...
+    finalConfigure()
+}
+```
 
 
 ### Why is my Android build so much slower after adding j2objc?
@@ -122,13 +132,15 @@ You can disable tasks performed by the plugin using the following configuration 
 `build.gradle`. This is separate and alongside the `j2objcConfig` settings. For example, to
 disable the `j2objcTest` task, do the following:
 
-    // File: shared/build.gradle
-    j2objcTest {
-        enabled = false
-    }
-    j2objcConfig {
-        ...
-    }
+```gradle
+// File: shared/build.gradle
+j2objcTest {
+    enabled = false
+}
+j2objcConfig {
+    ...
+}
+```
 
 
 ### How do I setup dependencies with J2ObjC?
@@ -142,10 +154,12 @@ The Java project must use the [Gradle Java Plugin](https://docs.gradle.org/curre
 If project `shared` depends on Gradle Java Project A, and you want J2Objc generated Project
 `shared` to depend on J2ObjC generated Project A. Add to `shared/build.gradle`:
 
-    // File: shared/build.gradle
-    j2objcConfig {
-        dependsOnJ2objc project(':A')
-    }
+```gradle
+// File: shared/build.gradle
+j2objcConfig {
+    dependsOnJ2objc project(':A')
+}
+```
 
 Project A needs to have the J2objc Gradle Plugin applied along with `j2objcConfig {...}`.
 This applies transitively, so in turn it may need `dependsOnJ2objc` again.
@@ -163,12 +177,14 @@ For a Java and J2ObjC project `shared` that depends on library libpreBuilt pre-b
 of Gradle in directory /lib/SOMEPATH, with corresponding headers in /include/SOMEPATH.
 Add to `shared/build.gradle`:
 
-    // File: shared/build.gradle
-    j2objcConfig {
-        extraObjcCompilerArgs '-I/include/SOMEPATH'
-        extraLinkerArgs '-L/lib/SOMEPATH'
-        extraLinkerArgs '-lpreBuilt'
-    }
+```gradle
+// File: shared/build.gradle
+j2objcConfig {
+    extraObjcCompilerArgs '-I/include/SOMEPATH'
+    extraLinkerArgs '-L/lib/SOMEPATH'
+    extraLinkerArgs '-lpreBuilt'
+}
+```
 
 The library will be linked in and the headers available for inclusion. All prebuilt libraries
 must be fat binaries with the architectures defined by `supportedArchs` in
@@ -181,10 +197,12 @@ The dependency must use the Gradle [custom native library](https://docs.gradle.o
 If project `shared` depends on a called someLibrary from native project A.
 Add to `shared/build.gradle`:
 
-    // File: shared/build.gradle
-    j2objcConfig {
-        extraNativeLib project: ':A', library: 'someLibrary', linkage: 'static'
-    }
+```gradle
+// File: shared/build.gradle
+j2objcConfig {
+    extraNativeLib project: ':A', library: 'someLibrary', linkage: 'static'
+}
+```
 
 
 ### Cycle Finder Basic Setup
@@ -198,10 +216,12 @@ The basic setup will implicitly check for 40 memory cycles - this is the expecte
 of erroneous matches with `jre_emul` library for J2ObjC version 0.9.6.1. This may cause
 issues if this number changes with future versions of J2ObjC libraries.
 
-    // File: shared/build.gradle
-    j2objcCycleFinder {
-        enabled = true
-    }
+```gradle
+// File: shared/build.gradle
+j2objcCycleFinder {
+    enabled = true
+}
+```
 
 Also see FAQ's [Advanced Cycle Finder Setup](FAQ.md#Cycle-Finder-Advanced-Setup).
 
@@ -225,7 +245,7 @@ source and whitelist. Note how this specifies an expected cycle count of zero, a
 are already accounted for in the generated whitelist.  If however, you have additional cycles
 you expect, you should use that number instead of zero.
 
-```
+```gradle
     // File: shared/build.gradle
     j2objcConfig {
         cycleFinderArgs '--whitelist', 'J2OBJC_REPO/jre_emul/cycle_whitelist.txt'
