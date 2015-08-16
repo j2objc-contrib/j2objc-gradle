@@ -16,7 +16,9 @@
 
 For plugin contributors, you should build the plugin from this repository's root:
 
-    $ ./gradlew build
+```sh
+$ ./gradlew build
+```
 
 This will create a .jar containing the plugin at projectDir/build/libs/j2objc-gradle-X.Y.Z-alpha.jar
 
@@ -27,21 +29,21 @@ project that uses the plugin:
 1. Add the `buildscript` and `apply plugin` lines then update X.Y.Z based on "version = 'X.Y.Z-alpha'"
 in j2objc-gradle/build.gradle
 
-```
-    // File: shared/build.gradle
+```gradle
+// File: shared/build.gradle
 
-    //plugins {
-    //    id 'java'
-    //    id 'com.github.j2objccontrib.j2objcgradle' version 'X.Y.Z-alpha'
-    //}
+//plugins {
+//    id 'java'
+//    id 'com.github.j2objccontrib.j2objcgradle' version 'X.Y.Z-alpha'
+//}
 
-    buildscript {
-        dependencies {
-            classpath files('/LOCAL_J2OBJC_GRADLE/j2objc-gradle/build/libs/j2objc-gradle-X.Y.Z-alpha.jar')
-        }
+buildscript {
+    dependencies {
+        classpath files('/LOCAL_J2OBJC_GRADLE/j2objc-gradle/build/libs/j2objc-gradle-X.Y.Z-alpha.jar')
     }
-    apply plugin: 'java'
-    apply plugin: 'com.github.j2objccontrib.j2objcgradle'
+}
+apply plugin: 'java'
+apply plugin: 'com.github.j2objccontrib.j2objcgradle'
 ```
 
 Note that when rapidly developing and testing changes to the plugin by building your own project,
@@ -81,13 +83,13 @@ a customizations that aren't explicit in those guides.
 Further Customizations:
 
 * Function calls should use parentheses:
-```
+```groovy
 logging.captureStandardOutput(LogLevel.INFO)  // CORRECT
 logging.captureStandardOutput LogLevel.INFO   // WRONG
 ```
 
 * Configure calls do not use parentheses:
-```
+```groovy
 project.exec {
     executable 'j2objc'              // CORRECT
     args '-sourcepath', sourcepath   // CORRECT
@@ -98,7 +100,7 @@ project.exec {
 ```
 
 * Explicit Types instead of 'def':
-```
+```groovy
 String message = 'a message'  // CORRECT
 def message = 'a message'     // WRONG
 
@@ -108,7 +110,7 @@ translateArgs.each { arg ->         // WRONG
 ```
 
 * GString curly braces only for methods or object members:
-```
+```groovy
 String message = "the count is $count"           // CORRECT
 String message = "the count is ${object.count}"  // CORRECT
 String message = "the count is ${method()}"      // CORRECT
@@ -119,14 +121,14 @@ String message = "the count is $object.count"    // incorrect as it only prints 
 ```
 
 * Single quotes for non-GString, i.e. no string interpolation:
-```
+```groovy
 String message = 'the count is negative'  // CORRECT
 String message = "the count is negative"  // WRONG - only needed for $var interpolation
 ```
 
 * Regexes should be written and displayed as
 [Slashy Strings](http://docs.groovy-lang.org/latest/html/documentation/#_slashy_string):
-```
+```groovy
 String regex = /dot-star:.*, forward-slash:\/, newline:\n/
 logger.debug('Regex is: ' + Utils.escapedSlashyString(regex))
 
@@ -139,7 +141,7 @@ Unit tests must be written for all new code and major changes. Please follow the
 of existing tests.
 
 Running `build` also runs all the unit tests:
-```
+```sh
 ./gradlew build
 ```
 
@@ -164,7 +166,7 @@ branch is called 'patch-1' and that your pull request is number 46.
 
 
 ### Preparation
-```
+```sh
 # have a clean working directory and index
 # from the tip of your patch-1 branch: first save away your work
 git branch backup46
@@ -185,7 +187,7 @@ https://help.github.com/articles/configuring-a-remote-for-a-fork/,
 then do https://help.github.com/articles/syncing-a-fork/.
 Your local master should now be equal to upstream/master.
 Push your local master to your origin remote:
-```
+```sh
 # While in your local master branch
 git push
 ```
@@ -204,7 +206,7 @@ The following steps will:
 2. Allow you to merge those change in to yours.
 3. Allow you to squash all your commits into a single well-described commit.
 
-```
+```sh
 git checkout patch-1
 # condense this down to one commit to preserve proper project history
 git rebase -i master
