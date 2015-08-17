@@ -36,7 +36,7 @@ import org.gradle.util.ConfigureUtil
  *
  * j2objcConfig {
  *     xcodeProjectDir '../ios'
- *     xcodeTarget 'IosApp'
+ *     xcodeTarget 'IOS-APP'
  *     finalConfigure()
  * }
  *
@@ -432,6 +432,7 @@ class J2objcConfig {
      * @param extraObjcSrcDirs add directories for Objective-C source to be compiled
      */
     void extraObjcSrcDirs(String... extraObjcSrcDirs) {
+        verifyNoSpaceArgs('extraObjcSrcDirs', extraObjcSrcDirs)
         for (String arg in extraObjcSrcDirs) {
             this.extraObjcSrcDirs += arg
         }
@@ -447,6 +448,7 @@ class J2objcConfig {
      * @param extraObjcCompilerArgs add arguments to pass to the native compiler.
      */
     void extraObjcCompilerArgs(String... extraObjcCompilerArgs) {
+        verifyNoSpaceArgs('extraObjcCompilerArgs', extraObjcCompilerArgs)
         for (String arg in extraObjcCompilerArgs) {
             this.extraObjcCompilerArgs += arg
         }
@@ -462,6 +464,7 @@ class J2objcConfig {
      * @param extraLinkerArgs add arguments to pass to the native linker.
      */
     void extraLinkerArgs(String... extraLinkerArgs) {
+        verifyNoSpaceArgs('extraLinkerArgs', extraLinkerArgs)
         for (String arg in extraLinkerArgs) {
             this.extraLinkerArgs += arg
         }
@@ -495,6 +498,11 @@ class J2objcConfig {
     String xcodeProjectDir = null
     /**
      * Xcode app target the generated library should be linked to.
+     *
+     * This will automatically add linkage for any target that starts with the
+     * same name. This should include any Test and Watch targets. For the example of
+     * xcodeTarget == 'IOS-APP', it will add targets for 'IOS-APPTests',
+     * 'IOS-APP WatchKit App' & 'IOS-APP WatchKit Extension' (if they exist).
      */
     String xcodeTarget = null
 
@@ -516,7 +524,6 @@ class J2objcConfig {
         assert destLibDir != null
         assert destSrcMainDir != null
         assert destSrcTestDir != null
-
 
         // Disable only if explicitly present and not true.
         boolean debugEnabled = Boolean.parseBoolean(Utils.getLocalProperty(project, 'debug.enabled', 'true'))
@@ -565,8 +572,15 @@ class J2objcConfig {
     // }
     @VisibleForTesting
     static void appendArgs(List<String> listArgs, String nameArgs, String... args) {
+        verifyNoSpaceArgs(nameArgs, args)
+        listArgs.addAll(Arrays.asList(args))
+    }
+
+    // Verify that no argument contains a space
+    @VisibleForTesting
+    static void verifyNoSpaceArgs(String nameArgs, String... args) {
         if (args == null) {
-            throw new InvalidUserDataException("args == null!")
+            throw new InvalidUserDataException("$nameArgs == null!")
         }
         for (String arg in args) {
             if (arg.contains(' ')) {
@@ -576,6 +590,5 @@ class J2objcConfig {
                         "$nameArgs $rewrittenArgs")
             }
         }
-        listArgs.addAll(Arrays.asList(args))
     }
 }
