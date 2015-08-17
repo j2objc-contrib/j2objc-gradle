@@ -27,6 +27,8 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
+import java.util.regex.Matcher
+
 /**
  * Updates the Xcode project with j2objc generated files and resources.
  * <p/>
@@ -184,11 +186,11 @@ class XcodeTask extends DefaultTask {
                     "Xcode settings need to be configured in this project's build.gradle.\n" +
                     "The directory should point to the location containing your Xcode project,\n" +
                     "including the .xccodeproj and .xcworkspace files. The target is the name,\n" +
-                    "of the iOS app within Xcode (not the tests or watch extension targets).\n" +
+                    "of the iOS app within Xcode (not the tests or watch app target).\n" +
                     "\n" +
                     "j2objcConfig {\n" +
                     "    xcodeProjectDir '../ios'\n" +
-                    "    xcodeTarget 'IOS-APP-TARGET'\n" +
+                    "    xcodeTarget 'IOS-APP'\n" +
                     "}\n" +
                     "\n" +
                     "Also see the guidelines for the folder structure:\n" +
@@ -251,6 +253,27 @@ class XcodeTask extends DefaultTask {
     }
 
     /**
+     * Extracts all target names that start with xcodeTarget.
+     *
+     * For xcodeTarget == 'IOS-APP', likely extracted names are:
+     *   IOS-APP
+     *   IOS-APPTests
+     *   IOS-APP WatchKit App
+     *   IOS-APP WatchKit Extension
+     */
+    @VisibleForTesting
+    static List<String> extractXcodeTargets(String xcodeTarget, List<String> podFileLines) {
+        List<String> xcodeTargets = new ArrayList<>()
+        for (line in podFileLines) {
+            Matcher matcher = (line =~ /^target '($xcodeTarget[^']*)' do$/)
+            if (matcher.find()) {
+                xcodeTargets.add(matcher.group(1))
+            }
+        }
+        return xcodeTargets
+    }
+
+    /**
      * Modify in place the existing podFile.
      */
     @VisibleForTesting
@@ -260,12 +283,22 @@ class XcodeTask extends DefaultTask {
 
         List<String> oldPodFileLines = podFile.readLines()
         List<String> newPodFileLines = new ArrayList<String>(oldPodFileLines)
-        newPodFileLines = updatePodFileLines(
-                newPodFileLines, xcodeTarget,
-                podNameDebug, ['Debug'], podPath)
-        newPodFileLines = updatePodFileLines(
-                newPodFileLines, xcodeTarget,
-                podNameRelease, ['Release'], podPath)
+        List<String> xcodeTargets = extractXcodeTargets(xcodeTarget, oldPodFileLines)
+
+        if (! xcodeTargets.contains(xcodeTarget)) {
+            throw new InvalidUserDataException(
+                    "Can't find iOS App Target '$xcodeTarget' in Podfile: ${podFile.absolutePath}")
+        }
+
+        // Iterate over all the xcodeTargets for Debug and Release
+        for (xcodeTargetName in xcodeTargets) {
+            newPodFileLines = updatePodFileLines(
+                    newPodFileLines, xcodeTargetName,
+                    podNameDebug, ['Debug'], podPath)
+            newPodFileLines = updatePodFileLines(
+                    newPodFileLines, xcodeTargetName,
+                    podNameRelease, ['Release'], podPath)
+        }
 
         // Write file only if it's changed
         if (!oldPodFileLines.equals(newPodFileLines)) {

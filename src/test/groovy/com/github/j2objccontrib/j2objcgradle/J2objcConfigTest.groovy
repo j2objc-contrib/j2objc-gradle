@@ -23,7 +23,9 @@ import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.util.ConfigureUtil
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.ExpectedException
 
 /**
  * J2objcConfig tests.
@@ -32,6 +34,9 @@ import org.junit.Test
 class J2objcConfigTest {
 
     private Project proj
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @Before
     void setUp() {
@@ -101,7 +106,7 @@ class J2objcConfigTest {
     }
 
     @Test
-    void testconfigureArgs() {
+    void testAppendArgs() {
         List<String> args = new ArrayList()
         J2objcConfig.appendArgs(args, 'testArgs', '-arg1', '-arg2')
 
@@ -110,14 +115,41 @@ class J2objcConfigTest {
     }
 
     @Test(expected = InvalidUserDataException.class)
-    void testconfigureArgs_Null() {
+    void testAppendArgs_Null() {
         List<String> args = new ArrayList()
         J2objcConfig.appendArgs(args, 'testArgs', null)
     }
 
     @Test(expected = InvalidUserDataException.class)
-    void testconfigureArgs_Spaces() {
+    void testAppendArgs_Spaces() {
         List<String> args = new ArrayList()
         J2objcConfig.appendArgs(args, 'testArgs', '-arg1 -arg2')
+    }
+
+    @Test
+    void testVerifyNoSpaceArgs_NoSpace() {
+        J2objcConfig.verifyNoSpaceArgs('testArgs', '-arg1', '-arg2')
+    }
+
+    @Test
+    void testVerifyNoSpaceArgs_Space() {
+        expectedException.expect(InvalidUserDataException.class)
+        expectedException.expectMessage('argument should not contain spaces and be written out as distinct entries')
+        expectedException.expectMessage("testArgs '-arg1', '-arg2'")
+
+        J2objcConfig.verifyNoSpaceArgs('testArgs', '-arg1 -arg2')
+    }
+
+    // A small number of the configuration variable must be String[]
+    // instead of List<String>, this tests 'extraLinkerArgs' as an example.
+    @Test
+    void testStringArrayArgs() {
+        J2objcConfig j2objcConfig = new J2objcConfig(proj)
+        j2objcConfig.extraLinkerArgs = ['-arg1']
+
+        j2objcConfig.extraLinkerArgs('-arg2', '-arg3')
+
+        String[] expected = ['-arg1', '-arg2', '-arg3']
+        assert Arrays.equals(expected, j2objcConfig.extraLinkerArgs)
     }
 }
