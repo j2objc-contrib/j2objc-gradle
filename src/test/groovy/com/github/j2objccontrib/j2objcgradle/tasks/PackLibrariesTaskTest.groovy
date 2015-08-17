@@ -18,14 +18,9 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 
 import com.github.j2objccontrib.j2objcgradle.J2objcConfig
 import com.github.j2objccontrib.j2objcgradle.NativeCompilation
-import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
-import org.gradle.api.file.FileCollection
-import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.ExpectedException
 
 /**
  * TestTask tests.
