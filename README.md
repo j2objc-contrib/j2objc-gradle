@@ -75,7 +75,7 @@ Download the latest version from the [J2ObjC Releases](https://github.com/google
 Find (or add) the local.properties in your root folder and add the path to the unzipped folder:
 
 ```properties
-// File: local.properties
+# File: local.properties
 j2objc.home=/J2OBJC_HOME
 ```
 
@@ -171,7 +171,7 @@ shown before folders, so it is not in strict alphabetical order.
 
 These are the main tasks for the plugin:
 
-    j2objcCycleFinder - Find cycles that can cause memory leaks, see notes below
+    j2objcCycleFinder - Find memory cycles that can cause leaks, see FAQ for more details
     j2objcTranslate   - Translates Java source to Objective-C
     j2objcAssemble    - Outputs packed libraries, source & resources to build/j2objcOutputs
     j2objcTest        - Runs all JUnit tests in the translated code
