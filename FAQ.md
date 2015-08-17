@@ -246,12 +246,12 @@ are already accounted for in the generated whitelist.  If however, you have addi
 you expect, you should use that number instead of zero.
 
 ```gradle
-    // File: shared/build.gradle
-    j2objcConfig {
-        cycleFinderArgs '--whitelist', 'J2OBJC_REPO/jre_emul/cycle_whitelist.txt'
-        cycleFinderArgs '--sourcefilelist', 'J2OBJC_REPO/jre_emul/build_result/java_sources.mf'
-        cycleFinderExpectedCycles 0
-    }
+// File: shared/build.gradle
+j2objcConfig {
+    cycleFinderArgs '--whitelist', 'J2OBJC_REPO/jre_emul/cycle_whitelist.txt'
+    cycleFinderArgs '--sourcefilelist', 'J2OBJC_REPO/jre_emul/build_result/java_sources.mf'
+    cycleFinderExpectedCycles 0
+}
 ```
 
 For more details:
@@ -259,19 +259,17 @@ For more details:
 - https://groups.google.com/forum/#!msg/j2objc-discuss/2fozbf6-liM/R83v7ffX5NMJ
 
 
-### Can I develop on Windows?
+### How do I develop on Windows?
 
-Development is officially supported only on Mac OS X. This matches the
+Windows support is limited to the j2objcCycleFinder and j2objcTranslate tasks. Windows can't
+support j2objcTest, j2objcXcode or the library packing (see [task descriptions](README.md#tasks)).
+Complete development on iOS is supported only on Mac OS X. This matches the
 [J2ObjC Requirements](http://j2objc.org/#requirements).
-In practice, the j2objcCycleFinder and j2objcTranslate tasks may work, though it is
-strongly suggested to use this for experimentation only and do all proper development
-on OS X. The team will reject any bugs related to systems that don't meet the
-[minimum requirements](README.md#minimum-requirements). You can attempt just
-j2objcCycleFinder and j2objcTranslate by adding the following line to your local.properties
-file only on Windows machines.
+
+It is recommended that Windows users use translateOnlyMode to reduce the chances of breaking the
+iOS / OS X build. This can be done by the Windows developers configuring their local.properties:
 
 ```properties
-    j2objc.translateOnlyMode=true
+# File: local.properties
+j2objc.translateOnlyMode=true
 ```
-
-Please note that this will not build the packed libraries or update your Xcode project.
