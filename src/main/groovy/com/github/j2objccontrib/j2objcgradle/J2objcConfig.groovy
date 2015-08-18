@@ -360,6 +360,35 @@ class J2objcConfig {
     // Public to allow assignment of array of targets as shown in example
     List<String> supportedArchs = NativeCompilation.ALL_SUPPORTED_ARCHS.clone() as List<String>
 
+    /**
+     * An architecture is active if it is both supported ({@link #supportedArchs})
+     * and enabled in the current environment via the comma-separated j2objc.enabledArchs
+     * value in local.properties.
+     * <p/>
+     * If no j2objc.enabledArchs value is specified in local.properties, all supported
+     * architectures are also active, otherwise the intersection of supportedArchs
+     * and j2objc.enabledArchs is used.
+     */
+    List<String> getActiveArchs() {
+        // null is the default value, since an explicit empty string means no architectures
+        // are enabled.
+        String archsCsv = Utils.getLocalProperty(project, 'enabledArchs', null)
+        if (archsCsv == null) {
+            return supportedArchs
+        }
+        List<String> enabledArchs = archsCsv.split(',').toList()
+        // Given `j2objc.enabledArchs=` we will have one architecture of empty string,
+        // instead we want no architectures at all in this case.
+        enabledArchs.remove('')
+        List<String> invalidArchs = enabledArchs.minus(
+                NativeCompilation.ALL_SUPPORTED_ARCHS.clone() as List<String>).toList()
+        if (!invalidArchs.isEmpty()) {
+            throw new InvalidUserDataException("Invalid 'enabledArchs' entry: " + invalidArchs.join(', '))
+        }
+        // Keep the return value sorted to prevent changes in intersection ordering
+        // from forcing a rebuild.
+        return supportedArchs.intersect(enabledArchs).toList().sort()
+    }
 
     // TEST
     /**

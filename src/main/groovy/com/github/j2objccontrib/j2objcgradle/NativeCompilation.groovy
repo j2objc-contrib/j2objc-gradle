@@ -224,7 +224,7 @@ class NativeCompilation {
                                 }
                             }
                         }
-                        j2objcConfig.supportedArchs.each { String arch ->
+                        j2objcConfig.activeArchs.each { String arch ->
                             if (!(arch in ALL_SUPPORTED_ARCHS)) {
                                 throw new InvalidUserDataException(
                                         "Requested architecture $arch must be one of $ALL_SUPPORTED_ARCHS")
