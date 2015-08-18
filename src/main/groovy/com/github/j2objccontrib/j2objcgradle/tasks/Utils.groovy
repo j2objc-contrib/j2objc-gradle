@@ -87,6 +87,12 @@ class Utils {
 
     private static final String PROPERTY_KEY_PREFIX = 'j2objc.'
 
+    /**
+     * Retrieves the local properties with highest precedence:
+     * 1.  local.properties value like j2objc.name1.name2 when present.
+     * 2.  environment variable like J2OBJC_NAME1_NAME2 when present.
+     * 3.  defaultValue.
+     */
     static String getLocalProperty(Project proj, String key, String defaultValue = null) {
 
         // Check for requesting invalid key
@@ -96,7 +102,7 @@ class Utils {
                     "Valid Keys: $PROPERTIES_VALID_KEYS")
         }
         File localPropertiesFile = new File(proj.rootDir, 'local.properties')
-        String result = defaultValue
+        String result = null
         if (localPropertiesFile.exists()) {
             Properties localProperties = new Properties()
             localPropertiesFile.withInputStream {
@@ -117,18 +123,21 @@ class Utils {
                 }
             }
 
-            result = localProperties.getProperty(PROPERTY_KEY_PREFIX + key, defaultValue)
+            result = localProperties.getProperty(PROPERTY_KEY_PREFIX + key, null)
         }
-        return result
+        if (result == null) {
+            // debug.enabled becomes J2OBJC_DEBUG_ENABLED
+            String envName = 'J2OBJC_' + key.replace('.', '_').toUpperCase(Locale.ENGLISH)
+            // TODO: Unit tests.
+            result = System.getenv(envName)
+        }
+        return result == null ? defaultValue : result
     }
 
     // MUST be used only in @Input getJ2objcHome() methods to ensure up-to-date checks are correct
     // @Input getJ2objcHome() method can be used freely inside the task action
     static String j2objcHome(Project proj) {
         String result = getLocalProperty(proj, 'home')
-        if (result == null) {
-            result = System.getenv('J2OBJC_HOME')
-        }
         if (result == null) {
             String message =
                     "J2ObjC Home not set, this should be configured either:\n" +

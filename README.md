@@ -113,11 +113,20 @@ Also see the FAQ note on [developing with Swift](https://github.com/j2objc-contr
 You can reduce the build time by 50% by skipping the release binaries by adding the
 following to your root level `local.properties` file:
 
-    j2objc.release.enabled=false
+```properties
+j2objc.release.enabled=false
+```
 
 This is helpful for a tight modify-compile-test loop using only debug binaries.
 You can also do this for `j2objc.debug.enabled`.
 
+If you'd rather just disable release builds for a particular run of the command line:
+
+```sh
+J2OBJC_RELEASE_ENABLED=false ./gradlew build
+```
+
+The `local.properties` value overrides the environment variable, if present.
 
 ### J2ObjC Standard Libraries
 
