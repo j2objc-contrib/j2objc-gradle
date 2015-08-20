@@ -264,3 +264,34 @@ published version (this was the sha used previously in step 3 from the last sect
 3.  Merge the release branch back into master.
 4.  Delete the release branch from the repository.
 5.  If further hotfixes are needed, start at step 1, using the last commit from step 2.
+
+### Issue tracking
+Labels are assigned as follows:
+
+label | description
+----- | -----------
+**type** | Type of issue (use one)
+`type:bug` | Defect in the codebase
+`type:enhancement` | Feature request
+`type:push-release` | Request/documentation for a release
+`type:question` | Question from a user
+**status** | Status of the issue
+(none) | Issue has not yet been triaged by a committer
+(assigned to a committer) | A committer is working on this
+`status:duplicate` | Closed as duplicate of another issue (please link in closing comment)
+`status:help-wanted` | Requesting PRs from the public
+`status:icebox` | Nice to have, but indefinitely on hold
+`status:no-repro` | Closed because we could not reproduce the error
+`status:obsolete` | Closed because the issue no longer occurs
+`status:public-dev-assigned` | Expecting a PR from a particular member of the public (GitHub prevents us from assigning the issue explicitly)
+`status:wontfix` | Closed because we've chosen not to fix this
+`status:works-as-intended` | Closed because the described behavior is intended
+**categories** | Which component(s) of the project are affected
+`cat:convenience-magic` | Increasing convenience for plugin users by ex. automatic configuration
+`cat:dependencies` | Handling of dependencies among projects, libraries, etc.
+`cat:docs` | Improving project documentation
+`cat:testing` | Improving project test coverage
+`cat:native-build` | Building the translated code into libraries
+`cat:perf` | Improving performance
+`cat:translation` | The core `j2objc` execution phase, converting Java to Objective-C
+`cat:xcode` | Integration with Xcode
