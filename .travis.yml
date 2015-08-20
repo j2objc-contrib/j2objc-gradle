@@ -9,7 +9,8 @@ language: groovy
 jdk:
   - oraclejdk7
   - openjdk7
-  - oraclejdk8
+# Renable after fixing #374
+#  - oraclejdk8
 
 # We can be run in a container for improved performance.
 sudo: false
