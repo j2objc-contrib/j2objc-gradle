@@ -1,8 +1,9 @@
 language: groovy
 
-os:
-  - linux
-  - osx
+# TODO: Multi-os in beta, requires approval from Travis.
+#os:
+#  - linux
+#  - osx
 
 # Everything except Java 6.
 jdk:
