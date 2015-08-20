@@ -34,6 +34,14 @@ task wrapper(type: Wrapper) {
 group = 'com.github.j2objccontrib.j2objcgradle'
 version = '0.4.0-alpha'
 
+test {
+    testLogging {
+        // Provide full exception info on failure, instead
+        // of just pointing to an HTML file.
+        exceptionFormat = 'full'
+    }
+}
+
 pluginBundle {
     website = 'https://www.github.com/j2objc-contrib/j2objc-gradle/'
     vcsUrl = 'https://github.com/j2objc-contrib/j2objc-gradle'
