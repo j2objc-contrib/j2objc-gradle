@@ -9,6 +9,7 @@ of the generated files is necessary. The goal is to write an app's non-UI code
 (such as application logic and data models) in Java, which is then shared by
 Android apps (natively Java), web apps (using GWT), and iOS apps (using J2ObjC).
 
+[![Build Status](https://travis-ci.org/j2objc-contrib/j2objc-gradle.svg)](https://travis-ci.org/j2objc-contrib/j2objc-gradle)
 
 ### Usage
 

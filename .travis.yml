@@ -1,1 +1,29 @@
 language: groovy
+
+# TODO: Multi-os in beta, requires approval from Travis.
+#os:
+#  - linux
+#  - osx
+
+# Everything except Java 6.
+jdk:
+  - oraclejdk7
+  - openjdk7
+  - oraclejdk8
+
+# We can be run in a container for improved performance.
+sudo: false
+
+# If these steps fail, the build is 'errored' - i.e. misconfigured.
+# This can fail if we cannot download Gradle 2.4 or the libraries
+# we depend on.
+install: 
+  - ./gradlew wrapper
+  - ./gradlew dependencies
+
+# If these steps fail, the build is 'failed' - i.e. we have a code defect.
+# We compile (assemble) and then build (which also tests) to capture build
+# and test failures separately.
+script:
+  - ./gradlew assemble
+  - ./gradlew build
