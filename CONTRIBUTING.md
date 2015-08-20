@@ -226,6 +226,7 @@ https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging
 
 
 ### Publishing and versioning
+
 These instructions are only for plugin maintainers; if you are just working
 on issues or pull requests, you can ignore this section.
 
@@ -236,19 +237,30 @@ published versions on plugins.gradle.org.  All branches and tags are on the
 
 1.  Determine the version number.  Use https://semver.org to guide which
 slot in the version number should be bumped.  We'll call this `vX.Y.Z`.
-2.  From `master`, create a branch `release_vX.Y.Z` and check it out.
-3.  Optional: If any critical bugfixes are deemed neccessary, merge those
-commits into this release branch.
-4.  As a separate commit, bump the version number in `build.gradle`. 
+2.  As a separate commit, bump the version number in `build.gradle`.
 File a PR, and merge that PR into the release branch.
-5.  Tag the merge commit where that PR is merged into `release_vX.Y.Z` as `vX.Y.Z` and push that
-tag to the repository.  It is important that the commit where the
-merge occurred into the release branch is tagged - not the commit that bumped the version number, but
-also not the commit that merges the release branch into master (see below).
-6.  Do a clean build and then publish the new version to https://plugins.gradle.org<br>
-`./gradlew clean build publishPlugins`
-7.  Merge the release branch back into master.
-8.  Delete the release branch from the repository.  If for some reason a hotfix
-is later needed, start at step 1, but instead of creating a new branch from the tip
-of `master`, instead create the release branch from the commit tagged in step 5.  Do
-not reuse the old release branch.
+3.  Tag the merge commit where that PR is merged into master as `vX.Y.Z` and push
+that tag to the repository.  It is important that this is not the commit for the PR.
+Since you are working directly off master, you must manually verify that no additional
+commits/PRs have been merged that you don't want in the release. Finally, verify that the
+build is Successful on Travis CI at the specific commit you are about to tag."
+```sh
+git tag -a v0.4.1-alpha cfdc1aa
+git push upstream v0.4.1-alpha
+```
+4.  Do a clean build and then publish the new version to https://plugins.gradle.org<br>
+```sh
+./gradlew clean build publishPlugins
+```
+
+### Hotfixes
+
+Currently the development is manageable, such that release branching can be isolated
+to hot fixes. When that is necessary, do the following:
+
+1.  Create a branch `release_vX.Y.Z` on the `master` repo from the last commit for the
+published version (this was the sha used previously in step 3 from the last section).
+2.  Merge in hotfix PRs to the release branch.
+3.  Merge the release branch back into master.
+4.  Delete the release branch from the repository.
+5.  If further hotfixes are needed, start at step 1, using the last commit from step 2.
