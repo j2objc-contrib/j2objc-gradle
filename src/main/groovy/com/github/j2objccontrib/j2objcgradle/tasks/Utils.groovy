@@ -79,6 +79,7 @@ class Utils {
     private static final List<String> PROPERTIES_VALID_KEYS =
             Collections.unmodifiableList(Arrays.asList(
         'debug.enabled',
+        'enabledArchs',
         'home',
         'release.enabled',
         'translateOnlyMode'

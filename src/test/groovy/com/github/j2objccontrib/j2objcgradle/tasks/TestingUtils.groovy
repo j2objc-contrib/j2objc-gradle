@@ -48,6 +48,8 @@ class TestingUtils {
         boolean createReportsDir = false
         /** the parent project for this project, if any */
         Project rootProject = null
+        /** lines to add to the local.properties file (in addition to j2objc.home) */
+        List<String> extraLocalProperties = []
     }
 
     /**
@@ -78,7 +80,9 @@ class TestingUtils {
         // To satisfy Utils.J2objcHome()
         String j2objcHome = File.createTempDir('J2OBJC_HOME', '').path
         File localProperties = proj.file('local.properties')
-        localProperties.write("j2objc.home=$j2objcHome\n")
+        List<String> localPropertiesLines = ["j2objc.home=$j2objcHome"]
+        localPropertiesLines.addAll(config.extraLocalProperties)
+        localProperties.write(localPropertiesLines.join('\n'))
 
         J2objcConfig j2objcConfig = null
         if (config.applyJ2objcPlugin) {
@@ -96,6 +100,10 @@ class TestingUtils {
         }
 
         return [proj, j2objcHome, j2objcConfig]
+    }
+
+    static J2objcConfig setupProjectJ2objcConfig(ProjectConfig config) {
+        return setupProject(config)[2] as J2objcConfig
     }
 
     static Set<? extends Task> getTaskDependencies(Project proj, String name) {

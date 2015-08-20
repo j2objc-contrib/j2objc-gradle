@@ -37,7 +37,7 @@ class PackLibrariesTask extends DefaultTask {
     @InputFiles
     ConfigurableFileCollection getLibrariesFiles() {
         String staticLibraryPath = "${project.buildDir}/binaries/${project.name}-j2objcStaticLibrary"
-        return project.files(getSupportedArchs().collect { String arch ->
+        return project.files(getActiveArchs().collect { String arch ->
             "$staticLibraryPath/$arch$buildType/lib${project.name}-j2objc.a"
         })
     }
@@ -47,7 +47,7 @@ class PackLibrariesTask extends DefaultTask {
     String buildType
 
     @Input
-    List<String> getSupportedArchs() { return J2objcConfig.from(project).supportedArchs }
+    List<String> getActiveArchs() { return J2objcConfig.from(project).activeArchs }
 
 
     @OutputDirectory
