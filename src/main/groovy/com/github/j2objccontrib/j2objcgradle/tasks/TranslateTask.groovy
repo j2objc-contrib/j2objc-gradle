@@ -69,6 +69,18 @@ class TranslateTask extends DefaultTask {
         return allFiles
     }
 
+    // Property is never used, however it is an input value as
+    // the contents of the prefixes, including a prefix file, affect all translation
+    // output.  We don't care about the prefix file (if any) per se, but we care about
+    // the final set of prefixes.
+    // NOTE: As long as all other tasks have the output of TranslateTask as its own inputs,
+    // they do not also need to have the packagePrefixes as a direct input in order to
+    // have correct up-to-date checks.
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    @Input Properties getPackagePrefixes() {
+        return Utils.packagePrefixes(project, translateArgs)
+    }
+
     @Input
     String getJ2objcHome() { return Utils.j2objcHome(project) }
 
