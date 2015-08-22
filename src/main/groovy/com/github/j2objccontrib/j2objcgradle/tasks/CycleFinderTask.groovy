@@ -166,7 +166,7 @@ class CycleFinderTask extends DefaultTask {
             if (!Utils.isProjectExecNonZeroExit(exception)) {
                 throw exception
             }
-
+            
             String cyclesFoundStr = Utils.matchRegexOutputs(stdout, stderr, cyclesFoundRegex)
             if (!cyclesFoundStr?.isInteger()) {
                 String message =
@@ -194,10 +194,10 @@ class CycleFinderTask extends DefaultTask {
                 throw new InvalidUserDataException(message)
             }
             // Suppress exception when cycles found == cycleFinderExpectedCycles
+        } finally {
+            // Write output always.
+            getReportFile().write(Utils.stdOutAndErrToLogString(stdout, stderr))
+            logger.debug("CycleFinder Output: ${getReportFile().path}")
         }
-
-        // Only write output if task is successful
-        getReportFile().write(Utils.stdOutAndErrToLogString(stdout, stderr))
-        logger.debug("CycleFinder Output: ${getReportFile().path}")
     }
 }
