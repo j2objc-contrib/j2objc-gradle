@@ -236,10 +236,14 @@ published versions on plugins.gradle.org.  All branches and tags are on the
 `j2objc-contrib/j2objc-gradle` repository, not any forks.  The steps are:
 
 1.  Determine the version number.  Use https://semver.org to guide which
-slot in the version number should be bumped.  We'll call this `vX.Y.Z`.
-2.  As a separate commit, bump the version number in `build.gradle` and add a
-brief section at the top of [CHANGELOG.md](CHANGELOG.md) indicating key
-functionality and quality improvements.
+slot in the version number should be bumped.  We'll call this `vX.Y.Z`.  Note that
+this does not have to be the `-SNAPSHOT` version in build.gradle - that number
+was auto-incremented after the last release and may not reflect the extent
+of API changes which, per semantic versioning, whether to increment major, minor,
+or patch numbers.
+2.  As a separate commit, update the version number in `build.gradle`, removing the
+`-SNAPSHOT` suffix if any, and add a brief section at the top of
+[CHANGELOG.md](CHANGELOG.md) indicating key functionality and quality improvements.
 File a PR, and merge that PR into the release branch.
 3.  Tag the merge commit where that PR is merged into master as `vX.Y.Z` and push
 that tag to the repository.  It is important that this is not the commit for the PR.
@@ -254,6 +258,10 @@ git push upstream v0.4.1-alpha
 ```sh
 ./gradlew clean build publishPlugins
 ```
+
+5.  Push a new PR that increments build.gradle to `vX.Y.(Z+1)-SNAPSHOT`.  `-SNAPSHOT`
+is standard convention for marking an unofficial build (if users happen to get their
+hands on one built directly from source).
 
 ### Hotfixes
 

@@ -13,11 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 // Based on https://plugins.gradle.org/docs/publish-plugin
 
 plugins {
     id "com.gradle.plugin-publish" version "0.9.0"
+    // Outputs a BuildInfo.java file with information about the git repo;
+    // also fails plugin publishing if your git working directory is unclean.
+    // Note this only enforces that the code you are publishing is committed
+    // to your local repo; you have to make sure to push it upstream.
+    id "com.madvay.tools.build.gitbuildinfo" version "0.1.2-alpha"
 }
 apply plugin: 'groovy'
 
@@ -32,7 +36,11 @@ task wrapper(type: Wrapper) {
 }
 
 group = 'com.github.j2objccontrib.j2objcgradle'
-version = '0.4.2-alpha'
+
+// A suffix of -SNAPSHOT means this is not an official release of the
+// system, but built from an intermediate source tree.  See
+// CONTRIBUTING.md on how to update this version number.
+version = '0.4.3-alpha-SNAPSHOT'
 
 test {
     testLogging {
@@ -67,4 +75,9 @@ project.tasks.all {
     if (it.name == 'publishPluginGroovyDocsJar' || it.name == 'publishPluginJavaDocsJar') {
         it.from(project.file('src/main/resources/'))
     }
+}
+
+buildStamp {
+    repoBaseUrl "https://github.com/j2objc-contrib/j2objc-gradle/tree/"
+    packageName "com.github.j2objccontrib.j2objcgradle"
 }
