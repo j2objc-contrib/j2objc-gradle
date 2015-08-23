@@ -15,10 +15,6 @@ Home Page: https://github.com/j2objc-contrib/j2objc-gradle
 
 ### Usage
 
-At HEAD, this plugin is in a state of flux as we refactor it into a first-class
-Gradle plugin for our beta. You may wish to wait for the beta release as we may make
-backwards incompatible changes before that point.
-
 You should start with a clean java only project without any Android dependencies.
 It is suggested that the project is named `shared`. It must be buildable using the standard
 [Gradle Java plugin](https://docs.gradle.org/current/userguide/java_plugin.html).
@@ -59,6 +55,8 @@ dependencies {
 }
 ```
 
+Note that the plugin is currently in alpha; we may need to make breaking API changes
+before the 1.0 release.
 
 ### Minimum Requirements
 
