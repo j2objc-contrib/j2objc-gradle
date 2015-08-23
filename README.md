@@ -34,7 +34,7 @@ Configure `shared/build.gradle` in your Java only project:
 // File: shared/build.gradle
 plugins {
     id 'java'
-    id 'com.github.j2objccontrib.j2objcgradle' version '0.4.1-alpha'
+    id 'com.github.j2objccontrib.j2objcgradle' version '0.4.2-alpha'
 }
 
 // Plugin settings:
@@ -185,7 +185,7 @@ These are the main tasks for the plugin:
     j2objcTranslate   - Translates Java source to Objective-C
     j2objcAssemble    - Outputs packed libraries, source & resources to build/j2objcOutputs
     j2objcTest        - Runs all JUnit tests in the translated code
-    j2objcBuild       - Runs j2objcTest and j2objcAssemble, doesn't run j2objcXcode
+    j2objcBuild       - Runs j2objcAssemble and j2objcTest, doesn't run j2objcXcode
     j2objcXcode       - Xcode updated with libraries, headers & resources (uses CocoaPods)
 
 Running the `build` task from the Gradle Java plugin will automatically run the j2objcBuild command
