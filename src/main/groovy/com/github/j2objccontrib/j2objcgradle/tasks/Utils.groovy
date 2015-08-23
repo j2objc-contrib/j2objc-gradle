@@ -296,7 +296,9 @@ class Utils {
         Matcher stdMatcher = (stdout.toString() =~ regex)
         Matcher errMatcher = (stderr.toString() =~ regex)
         // Requires a capturing group in the regex
-        String assertFailMsg = "matchRegexOutputs must have '(...)' capture group, regex: '$regex'"
+        String assertFailMsg =
+                "matchRegexOutputs must have '(...)' capture group, regex: " +
+                escapeSlashyString(regex)
         assert stdMatcher.groupCount() >= 1, assertFailMsg
         assert errMatcher.groupCount() >= 1, assertFailMsg
 
