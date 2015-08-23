@@ -117,7 +117,7 @@ Instead make sure your run configuration only performs the `:android:assembleDeb
 
 <img width="664" alt="Run Configuration" src="https://cloud.githubusercontent.com/assets/11729521/9024382/95a511a4-3881-11e5-8525-9e4256990614.png">
 
-At the command line, if you want to use the debug version of your android app,
+At the command line, if you want to use the debug version of your Android app,
 make sure you are running `./gradlew :android:assembleDebug` and not for example
 `./gradlew build`.
 
