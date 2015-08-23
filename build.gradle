@@ -62,3 +62,9 @@ pluginBundle {
         }
     }
 }
+
+project.tasks.all {
+    if (it.name == 'publishPluginGroovyDocsJar' || it.name == 'publishPluginJavaDocsJar') {
+        it.from(project.file('src/main/resources/'))
+    }
+}

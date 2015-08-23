@@ -237,7 +237,9 @@ published versions on plugins.gradle.org.  All branches and tags are on the
 
 1.  Determine the version number.  Use https://semver.org to guide which
 slot in the version number should be bumped.  We'll call this `vX.Y.Z`.
-2.  As a separate commit, bump the version number in `build.gradle`.
+2.  As a separate commit, bump the version number in `build.gradle` and add a
+brief section at the top of [CHANGELOG.md](CHANGELOG.md) indicating key
+functionality and quality improvements.
 File a PR, and merge that PR into the release branch.
 3.  Tag the merge commit where that PR is merged into master as `vX.Y.Z` and push
 that tag to the repository.  It is important that this is not the commit for the PR.
