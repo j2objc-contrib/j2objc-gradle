@@ -1,8 +1,11 @@
-language: groovy
+language: generic
 
 matrix:
   include:
     - language: groovy
+      jdk: oraclejdk7
+    - language: groovy
+      jdk: openjdk7
     - language: objective-c # This forces an OS X build!
       osx_image: xcode6.4
 
@@ -16,13 +19,6 @@ branches:
 #os:
 #  - linux
 #  - osx
-
-# Everything except Java 6.
-jdk:
-  - oraclejdk7
-  - openjdk7
-# Renable after fixing #374
-#  - oraclejdk8
 
 # We can be run in a container for improved performance.
 sudo: false
