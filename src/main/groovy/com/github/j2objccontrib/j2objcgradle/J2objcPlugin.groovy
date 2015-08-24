@@ -48,8 +48,7 @@ class J2objcPlugin implements Plugin<Project> {
             project.logger.error('j2objc-gradle plugin was built with local modification.\n' +
                                  'If you encounter issues, please use an official release from:\n' +
                                  '    https://github.com/j2objc-contrib/j2objc-gradle/releases')
-        }
-        if (version.contains('SNAPSHOT')) {
+        } else if (version.contains('SNAPSHOT')) {
             project.logger.warn('j2objc-gradle plugin was built outside of an official release.\n' +
                                 'If you encounter issues, please use an official release from:\n' +
                                 '    https://github.com/j2objc-contrib/j2objc-gradle/releases')
