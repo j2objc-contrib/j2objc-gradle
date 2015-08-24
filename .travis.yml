@@ -23,7 +23,6 @@ matrix:
     # TODO: Figure out how to set the JDK version on OS X.
     - os: osx
       language: objective-c
-      osx_image: xcode6.4
       env: USING_OS=osx
 
 branches:
@@ -46,8 +45,9 @@ sudo: false
 install:
   # OS X is missing the dumb term command.
   - export TERM=dumb
+  - env
   # We need JDK 7 specifically on OS X.
-  - if [ "$USING_OS" = "osx" ]; then (brew update && brew install caskroom/cask/brew-cask && brew cask install caskroom/versions/java7 && /usr/libexec/java_home -V); fi
+  - if [ "$USING_OS" = "osx" ]; then (/usr/libexec/java_home -V); fi
   - java -Xmx32m -version && javac -J-Xmx32m -version
   - ./gradlew wrapper
   - ./gradlew dependencies
