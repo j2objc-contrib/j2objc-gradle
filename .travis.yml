@@ -48,7 +48,7 @@ install:
   - export TERM=dumb
   # OS X does not declare Java versions.
   - java -Xmx32m -version && javac -J-Xmx32m -version
-  - if [ "$USING_OS" = "osx" ]; then ls -al /System/Library/Frameworks/JavaVM.framework/Versions/ ; fi
+  - if [ "$USING_OS" = "osx" ]; then /usr/libexec/java_home -V ; fi
   - echo $JAVA_HOME
   - ./gradlew wrapper
   - ./gradlew dependencies
