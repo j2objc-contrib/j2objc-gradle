@@ -17,6 +17,7 @@
 package com.github.j2objccontrib.j2objcgradle
 
 import com.github.j2objccontrib.j2objcgradle.tasks.TestingUtils
+import com.github.j2objccontrib.j2objcgradle.tasks.Utils
 import groovy.transform.CompileStatic
 import groovy.transform.TypeCheckingMode
 import org.gradle.api.InvalidUserDataException
@@ -71,8 +72,34 @@ class J2objcConfigTest {
     }
 
     @Test
-    void testFinalConfigure() {
+    void testFinalConfigure_MacOSX() {
+        Utils.fakeOSName = 'Mac OS X'
         J2objcConfig ext = new J2objcConfig(proj)
+
+        assert !ext.finalConfigured
+        ext.finalConfigure()
+        assert ext.finalConfigured
+    }
+
+    @Test
+    void testFinalConfigure_nonMacOSX_translateOnlyMode() {
+        Utils.fakeOSName = 'Windows'
+        J2objcConfig ext = new J2objcConfig(proj)
+        assert !ext.finalConfigured
+        ext.translateOnlyMode = true
+
+        ext.finalConfigure()
+        assert ext.finalConfigured
+    }
+
+    // This protect against trying the native compile on a nonMacOSX system
+    @Test
+    void testFinalConfigure_nonMacOSX_unsupported() {
+        Utils.fakeOSName = 'Windows'
+        J2objcConfig ext = new J2objcConfig(proj)
+
+        expectedException.expect(InvalidUserDataException.class)
+        expectedException.expectMessage('Mac OS X is required for Native Compilation of translated code')
 
         assert !ext.finalConfigured
         ext.finalConfigure()

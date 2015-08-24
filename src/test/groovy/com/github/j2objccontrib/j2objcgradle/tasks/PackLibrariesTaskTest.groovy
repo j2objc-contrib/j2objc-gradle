@@ -18,9 +18,12 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 
 import com.github.j2objccontrib.j2objcgradle.J2objcConfig
 import com.github.j2objccontrib.j2objcgradle.NativeCompilation
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.ExpectedException
 
 /**
  * TestTask tests.
@@ -31,12 +34,31 @@ class PackLibrariesTaskTest {
     private String j2objcHome
     private J2objcConfig j2objcConfig
 
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+
     @Before
     void setUp() {
+        Utils.fakeOSName = 'Mac OS X'
         (proj, j2objcHome, j2objcConfig) = TestingUtils.setupProject(new TestingUtils.ProjectConfig(
                 applyJavaPlugin: true,
                 createJ2objcConfig: true
         ))
+    }
+
+    @Test
+    void testPackLibraries_nonMacOSX() {
+        Utils.fakeOSName = 'Windows'
+
+        PackLibrariesTask j2objcPackLibraries =
+                (PackLibrariesTask) proj.tasks.create(name: 'j2objcPackLibraries', type: PackLibrariesTask) {
+                    buildType = 'Debug'
+                }
+
+        expectedException.expect(InvalidUserDataException.class)
+        expectedException.expectMessage('Mac OS X is required for j2objcPackLibraries task')
+
+        j2objcPackLibraries.packLibraries()
     }
 
     @Test
@@ -62,7 +84,7 @@ class PackLibrariesTaskTest {
         assert NativeCompilation.ALL_SUPPORTED_ARCHS.size() == 5, 'Need to update list of arguments above'
 
         PackLibrariesTask j2objcPackLibraries =
-                (PackLibrariesTask) proj.tasks.create(name: 'j2objcPL', type: PackLibrariesTask) {
+                (PackLibrariesTask) proj.tasks.create(name: 'j2objcPackLibraries', type: PackLibrariesTask) {
                     buildType = 'Debug'
                 }
 

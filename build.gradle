@@ -48,6 +48,7 @@ test {
         // of just pointing to an HTML file.
         exceptionFormat = 'full'
     }
+    systemProperty 'inTestMustFakeOS', 'true'
 }
 
 pluginBundle {

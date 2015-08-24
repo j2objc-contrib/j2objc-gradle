@@ -59,11 +59,6 @@ class J2objcPlugin implements Plugin<Project> {
         project.with {
             Utils.checkMinGradleVersion(GradleVersion.current())
 
-            if (Utils.isWindows()) {
-                logger.warn('Windows is officially unsupported:\n' +
-                            'https://github.com/j2objc-contrib/j2objc-gradle/blob/master/FAQ.md#can-i-develop-on-windows')
-            }
-
             extensions.create('j2objcConfig', J2objcConfig, project)
 
             afterEvaluate { Project evaluatedProject ->

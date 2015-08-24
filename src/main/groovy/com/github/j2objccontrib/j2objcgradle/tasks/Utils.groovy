@@ -60,8 +60,43 @@ class Utils {
         }
     }
 
+    @VisibleForTesting
+    static String fakeOSName = ''
+
+    @VisibleForTesting
+    static String getLowerCaseOSName() {
+
+        String osName = System.getProperty('os.name')
+        if (!fakeOSName.isEmpty()) {
+            osName = fakeOSName
+        } else {
+            if (System.getProperty('inTestMustFakeOS') == 'true') {
+                throw new InvalidUserDataException(
+                        "Tests must set Utils.fakeOSName = 'OS NAME'\n" +
+                        "This ensure that tests don't depend on the system environment")
+            }
+        }
+        osName = osName.toLowerCase()
+        return osName
+    }
+
     static boolean isWindows() {
-        return System.getProperty('os.name').toLowerCase().contains('windows')
+        String osName = getLowerCaseOSName()
+        return osName.contains('windows')
+    }
+
+    static boolean isMacOSX() {
+        String osName = getLowerCaseOSName()
+        // From: http://stackoverflow.com/a/18417382/1509221
+        return osName.contains('mac') || osName.contains('darwin')
+    }
+
+    static void requireMacOSX(String taskName) {
+        if (!isMacOSX()) {
+            throw new InvalidUserDataException(
+                    "Mac OS X is required for $taskName. Use `translateOnlyMode` on Windows or Linux:\n" +
+                    'https://github.com/j2objc-contrib/j2objc-gradle/blob/master/FAQ.md#how-do-i-develop-on-windows-or-linux')
+        }
     }
 
     static void throwIfNoJavaPlugin(Project proj) {

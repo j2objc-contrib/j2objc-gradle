@@ -58,14 +58,10 @@ class PackLibrariesTask extends DefaultTask {
 
     @TaskAction
     void packLibraries() {
+        Utils.requireMacOSX('j2objcPackLibraries task')
+
         Utils.projectDelete(project, getOutputLibDirFile())
         getOutputLibDirFile().mkdirs()
-
-        if (Utils.isWindows()) {
-            throw new InvalidUserDataException(
-                    'Windows is officially unsupported. The packLibraries task can only be run on Mac OS X:\n' +
-                    'https://github.com/j2objc-contrib/j2objc-gradle/blob/master/FAQ.md#can-i-develop-on-windows')
-        }
 
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()

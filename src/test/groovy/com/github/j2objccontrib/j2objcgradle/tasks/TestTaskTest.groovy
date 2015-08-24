@@ -21,6 +21,7 @@ import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 import org.gradle.testfixtures.ProjectBuilder
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
@@ -38,6 +39,11 @@ class TestTaskTest {
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
+
+    @Before
+    void setUp() {
+        Utils.fakeOSName = 'Mac OS X'
+    }
 
     @Test
     void testGetTestNames_Simple() {
@@ -100,6 +106,17 @@ class TestTaskTest {
             testBinaryFile = proj.file("${proj.buildDir}/binaries/testJ2objcExecutable/debug/testJ2objc")
             buildType = 'debug'
         }
+    }
+
+    @Test
+    void testTaskAction_nonMacOSX() {
+        Utils.fakeOSName = 'Windows'
+        setupTask()
+
+        expectedException.expect(InvalidUserDataException.class)
+        expectedException.expectMessage('Mac OS X is required for j2objcTest task')
+
+        j2objcTest.test()
     }
 
     @Test

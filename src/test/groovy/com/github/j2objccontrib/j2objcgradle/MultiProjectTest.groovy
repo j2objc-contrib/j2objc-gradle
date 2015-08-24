@@ -1,6 +1,7 @@
 package com.github.j2objccontrib.j2objcgradle
 
 import com.github.j2objccontrib.j2objcgradle.tasks.TestingUtils
+import com.github.j2objccontrib.j2objcgradle.tasks.Utils
 import groovy.util.logging.Slf4j
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
@@ -21,6 +22,7 @@ class MultiProjectTest {
 
     @Before
     void setUp() {
+        Utils.fakeOSName = 'Mac OS X'
         // We can't use _ for unused slots because the other variables have already been declared above.
         Object unused
 
