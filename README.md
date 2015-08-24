@@ -12,6 +12,7 @@ Android apps (natively Java), web apps (using GWT), and iOS apps (using J2ObjC).
 [![License](https://img.shields.io/github/license/j2objc-contrib/j2objc-gradle.svg)](https://github.com/j2objc-contrib/j2objc-gradle/blob/master/LICENSE)
 [![Linux Build Status](https://img.shields.io/travis/j2objc-contrib/j2objc-gradle/master.svg?label=Linux Build)](https://travis-ci.org/j2objc-contrib/j2objc-gradle)
 [![Windows Build Status](https://img.shields.io/appveyor/ci/madvayApiAccess/j2objc-gradle/master.svg?label=Windows Build)](https://ci.appveyor.com/project/madvayApiAccess/j2objc-gradle/branch/master)
+[![Latest Release](https://img.shields.io/github/release/j2objc-gradle/j2objc-contrib.svg?label=Release)](https://github.com/j2objc-contrib/j2objc-gradle/releases)
 
 Home Page: https://github.com/j2objc-contrib/j2objc-gradle
 
