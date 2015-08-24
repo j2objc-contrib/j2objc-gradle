@@ -17,5 +17,22 @@
 # Fail if anything fails.
 set -e
 
-echo Running test simple1
-pushd simple1 && ./gradlew wrapper && ./gradlew clean && ./gradlew build && popd
+function runTest {
+    TEST_DIR=$1
+    echo Running test $TEST_DIR
+    set -e
+    pushd $TEST_DIR
+    ./gradlew wrapper
+    ./gradlew clean
+    ./gradlew build
+    popd
+}
+
+# TODO: Might want to infer the directories that have build.gradle files in them.
+
+# Simplest possible set-up.  A single project with no dependencies.
+runTest simple1
+
+# Two gradle projects, `extended` depends on `base`.  They also both test
+# dependency on built-in j2objc libraries, like Guava.
+runTest multiProject1
