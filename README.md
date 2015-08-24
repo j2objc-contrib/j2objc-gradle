@@ -9,7 +9,9 @@ of the generated files is necessary. The goal is to write an app's non-UI code
 (such as application logic and data models) in Java, which is then shared by
 Android apps (natively Java), web apps (using GWT), and iOS apps (using J2ObjC).
 
-[![Build Status](https://travis-ci.org/j2objc-contrib/j2objc-gradle.svg)](https://travis-ci.org/j2objc-contrib/j2objc-gradle)
+[![License](https://img.shields.io/badge/license-Apache%202.0%20License-blue.svg)](https://github.com/j2objc-contrib/j2objc-gradle/blob/master/LICENSE)
+[![Linux Build Status](https://img.shields.io/travis/j2objc-contrib/j2objc-gradle/master.svg?label=linux build)](https://travis-ci.org/j2objc-contrib/j2objc-gradle)
+[![Windows Build Status](https://img.shields.io/appveyor/ci/madvayApiAccess/j2objc-gradle/master.svg?label=windows build)](https://ci.appveyor.com/project/madvayApiAccess/j2objc-gradle/branch/master)
 
 Home Page: https://github.com/j2objc-contrib/j2objc-gradle
 
