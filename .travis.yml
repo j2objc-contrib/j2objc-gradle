@@ -1,5 +1,11 @@
 language: groovy
 
+matrix:
+  include:
+    - language: groovy
+    - language: objective-c # This forces an OS X build!
+      osx_image: xcode6.4
+
 branches:
   only:
     - master
