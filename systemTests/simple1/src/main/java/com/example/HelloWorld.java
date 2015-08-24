@@ -20,6 +20,10 @@ public class HelloWorld {
 
     private final String nameOfWorld;
 
+    /*-[
+#error whoops
+    ]-*/
+
     public HelloWorld(String nameOfWorld) {
         this.nameOfWorld = nameOfWorld;
     }
