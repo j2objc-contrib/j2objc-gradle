@@ -1,5 +1,11 @@
 language: groovy
 
+branches:
+  only:
+    - master
+    - /^release.*$/
+    - /^v[0-9].*$/
+
 # TODO: Multi-os in beta, requires approval from Travis.
 #os:
 #  - linux
