@@ -3,9 +3,11 @@ language: generic
 
 matrix:
   include:
-    - language: groovy
+    - os: linux
+      language: groovy
       jdk: oraclejdk7
-    - language: groovy
+    - os: linux
+      language: groovy
       jdk: openjdk7
     # 'objective-c' forces a build on OS X.  The UI will still
     # show a Linux logo, but the logs will show a Mac box.
@@ -14,7 +16,8 @@ matrix:
     # using groovy.
     # TODO: Replace with actual `os: osx` when Travis supports groovy.
     # TODO: Figure out how to set the JDK version on OS X.
-    - language: objective-c
+    - os: osx
+      language: objective-c
       osx_image: xcode6.4
 
 branches:
