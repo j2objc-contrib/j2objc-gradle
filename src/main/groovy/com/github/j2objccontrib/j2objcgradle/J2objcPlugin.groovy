@@ -39,6 +39,22 @@ class J2objcPlugin implements Plugin<Project> {
   
     @Override
     void apply(Project project) {
+        String version = BuildInfo.VERSION
+        String commit = BuildInfo.GIT_COMMIT
+        String url = BuildInfo.URL
+        String timestamp = BuildInfo.TIMESTAMP
+        project.logger.info("j2objc-gradle plugin: Version $version, Built: $timestamp, Commit: $commit, URL: $url")
+        if (!BuildInfo.GIT_IS_CLEAN) {
+            project.logger.error('j2objc-gradle plugin was built with local modification.\n' +
+                                 'If you encounter issues, please use an official release from:\n' +
+                                 '    https://github.com/j2objc-contrib/j2objc-gradle/releases')
+        }
+        if (version.contains('SNAPSHOT')) {
+            project.logger.warn('j2objc-gradle plugin was built outside of an official release.\n' +
+                                'If you encounter issues, please use an official release from:\n' +
+                                '    https://github.com/j2objc-contrib/j2objc-gradle/releases')
+        }
+
         // This avoids a lot of "project." prefixes, such as "project.tasks.create"
         project.with {
             Utils.checkMinGradleVersion(GradleVersion.current())
