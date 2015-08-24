@@ -6,6 +6,5 @@ build
 .idea/*
 !.idea/codeStyleSettings.xml
 j2objc-gradle.iml
-gradlew.bat
 
 local.properties
