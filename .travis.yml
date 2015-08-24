@@ -45,11 +45,10 @@ sudo: false
 # we depend on.
 install:
   # OS X is missing the dumb term command.
-  - export TERM=dumb
-  # OS X does not declare Java versions.
+  - if [ "$USING_OS" = "osx" ]; export TERM=dumb ; fi
+  # We need JDK 7 specifically on OS X.
+  - if [ "$USING_OS" = "osx" ]; then (brew update && brew install caskroom/cask/brew-cask && brew cask install caskroom/versions/java7 && /usr/libexec/java_home -V) ; fi
   - java -Xmx32m -version && javac -J-Xmx32m -version
-  - if [ "$USING_OS" = "osx" ]; then /usr/libexec/java_home -V ; fi
-  - echo $JAVA_HOME
   - ./gradlew wrapper
   - ./gradlew dependencies
 
@@ -57,7 +56,5 @@ install:
 # We compile (assemble) and then build (which also tests) to capture build
 # and test failures separately.
 script:
-  # OS X is missing the dumb term command.
-  - export TERM=dumb
   - ./gradlew assemble
   - ./gradlew build
