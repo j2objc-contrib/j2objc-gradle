@@ -53,6 +53,8 @@ install:
   - java -Xmx32m -version && javac -J-Xmx32m -version
   - ./gradlew wrapper
   - ./gradlew dependencies
+  # Prepare our system tests
+  - if [ "$USING_OS" = "osx" ]; then (pushd systemTests && ./prep.sh && popd); fi
 
 # If these steps fail, the build is 'failed' - i.e. we have a code defect.
 # We compile (assemble) and then build (which also tests) to capture build
@@ -60,3 +62,5 @@ install:
 script:
   - ./gradlew assemble
   - ./gradlew build
+  # Run our system tests
+  - if [ "$USING_OS" = "osx" ]; then (pushd systemTests && ./run-all.sh && popd); fi
