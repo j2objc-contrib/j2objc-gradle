@@ -35,6 +35,7 @@ class TranslateTaskTest {
 
     @Before
     void setUp() {
+        Utils.fakeOSName = 'Mac OS X'
         (proj, j2objcHome, j2objcConfig) = TestingUtils.setupProject(
                 new TestingUtils.ProjectConfig(applyJavaPlugin: true, createJ2objcConfig: true))
     }
@@ -52,6 +53,29 @@ class TranslateTaskTest {
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
         mockProjectExec.demandExecAndReturn([
                 '/J2OBJC_HOME/j2objc',
+                '-d', '/PROJECT_DIR/build/j2objcSrcGen',
+                '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java',
+                '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/PROJECT_DIR/build/classes'
+        ])
+
+        j2objcTranslate.translate(genNonIncrementalInputs())
+
+        mockProjectExec.verify()
+    }
+
+    @Test
+    void translate_Windows() {
+        Utils.fakeOSName = 'Windows'
+        TranslateTask j2objcTranslate = (TranslateTask) proj.tasks.create(
+                name: 'j2objcTranslate', type: TranslateTask) {
+            srcGenDir = proj.file("${proj.buildDir}/j2objcSrcGen")
+        }
+
+        MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
+        mockProjectExec.demandExecAndReturn([
+                'java',
+                '-jar',
+                '/J2OBJC_HOME/lib/j2objc.jar',
                 '-d', '/PROJECT_DIR/build/j2objcSrcGen',
                 '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java',
                 '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/PROJECT_DIR/build/classes'

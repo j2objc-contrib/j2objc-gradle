@@ -259,15 +259,16 @@ For more details:
 - https://groups.google.com/forum/#!msg/j2objc-discuss/2fozbf6-liM/R83v7ffX5NMJ
 
 
-### How do I develop on Windows?
+### How do I develop on Windows or Linux?
 
-Windows support is limited to the j2objcCycleFinder and j2objcTranslate tasks. Windows can't
-support j2objcTest, j2objcXcode or the library packing (see [task descriptions](README.md#tasks)).
-Complete development on iOS is supported only on Mac OS X. This matches the
+Windows and Linux support is limited to the j2objcCycleFinder and j2objcTranslate tasks.
+Mac OS X is required for the j2objcAssemble, j2objcTest and j2objcXcode tasks
+(see [task descriptions](README.md#tasks)) This matches the
 [J2ObjC Requirements](http://j2objc.org/#requirements).
 
-It is recommended that Windows users use translateOnlyMode to reduce the chances of breaking the
-iOS / OS X build. This can be done by the Windows developers configuring their local.properties:
+It is recommended that Windows and Linux users use `translateOnlyMode` to reduce the chances
+of breaking the iOS / OS X build. This can be done by those developers configuring their
+local.properties (the Mac OS X developers should not use this):
 
 ```properties
 # File: local.properties

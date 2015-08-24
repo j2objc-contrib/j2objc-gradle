@@ -561,6 +561,10 @@ class J2objcConfig {
         boolean translateOnlyMode = this.translateOnlyMode ||
                                     Boolean.parseBoolean(Utils.getLocalProperty(project, 'translateOnlyMode', 'false'))
 
+        if (!translateOnlyMode) {
+            Utils.requireMacOSX('Native Compilation of translated code task')
+        }
+
         project.tasks.all { Task task ->
             String name = task.name
             // For convenience, disable all debug and/or release tasks if the user desires.
@@ -586,9 +590,8 @@ class J2objcConfig {
                 }
             }
         }
-
-
     }
+
     boolean isFinalConfigured() {
         return finalConfigured
     }

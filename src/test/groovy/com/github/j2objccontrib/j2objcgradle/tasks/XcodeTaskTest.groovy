@@ -40,6 +40,7 @@ class XcodeTaskTest {
 
     @Before
     void setUp() {
+        Utils.fakeOSName = 'Mac OS X'
         proj = ProjectBuilder.builder().build()
     }
 
@@ -70,6 +71,26 @@ class XcodeTaskTest {
 
         // Test for fixing issue #226
         j2objcXcode.getPodfileFile()
+    }
+
+    @Test
+    void testXcodeConfig_nonMacOSX() {
+        Utils.fakeOSName = 'Windows'
+
+        String j2objcHome
+        J2objcConfig j2objcConfig
+        (proj, j2objcHome, j2objcConfig) =
+                TestingUtils.setupProject(new TestingUtils.ProjectConfig(
+                        applyJavaPlugin: true,
+                        createJ2objcConfig: true))
+
+        XcodeTask j2objcXcode = (XcodeTask) proj.tasks.create(name: 'j2objcXcode', type: XcodeTask)
+
+        expectedException.expect(InvalidUserDataException.class)
+        expectedException.expectMessage('Mac OS X is required for j2objcXcode task')
+
+        // Makes assumption that OS is checked before any other tests
+        j2objcXcode.xcodeConfig()
     }
 
     @Test

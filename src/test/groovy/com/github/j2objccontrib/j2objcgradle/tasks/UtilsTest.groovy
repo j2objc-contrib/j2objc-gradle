@@ -63,10 +63,48 @@ class UtilsTest {
     }
 
     @Test
-    void testIsWindows() {
-        // TODO: also test for correctness
-        // For now it only tests that the call runs successfully
-        Utils.isWindows()
+    void testIsMacOSX_MacOSX() {
+        Utils.fakeOSName = 'Mac OS X'
+        assert Utils.isMacOSX()
+    }
+
+    @Test
+    void testIsMacOSX_nonMacOSX() {
+        Utils.fakeOSName = 'Windows'
+        assert !Utils.isMacOSX()
+    }
+
+    @Test
+    void testRequireMacOSX_MacOSX() {
+        Utils.fakeOSName = 'Mac OS X'
+        Utils.requireMacOSX('taskName')
+    }
+
+    @Test
+    void testRequireMacOSX_nonMacOSX() {
+        Utils.fakeOSName = 'Windows'
+
+        expectedException.expect(InvalidUserDataException)
+        expectedException.expectMessage('Mac OS X is required for taskName')
+
+        Utils.requireMacOSX('taskName')
+    }
+
+    @Test
+    void testGetLowerCaseOSName_fakeOSName() {
+        Utils.fakeOSName = 'FAKEOS'
+
+        assert 'fakeos' == Utils.getLowerCaseOSName()
+    }
+
+    @Test
+    void testGetLowerCaseOSName_fakeOSNameEmpty() {
+        Utils.fakeOSName = ''
+
+        expectedException.expect(InvalidUserDataException)
+        expectedException.expectMessage("Tests must set Utils.fakeOSName = 'OS NAME'")
+
+        Utils.getLowerCaseOSName()
     }
 
     @Test(expected = InvalidUserDataException.class)

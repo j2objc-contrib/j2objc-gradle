@@ -86,6 +86,7 @@ class XcodeTask extends DefaultTask {
 
     @TaskAction
     void xcodeConfig() {
+        Utils.requireMacOSX('j2objcXcode task')
 
         verifyXcodeArgs()
 
