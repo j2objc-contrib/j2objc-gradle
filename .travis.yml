@@ -37,6 +37,8 @@ sudo: false
 install:
   # OS X is missing the dumb term command.
   - export TERM=dumb
+  # OS X does not declare Java versions.
+  - java -Xmx32m -version && javac -J-Xmx32m -version
   - ./gradlew wrapper
   - ./gradlew dependencies
 
