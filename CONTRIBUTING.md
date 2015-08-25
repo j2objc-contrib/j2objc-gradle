@@ -22,6 +22,29 @@ $ ./gradlew build
 
 This will create a .jar containing the plugin at projectDir/build/libs/j2objc-gradle-X.Y.Z-alpha.jar
 
+#### System tests
+
+On OS X we have system tests under the `systemTests` directory.  Each test directory
+has one root Gradle project (and zero or more subprojects), some or all of which apply the
+`j2objc-gradle` plugin.  Locally you can run them as follows:
+
+```sh
+# Once per git repository and/or new release of j2objc, run prep.
+pushd systemTests && ./prep.sh && popd
+# This downloads j2objc and prepares the environment.
+
+# Every time you want to run the tests:
+./gradlew build && pushd systemTests && ./run-all.sh && popd
+# Normal Gradle build results will be displayed for each test project.
+```
+
+These system tests are also run as part of OS X continuous integration builds on Travis.
+You are not required to run the system tests locally before creating a PR (they can take
+time and processing power), however if the tests fail on Travis you will need to update
+the PR until they pass.
+
+#### Testing on your own Gradle project
+
 In order to test your modification to the plugin using your own project, you need to modify the
 project that uses the plugin:
 
