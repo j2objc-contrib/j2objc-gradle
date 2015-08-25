@@ -148,7 +148,7 @@ class XcodeTask extends DefaultTask {
             try {
                 logger.debug('XcodeTask - projectExec - pod install:')
                 Utils.projectExec(project, stdout, stderr, null, {
-                    setWorkingDir getXcodeProjectDir()
+                    setWorkingDir project.file(getXcodeProjectDir())
                     executable 'pod'
                     args 'install'
                     setStandardOutput stdout
@@ -201,21 +201,24 @@ class XcodeTask extends DefaultTask {
     }
 
     @VisibleForTesting
-    static void validatePodspecPath(String path, boolean relative) {
+    static void validatePodspecPath(String path, boolean relativeRequired) {
         if (path.contains('//')) {
             throw new InvalidUserDataException("Path shouldn't have '//': $path")
         }
         if (path.endsWith('/')) {
             throw new InvalidUserDataException("Path shouldn't end with '/': $path")
         }
-        if (relative && path.startsWith('/')) {
-            throw new InvalidUserDataException("Path shouldn't be absolute: $path")
-        }
-        if (!relative && !path.startsWith('/')) {
-            throw new InvalidUserDataException("Path shouldn't be relative: $path")
-        }
         if (path.endsWith('*')) {
             throw new InvalidUserDataException("Only genPodspec(...) should add '*': $path")
+        }
+        // Hack to recognize absolute path on Windows, only relevant in unit tests run on Windows
+        boolean absolutePath = path.startsWith('/') ||
+                               (path.startsWith('C:\\') && Utils.isWindowsNoFake())
+        if (relativeRequired && absolutePath) {
+            throw new InvalidUserDataException("Path shouldn't be absolute: $path")
+        }
+        if (!relativeRequired && !absolutePath) {
+            throw new InvalidUserDataException("Path shouldn't be relative: $path")
         }
     }
 

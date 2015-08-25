@@ -93,7 +93,7 @@ class CycleFinderTask extends DefaultTask {
 
     @TaskAction
     void cycleFinder() {
-        String cycleFinderExec = "${getJ2objcHome()}/cycle_finder"
+        String cycleFinderExec = getJ2objcHome() + Utils.fileSeparator() + 'cycle_finder'
         List<String> windowsOnlyArgs = new ArrayList<String>()
         if (Utils.isWindows()) {
             cycleFinderExec = 'java'
@@ -125,7 +125,7 @@ class CycleFinderTask extends DefaultTask {
         ])
         // TODO: comment explaining ${project.buildDir}/classes
         String classpathArg = Utils.joinedPathArg(classpathFiles) +
-                              File.pathSeparator + "${project.buildDir}/classes"
+                              Utils.pathSeparator() + "${project.buildDir}/classes"
 
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()

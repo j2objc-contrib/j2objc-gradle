@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger
 @Slf4j
 class TestingUtils {
 
+    static final String windowsAbsolutePathPrefix = 'C:'
     static AtomicInteger projectIndex = new AtomicInteger()
 
     static final class ProjectConfig {
@@ -77,12 +78,7 @@ class TestingUtils {
             proj.pluginManager.apply(JavaPlugin)
         }
 
-        // To satisfy Utils.J2objcHome()
-        String j2objcHome = File.createTempDir('J2OBJC_HOME', '').path
-        File localProperties = proj.file('local.properties')
-        List<String> localPropertiesLines = ["j2objc.home=$j2objcHome"]
-        localPropertiesLines.addAll(config.extraLocalProperties)
-        localProperties.write(localPropertiesLines.join('\n'))
+        String j2objcHome = createLocalPropertiesAndJ2objcHome(proj, config.extraLocalProperties)
 
         J2objcConfig j2objcConfig = null
         if (config.applyJ2objcPlugin) {
@@ -102,6 +98,25 @@ class TestingUtils {
         return [proj, j2objcHome, j2objcConfig]
     }
 
+    private static String createLocalPropertiesAndJ2objcHome(
+            Project proj, List<String> extraLocalProperties) {
+
+        // Create fake folder for J2OBJC_HOME
+        String j2objcHome = File.createTempDir('J2OBJC_HOME', '').absolutePath
+        // Backslashes on Windows are silently dropped when loading properties:
+        // http://docs.oracle.com/javase/6/docs/api/java/util/Properties.html#load(java.io.Reader)
+        j2objcHome = j2objcHome.replace('\\', '/')
+
+        // Utils.J2objcHome() finds the path through local.properties
+        File localProperties = proj.file('local.properties')
+        List<String> localPropertiesLines = new ArrayList<>()
+        localPropertiesLines.add("j2objc.home=" + j2objcHome)
+        localPropertiesLines.addAll(extraLocalProperties)
+        localProperties.write(localPropertiesLines.join('\n'))
+
+        return j2objcHome
+    }
+
     static J2objcConfig setupProjectJ2objcConfig(ProjectConfig config) {
         return setupProject(config)[2] as J2objcConfig
     }
@@ -110,5 +125,25 @@ class TestingUtils {
         // Strange API requires passing the task as a parameter to getDependencies.
         Task task = proj.tasks.getByName(name)
         return task.taskDependencies.getDependencies(task)
+    }
+
+    // Windows accepts both back and forward slashes
+    // This means it's ok to canonicalize both actual and expected paths before comparison
+    static String windowsToForwardSlash(String arg) {
+        if (Utils.isWindows() || Utils.isWindowsNoFake()) {
+            // Convert to Unix / Mac standard of forward slashes
+            return arg.replace('\\', '/')
+        }
+        return arg
+    }
+
+    // Needed to trick Gradle methods that require an absolute path
+    // E.g. proj.files(...) or proj.exec workingDir
+    static String windowsNoFakeAbsolutePath(String path) {
+        if (Utils.isWindowsNoFake()) {
+            assert path.startsWith('/') || path.startsWith('\\')
+            return windowsAbsolutePathPrefix + path
+        }
+        return path
     }
 }

@@ -72,7 +72,7 @@ class PackLibrariesTask extends DefaultTask {
                 args 'lipo'
 
                 args '-create'
-                args '-output', "${outputLibDirFile}/lib${project.name}-j2objc.a"
+                args '-output', project.file("${outputLibDirFile}/lib${project.name}-j2objc.a").absolutePath
 
                 getLibrariesFiles().each { File libFile ->
                     args libFile.absolutePath

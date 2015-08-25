@@ -45,21 +45,21 @@ class AssembleResourcesTaskTest {
 
         // Main
         mockProjectExec.demandDeleteAndReturn(
-                "${proj.projectDir}/build/j2objcOutputs/src/main/resources")
+                proj.file('build/j2objcOutputs/src/main/resources').absolutePath)
         mockProjectExec.demandMkDirAndReturn(
-                "${proj.projectDir}/build/j2objcOutputs/src/main/resources")
+                proj.file('build/j2objcOutputs/src/main/resources').absolutePath)
         mockProjectExec.demandCopyAndReturn(
-                "${proj.projectDir}/build/j2objcOutputs/src/main/resources",
-                "${proj.projectDir}/src/main/resources")
+                proj.file('build/j2objcOutputs/src/main/resources').absolutePath,
+                        proj.file('src/main/resources').absolutePath)
 
         // Test
         mockProjectExec.demandDeleteAndReturn(
-                "${proj.projectDir}/build/j2objcOutputs/src/test/resources")
+                proj.file('build/j2objcOutputs/src/test/resources').absolutePath)
         mockProjectExec.demandMkDirAndReturn(
-                "${proj.projectDir}/build/j2objcOutputs/src/test/resources")
+                proj.file('build/j2objcOutputs/src/test/resources').absolutePath)
         mockProjectExec.demandCopyAndReturn(
-                "${proj.projectDir}/build/j2objcOutputs/src/test/resources",
-                "${proj.projectDir}/src/test/resources")
+                proj.file('build/j2objcOutputs/src/test/resources').absolutePath,
+                proj.file('src/test/resources').absolutePath)
 
         AssembleResourcesTask j2objcAssembleResources =
                 (AssembleResourcesTask) proj.tasks.create(name: 'j2objcAR', type: AssembleResourcesTask)

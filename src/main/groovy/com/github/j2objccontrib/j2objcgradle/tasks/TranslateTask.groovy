@@ -235,7 +235,7 @@ class TranslateTask extends DefaultTask {
         ])
         // TODO: comment explaining ${project.buildDir}/classes
         String classpathArg = Utils.joinedPathArg(classpathFiles) +
-                              File.pathSeparator + "${project.buildDir}/classes"
+                              Utils.pathSeparator() + "${project.buildDir}/classes"
 
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()

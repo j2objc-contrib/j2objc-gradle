@@ -40,7 +40,8 @@ class XcodeTaskTest {
 
     @Before
     void setUp() {
-        Utils.fakeOSName = 'Mac OS X'
+        // Mac OS X is the only OS that can run this task
+        Utils.setFakeOSMacOSX()
         proj = ProjectBuilder.builder().build()
     }
 
@@ -55,7 +56,7 @@ class XcodeTaskTest {
         j2objcXcode.verifyXcodeArgs()
         File podFile = j2objcXcode.getPodfileFile()
 
-        String expectedPath = proj.file('../ios').absolutePath + '/Podfile'
+        String expectedPath = proj.file('../ios/Podfile').absolutePath
         assert expectedPath == podFile.absolutePath
     }
 
@@ -74,8 +75,8 @@ class XcodeTaskTest {
     }
 
     @Test
-    void testXcodeConfig_nonMacOSX() {
-        Utils.fakeOSName = 'Windows'
+    void testXcodeConfig_Windows() {
+        Utils.setFakeOSWindows()
 
         String j2objcHome
         J2objcConfig j2objcConfig
@@ -102,29 +103,26 @@ class XcodeTaskTest {
                         applyJavaPlugin: true,
                         createJ2objcConfig: true))
 
-        // TODO: should be '../ios' but that needs temp project to be subdirectory of temp dir
-        // Absolute Path to avoid test error: "Cannot convert relative path ios to an absolute file."
-        j2objcConfig.xcodeProjectDir = "${proj.projectDir}/ios"
+        j2objcConfig.xcodeProjectDir = '../ios'
         j2objcConfig.xcodeTarget = 'IOS-APP'
 
         // Needed for podspecDebug
         proj.file(proj.buildDir).mkdir()
         // Needed for Podfile
         proj.file(j2objcConfig.xcodeProjectDir).mkdir()
-
-        XcodeTask j2objcXcode = (XcodeTask) proj.tasks.create(name: 'j2objcXcode', type: XcodeTask)
-
         // Podfile written without podspecDebug reference
-        File podfile = proj.file('ios/Podfile')
+        File podfile = proj.file('../ios/Podfile')
         podfile.write(
                 "target 'IOS-APP' do\n" +
                 "end")
+
+        XcodeTask j2objcXcode = (XcodeTask) proj.tasks.create(name: 'j2objcXcode', type: XcodeTask)
 
         // Demands for exec and copy
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
 
         mockProjectExec.demandExecAndReturn(
-                "${proj.projectDir}/ios",  // working directory
+                proj.file('../ios').absolutePath,  // working directory
                 [
                         "pod",
                         "install",
@@ -147,13 +145,18 @@ class XcodeTaskTest {
         List<String> expectedPodfile = [
                 "target 'IOS-APP' do",
                 // Newly added line
-                "pod '$podNameDebug', :configuration => ['Debug'], :path => '${proj.projectDir}/build'",
-                "pod '$podNameRelease', :configuration => ['Release'], :path => '${proj.projectDir}/build'",
+                "pod '$podNameDebug', :configuration => ['Debug'], :path => '$proj.buildDir'",
+                "pod '$podNameRelease', :configuration => ['Release'], :path => '$proj.buildDir'",
                 "end"]
         List<String> readPodFileLines = podfile.readLines()
         assert expectedPodfile == readPodFileLines
 
         // Debug Podspec
+        if (Utils.isWindowsNoFake()) {
+            // TestingUtils.ProjectConfig converts j2objcHome to forwards slashes on Windows,
+            // this is due to backslashes in local.properties being silently ignored
+            j2objcHome = j2objcHome.replace('/', '\\')
+        }
         List<String> expectedPodspecDebug = [
                 "Pod::Spec.new do |spec|",
                 "  spec.name = '$podNameDebug'",
@@ -166,7 +169,7 @@ class XcodeTaskTest {
                 "  spec.libraries = 'ObjC', 'guava', 'javax_inject', 'jre_emul', 'jsr305', 'z', 'icucore', '$libName'",
                 "  spec.xcconfig = {",
                 "    'HEADER_SEARCH_PATHS' => '${j2objcHome}/include',",
-                "    'LIBRARY_SEARCH_PATHS' => '${j2objcHome}/lib ${proj.projectDir}/build/j2objcOutputs/lib/iosDebug'",
+                "    'LIBRARY_SEARCH_PATHS' => '${j2objcHome}/lib ${proj.file('build/j2objcOutputs/lib/iosDebug').absolutePath}'",
                 "  }",
                 "end"]
         File podspecDebug = proj.file("build/${podNameDebug}.podspec")
@@ -186,7 +189,7 @@ class XcodeTaskTest {
                 "  spec.libraries = 'ObjC', 'guava', 'javax_inject', 'jre_emul', 'jsr305', 'z', 'icucore', '$libName'",
                 "  spec.xcconfig = {",
                 "    'HEADER_SEARCH_PATHS' => '${j2objcHome}/include',",
-                "    'LIBRARY_SEARCH_PATHS' => '${j2objcHome}/lib ${proj.projectDir}/build/j2objcOutputs/lib/iosRelease'",
+                "    'LIBRARY_SEARCH_PATHS' => '${j2objcHome}/lib ${proj.file('build/j2objcOutputs/lib/iosRelease').absolutePath}'",
                 "  }",
                 "end"]
         File podspecRelease = proj.file("build/${podNameRelease}.podspec")
@@ -220,7 +223,7 @@ class XcodeTaskTest {
             assert false, 'Expected Exception'
         } catch (InvalidUserDataException exception) {
             assert exception.toString().contains('The Podfile must be created with this command')
-            assert exception.toString().contains("(cd ${proj.projectDir}/ios && pod init)")
+            assert exception.toString().contains("(cd ${proj.file('ios').absolutePath} && pod init)")
         }
 
         // Verify no calls to project.copy, project.delete or project.exec

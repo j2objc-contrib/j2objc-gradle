@@ -66,9 +66,9 @@ class J2objcConfig {
         nativeCompilation = new NativeCompilation(project)
 
         // Provide defaults for assembly output locations.
-        destSrcMainDir = "${project.buildDir}/j2objcOutputs/src/main"
-        destSrcTestDir = "${project.buildDir}/j2objcOutputs/src/test"
-        destLibDir = "${project.buildDir}/j2objcOutputs/lib"
+        destSrcMainDir = new File(project.buildDir, 'j2objcOutputs/src/main').absolutePath
+        destSrcTestDir = new File(project.buildDir, 'j2objcOutputs/src/test').absolutePath
+        destLibDir = new File(project.buildDir, 'j2objcOutputs/lib').absolutePath
     }
 
     /**

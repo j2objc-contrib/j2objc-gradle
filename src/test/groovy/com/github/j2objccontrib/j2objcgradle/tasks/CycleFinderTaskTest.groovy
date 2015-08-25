@@ -34,7 +34,8 @@ class CycleFinderTaskTest {
 
     @Before
     void setUp() {
-        Utils.fakeOSName = 'Mac OS X'
+        // Default to native OS except for specific tests
+        Utils.setFakeOSNone()
         (proj, j2objcHome, j2objcConfig) = TestingUtils.setupProject(new TestingUtils.ProjectConfig(
                 applyJavaPlugin: true,
                 createReportsDir: true,
@@ -62,6 +63,12 @@ class CycleFinderTaskTest {
                         '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java',
                         '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/PROJECT_DIR/build/classes',
                 ],
+                // expectedWindowsExecutableAndArgs
+                [
+                        'java',
+                        '-jar',
+                        '/J2OBJC_HOME/lib/cycle_finder.jar',
+                ],
                 'IGNORE\n40 CYCLES FOUND\nIGNORE',  // stdout
                 null,  // stderr
                 new ExecException('Non-Zero Exit'))
@@ -73,7 +80,7 @@ class CycleFinderTaskTest {
 
     @Test
     void cycleFinder_Windows() {
-        Utils.fakeOSName = 'Windows'
+        Utils.setFakeOSWindows()
 
         // Expected number of cycles when using simple method
         assert 40 == j2objcConfig.cycleFinderExpectedCycles
@@ -86,11 +93,15 @@ class CycleFinderTaskTest {
         mockProjectExec.demandExecAndReturn(
                 null,
                 [
+                        'INVALID-NEEDS-WINDOWS-SUBSTITUTION',
+                        '-sourcepath', '/PROJECT_DIR/src/main/java;/PROJECT_DIR/src/test/java',
+                        '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar;/J2OBJC_HOME/lib/j2objc_guava.jar;/J2OBJC_HOME/lib/j2objc_junit.jar;/J2OBJC_HOME/lib/jre_emul.jar;/J2OBJC_HOME/lib/javax.inject-1.jar;/J2OBJC_HOME/lib/jsr305-3.0.0.jar;/J2OBJC_HOME/lib/mockito-core-1.9.5.jar;/PROJECT_DIR/build/classes',
+                ],
+                // expectedWindowsExecutableAndArgs
+                [
                         'java',
                         '-jar',
                         '/J2OBJC_HOME/lib/cycle_finder.jar',
-                        '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java',
-                        '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/PROJECT_DIR/build/classes',
                 ],
                 'IGNORE\n40 CYCLES FOUND\nIGNORE',  // stdout
                 null,  // stderr
@@ -116,6 +127,12 @@ class CycleFinderTaskTest {
                         '/J2OBJC_HOME/cycle_finder',
                         '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java',
                         '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/PROJECT_DIR/build/classes',
+                ],
+                // expectedWindowsExecutableAndArgs
+                [
+                        'java',
+                        '-jar',
+                        '/J2OBJC_HOME/lib/cycle_finder.jar',
                 ],
                 // NOTE: '50' cycles instead of expected 40
                 '50 CYCLES FOUND',  // stdout
@@ -152,6 +169,12 @@ class CycleFinderTaskTest {
                         '--whitelist', '/J2OBJC_REPO/jre_emul/cycle_whitelist.txt',
                         '--sourcefilelist', '/J2OBJC_REPO/jre_emul/build_result/java_sources.mf'
                 ],
+                // expectedWindowsExecutableAndArgs
+                [
+                        'java',
+                        '-jar',
+                        '/J2OBJC_HOME/lib/cycle_finder.jar',
+                ],
                 '0 CYCLES FOUND',  // stdout
                 null,  // stderr
                 null)
@@ -181,6 +204,12 @@ class CycleFinderTaskTest {
                         '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/PROJECT_DIR/build/classes',
                         '--whitelist', '/J2OBJC_REPO/jre_emul/cycle_whitelist.txt',
                         '--sourcefilelist', '/J2OBJC_REPO/jre_emul/build_result/java_sources.mf'
+                ],
+                // expectedWindowsExecutableAndArgs
+                [
+                        'java',
+                        '-jar',
+                        '/J2OBJC_HOME/lib/cycle_finder.jar',
                 ],
                 'IGNORE\n2 CYCLES FOUND\nIGNORE',  // stdout
                 null,  // stderr

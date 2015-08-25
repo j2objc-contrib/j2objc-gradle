@@ -44,18 +44,18 @@ class AssembleLibrariesTaskTest {
         MockProjectExec mockProjectExec = new MockProjectExec(proj, '/J2OBJC_HOME')
         mockProjectExec.demandCopyAndReturn({
             includeEmptyDirs = true
-            from "$proj.projectDir/build/binaries/$proj.name-j2objcStaticLibrary"
-            from "$proj.projectDir/build/packedBinaries/$proj.name-j2objcStaticLibrary"
-            into "$proj.projectDir/build/j2objcOutputs/lib"
+            from proj.file("build/binaries/$proj.name-j2objcStaticLibrary").absolutePath
+            from proj.file("build/packedBinaries/$proj.name-j2objcStaticLibrary").absolutePath
+            into proj.file('build/j2objcOutputs/lib').absolutePath
             include '*Debug/*.a'
         })
 
-        AssembleLibrariesTask j2objcAssembleLibraries =
-                (AssembleLibrariesTask) proj.tasks.create(name: 'j2objcAL', type: AssembleLibrariesTask) {
-                    buildType = 'Debug'
-                    srcLibDir = proj.file("$proj.buildDir/binaries/$proj.name-j2objcStaticLibrary")
-                    srcPackedLibDir = proj.file("$proj.buildDir/packedBinaries/$proj.name-j2objcStaticLibrary")
-                }
+        AssembleLibrariesTask j2objcAssembleLibraries = (AssembleLibrariesTask) proj.tasks.create(
+                name: 'j2objcAssembleLibraries', type: AssembleLibrariesTask) {
+            buildType = 'Debug'
+            srcLibDir = new File(proj.buildDir, "binaries/$proj.name-j2objcStaticLibrary".toString())
+            srcPackedLibDir = new File(proj.buildDir, "packedBinaries/$proj.name-j2objcStaticLibrary".toString())
+        }
 
         j2objcAssembleLibraries.assembleLibraries()
 

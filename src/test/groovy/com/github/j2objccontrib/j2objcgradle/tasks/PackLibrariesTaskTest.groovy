@@ -39,7 +39,8 @@ class PackLibrariesTaskTest {
 
     @Before
     void setUp() {
-        Utils.fakeOSName = 'Mac OS X'
+        // Mac OS X is the only OS that can run this task
+        Utils.setFakeOSMacOSX()
         (proj, j2objcHome, j2objcConfig) = TestingUtils.setupProject(new TestingUtils.ProjectConfig(
                 applyJavaPlugin: true,
                 createJ2objcConfig: true
@@ -47,8 +48,8 @@ class PackLibrariesTaskTest {
     }
 
     @Test
-    void testPackLibraries_nonMacOSX() {
-        Utils.fakeOSName = 'Windows'
+    void testPackLibraries_Windows() {
+        Utils.setFakeOSWindows()
 
         PackLibrariesTask j2objcPackLibraries =
                 (PackLibrariesTask) proj.tasks.create(name: 'j2objcPackLibraries', type: PackLibrariesTask) {
@@ -66,7 +67,7 @@ class PackLibrariesTaskTest {
         // Expected Activity
         MockProjectExec mockProjectExec = new MockProjectExec(proj, '/J2OBJC_HOME')
         mockProjectExec.demandDeleteAndReturn(
-                "$proj.projectDir/build/packedBinaries/$proj.name-j2objcStaticLibrary/iosDebug")
+                proj.file("build/packedBinaries/$proj.name-j2objcStaticLibrary/iosDebug").absolutePath)
         mockProjectExec.demandExecAndReturn(
                 [
                         'xcrun',

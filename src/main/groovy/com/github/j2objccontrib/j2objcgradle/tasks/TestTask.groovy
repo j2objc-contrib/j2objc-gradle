@@ -222,25 +222,23 @@ class TestTask extends DefaultTask {
         }
     }
 
-    // Generate Test Names
-    // Generate list of tests from the source java files
-    // e.g. src/test/java/com/example/dir/ClassTest.java => "com.example.dir.ClassTest"
+    // Generate list of test names from the source java files
     // depends on --prefixes dir/prefixes.properties in translateArgs
+    //   Before:  src/test/java/com/example/dir/SomeTest.java
+    //   After:   com.example.dir.SomeTest or PREFIXSomeTest
     static List<String> getTestNames(Project proj, FileCollection srcFiles, Properties packagePrefixes) {
 
         List<String> testNames = srcFiles.collect { File file ->
-            // Overall goal is to take the File path to the test name:
-            // src/test/java/com/example/dir/SomeTest.java => com.example.dir.SomeTest
-            // Comments show the value of the LHS variable after assignment
-
-            String testName = proj.relativePath(file)  // com.example.dir.SomeTest
-                    .replace('src/test/java/', '')
-                    .replace('/', '.')
-                    .replace('.java', '')
+            // Comments indicate the value at the end of that statement
+            String testName = proj.relativePath(file)  // src/test/java/com/example/dir/SomeTest.java
+                            .replace('\\', '/')  // Windows backslashes converted to forward slash
+                            .replace('src/test/java/', '')  // com/example/dir/SomeTest.java
+                            .replace('.java', '')  // com/example/dir/SomeTest
+                            .replace('/', '.')  // com.example.dir.SomeTest
 
             // Translate test name according to prefixes.properties
-            // Prefix Property: com.example.dir: Prefix
-            // Test Name: com.example.dir.SomeTest => PrefixSomeTest
+            // Prefix Property: com.example.dir: PREFIX
+            // Test Name: com.example.dir.SomeTest => PREFIXSomeTest
 
             // First match against the set of Java packages, excluding the filename
             Matcher matcher = (testName =~ /^(([^.]+\.)+)[^.]+$/)  // (com.example.dir.)SomeTest
@@ -249,10 +247,10 @@ class TestTask extends DefaultTask {
                 String namespaceChopped = namespace[0..-2]  // com.example.dir
                 if (packagePrefixes.containsKey(namespaceChopped)) {
                     String prefix = packagePrefixes.getProperty(namespaceChopped)
-                    testName = testName.replace(namespace, prefix)  // PrefixSomeTest
+                    testName = testName.replace(namespace, prefix)  // PREFIXSomeTest
                 }
             }
-            return testName  // com.example.dir.SomeTest or PrefixSomeTest
+            return testName  // com.example.dir.SomeTest or PREFIXSomeTest
         }
         return testNames
     }

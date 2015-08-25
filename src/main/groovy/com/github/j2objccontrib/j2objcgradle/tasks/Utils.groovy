@@ -60,35 +60,64 @@ class Utils {
         }
     }
 
+    private static String fakeOSName = ''
+
+    // This allows faking of is(Linux|Windows|MacOSX) methods but misses java.io.File separators
+    // One of the following four methods should be called in @Before method to isolate test state
     @VisibleForTesting
-    static String fakeOSName = ''
+    static void setFakeOSLinux() {
+        fakeOSName = 'Linux'
+    }
 
     @VisibleForTesting
-    static String getLowerCaseOSName() {
+    static void setFakeOSMacOSX() {
+        fakeOSName = 'Mac OS X'
+    }
+
+    @VisibleForTesting
+    static void setFakeOSWindows() {
+        fakeOSName = 'Windows'
+    }
+
+    // Unset fake os, should be needed for @Before method
+    @VisibleForTesting
+    static void setFakeOSNone() {
+        fakeOSName = ''
+    }
+
+    @VisibleForTesting
+    static String getLowerCaseOSName(boolean ignoreFakeOSName) {
 
         String osName = System.getProperty('os.name')
-        if (!fakeOSName.isEmpty()) {
-            osName = fakeOSName
-        } else {
-            if (System.getProperty('inTestMustFakeOS') == 'true') {
-                throw new InvalidUserDataException(
-                        "Tests must set Utils.fakeOSName = 'OS NAME'\n" +
-                        "This ensure that tests don't depend on the system environment")
+        if (!ignoreFakeOSName) {
+            if (!fakeOSName.isEmpty()) {
+                osName = fakeOSName
             }
         }
         osName = osName.toLowerCase()
         return osName
     }
 
-    static boolean isWindows() {
-        String osName = getLowerCaseOSName()
-        return osName.contains('windows')
+    static boolean isLinux() {
+        String osName = getLowerCaseOSName(false)
+        // http://stackoverflow.com/a/18417382/1509221
+        return osName.contains('nux')
     }
 
     static boolean isMacOSX() {
-        String osName = getLowerCaseOSName()
-        // From: http://stackoverflow.com/a/18417382/1509221
+        String osName = getLowerCaseOSName(false)
+        // http://stackoverflow.com/a/18417382/1509221
         return osName.contains('mac') || osName.contains('darwin')
+    }
+
+    static boolean isWindows() {
+        String osName = getLowerCaseOSName(false)
+        return osName.contains('windows')
+    }
+
+    static boolean isWindowsNoFake() {
+        String osName = getLowerCaseOSName(true)
+        return osName.contains('windows')
     }
 
     static void requireMacOSX(String taskName) {
@@ -96,6 +125,24 @@ class Utils {
             throw new InvalidUserDataException(
                     "Mac OS X is required for $taskName. Use `translateOnlyMode` on Windows or Linux:\n" +
                     'https://github.com/j2objc-contrib/j2objc-gradle/blob/master/FAQ.md#how-do-i-develop-on-windows-or-linux')
+        }
+    }
+
+    // Same as File.separator but can be faked using setFakeOSXXXX()
+    static String fileSeparator() {
+        if (isWindows()) {
+            return '\\'
+        } else {
+            return '/'
+        }
+    }
+
+    // Same as File.pathSeparator but can be faked using setFakeOSXXXX()
+    static String pathSeparator() {
+        if (isWindows()) {
+            return ';'
+        } else {
+            return ':'
         }
     }
 
@@ -172,8 +219,8 @@ class Utils {
     // MUST be used only in @Input getJ2objcHome() methods to ensure up-to-date checks are correct
     // @Input getJ2objcHome() method can be used freely inside the task action
     static String j2objcHome(Project proj) {
-        String result = getLocalProperty(proj, 'home')
-        if (result == null) {
+        String j2objcHome = getLocalProperty(proj, 'home')
+        if (j2objcHome == null) {
             String message =
                     "J2ObjC Home not set, this should be configured either:\n" +
                     "1) in a 'local.properties' file in the project root directory as:\n" +
@@ -186,15 +233,13 @@ class Utils {
                     "https://github.com/google/j2objc/releases"
             throw new InvalidUserDataException(message)
         }
-        if (!proj.file(result).exists()) {
-            String message = "J2OjcC Home directory not found, expected location: ${result}"
+        File j2objcHomeFile = new File(j2objcHome)
+        if (!j2objcHomeFile.exists()) {
+            String message = "J2OjcC Home directory not found, expected location: ${j2objcHome}"
             throw new InvalidUserDataException(message)
         }
-        // Trailing slashes cause problems with string concatenation logic.
-        if (result != null && result.endsWith('/')) {
-            result = result.substring(0, result.length() - 1)
-        }
-        return result
+        // File removes trailing slashes cause problems with string concatenation logic
+        return j2objcHomeFile.absolutePath
     }
 
     // Reads properties file and arguments from translateArgs (last argument takes precedence)
@@ -297,7 +342,7 @@ class Utils {
             paths += file.path
         }
         // OS specific separator, i.e. ":" on OS X and ";" on Windows
-        return paths.join(File.pathSeparator)
+        return paths.join(pathSeparator())
     }
 
     static String trimTrailingForwardSlash(String path) {
