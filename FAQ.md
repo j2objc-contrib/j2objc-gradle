@@ -147,12 +147,54 @@ j2objcConfig {
 
 See the following FAQ answers...
 
+### How do I setup a dependency to a third-party Java library?
+
+These are the kinds of dependencies usually specified as follows in build `shared/build.gradle`.
+We'll use `gson` as an example:
+```gradle
+dependencies {
+    compile 'com.google.code.gson:gson:2.3.1'
+}
+```
+
+Per J2ObjC's documentation: "Developers must have source code for their Android app, which
+they either own or are licensed to use" - which includes libraries.
+The dependencies directive above only associates your project with the .class files,
+not the .java source files, of your third-party dependency.
+
+In order to use such a dependency with J2ObjC, you'll need to find the associated source jars.
+For many libraries and repositories, source jars are available easily from the library page.  For
+example, if you are using `mavenCentral()`, you could find the `gson` source by downloading
+the `gson-2.3.1-sources.jar` file from 
+[search.maven.org](http://search.maven.org/#artifactdetails%7Ccom.google.code.gson%7Cgson%7C2.3.1%7Cjar),
+and putting that in your `shared/srcLibs` directory.
+
+Then add the following to your j2objcConfig:
+```gradle
+j2objcConfig {
+    // This will automatically incorporate just the neccessary files from
+    // the translateSourcepaths.
+    translateArgs '--build-closure'
+    
+    // Repeat for every source jar dependency you have.
+    translateSourcepaths 'srcLibs/gson-2.3.1-sources.jar'
+    
+    ...
+}
+```
+
+In the future, this kind of dependency should be inferred automatically from the corresponding
+Java dependency - [issue 41](https://github.com/j2objc-contrib/j2objc-gradle/issues/41).
+
+Also note that this directly incorporates only the neccessary files from your dependencies into
+your Objective C libraries.  It does not produce a separate `gson` Objective C library that you can
+use standalone.  You would need to create a separate Gradle Java project manually to do that.
 
 ### How do I setup a dependency on a Java project?
 
 The Java project must use the [Gradle Java Plugin](https://docs.gradle.org/current/userguide/java_plugin.html).
 If project `shared` depends on Gradle Java Project A, and you want J2Objc generated Project
-`shared` to depend on J2ObjC generated Project A. Add to `shared/build.gradle`:
+`shared` to depend on J2ObjC generated Project A, then add to `shared/build.gradle`:
 
 ```gradle
 // File: shared/build.gradle
@@ -162,14 +204,16 @@ j2objcConfig {
 ```
 
 Project A needs to have the J2objc Gradle Plugin applied along with `j2objcConfig {...}`.
-This applies transitively, so in turn it may need `dependsOnJ2objc` again.
-Alternatively you can try building using `--build-closure` (TODO: need item on this).
+This applies transitively, so in turn it may need `dependsOnJ2objc` again, if say A
+depends on Gradle Java Project B. *
+
 The library will be linked in and the headers available for inclusion. Project A will be
 built first.
 
 In the future, this kind of dependency should be inferred automatically from the corresponding
 Java dependency - [issue 41](https://github.com/j2objc-contrib/j2objc-gradle/issues/41).
 
+* Alternatively you can try building using `--build-closure` (TODO: need item on this).
 
 ### How do I setup a dependency on a prebuilt native library?
 
