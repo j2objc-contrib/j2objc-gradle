@@ -15,17 +15,15 @@
  */
 
 package com.github.j2objccontrib.j2objcgradle
-
 import com.github.j2objccontrib.j2objcgradle.tasks.Utils
 import com.google.common.annotations.VisibleForTesting
 import groovy.transform.CompileStatic
+import groovy.transform.TypeCheckingMode
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.api.tasks.bundling.AbstractArchiveTask
 import org.gradle.api.tasks.util.PatternSet
 import org.gradle.util.ConfigureUtil
-
 /**
  * j2objcConfig is used to configure the plugin with the project's build.gradle.
  *
@@ -185,6 +183,17 @@ class J2objcConfig {
     }
 
     /**
+     * Enables --build-closure, which translates classes referenced from the
+     * list of files passed for translation, using the
+     * {@link #translateSourcepaths}.
+     */
+    void enableBuildClosure() {
+        if (!translateArgs.contains('--build-closure')) {
+            translateArgs('--build-closure')
+        }
+    }
+
+    /**
      *  Local jars for translation e.g.: "lib/json-20140107.jar", "lib/somelib.jar".
      *  This will be added to j2objc as a '-classpath' argument.
      */
@@ -226,6 +235,27 @@ class J2objcConfig {
     // (e.g. adding new files or changing translateClasspaths). When you change the dependencies and
     // the build breaks, you need to do a clean build.
     boolean UNSAFE_incrementalBuildClosure = false
+
+    /**
+     * Experimental functionality to automatically configure dependencies.
+     * Consider you have dependencies like:
+     * <pre>
+     * dependencies {
+     *     compile project(':peer1')                  // type (1)
+     *     compile 'com.google.code.gson:gson:2.3.1'  // type (3)
+     *     compile 'com.google.guava:guava:18.0'      // type (2)
+     *     testCompile 'junit:junit:4.11'             // type (2)
+     * }
+     * </pre>
+     * Project dependencies (1) will be added as a `j2objcLink` dependency.
+     * Libraries already included in j2objc (2) will be ignored.
+     * External libraries in Maven (3) will be added in source JAR form to
+     * `j2objcTranslate`, and translated using `--build-closure`.
+     * Dependencies must be fully specified before you call finalConfigure().
+     * <p/>
+     * This will become the default when stable in future releases.
+     */
+    boolean autoConfigureDeps = false
 
     /**
      * Additional libraries that are part of the j2objc distribution.
@@ -292,8 +322,11 @@ class J2objcConfig {
 
     /**
      * @see #dependsOnJ2objcLib(org.gradle.api.Project)
+     * @deprecated Use `dependencies { j2objcLinkage project(':beforeProjectName') }` or
+     * `autoConfigDeps = true` instead.
      */
     // TODO: Do this automatically based on project dependencies.
+    @Deprecated
     void dependsOnJ2objcLib(String beforeProjectName) {
         dependsOnJ2objcLib(project.project(beforeProjectName))
     }
@@ -311,33 +344,18 @@ class J2objcConfig {
      * Do not also include beforeProject's java source or jar in the
      * translateSourcepaths or translateClasspaths, respectively.  Calling this method
      * is preferable and sufficient.
+     *
+     * @deprecated Use `dependencies { j2objcLinkage project(':beforeProjectName') }` or
+     * `autoConfigDeps=true` instead.
      */
-    // TODO: Do this automatically based on project dependencies.
+    // TODO: Phase this API out, and have J2ObjC-applied project dependencies controlled
+    // solely via `j2objcLink` configuration.
+    @CompileStatic(TypeCheckingMode.SKIP)
+    @Deprecated
     void dependsOnJ2objcLib(Project beforeProject) {
-        // We need to have j2objcConfig on the beforeProject configured first.
-        project.evaluationDependsOn beforeProject.path
-
-        if (!beforeProject.plugins.hasPlugin(J2objcPlugin)) {
-            String message = "$beforeProject does not use the J2ObjC Gradle Plugin.\n" +
-                          "dependsOnJ2objcLib can be used only with another project that\n" +
-                          "itself uses the J2ObjC Gradle Plugin."
-            throw new InvalidUserDataException(message)
+        project.dependencies {
+            j2objcLinkage beforeProject
         }
-
-        // Build and test the java/objc libraries and the objc headers of
-        // the other project first.
-        // Since we assert the presence of the J2objcPlugin above,
-        // we are guaranteed that the java plugin, which creates the jar task,
-        // is also present.
-        project.tasks.getByName('j2objcPreBuild').dependsOn {
-            return [beforeProject.tasks.getByName('j2objcBuild'),
-                    beforeProject.tasks.getByName('jar')]
-        }
-        AbstractArchiveTask jarTask = beforeProject.tasks.getByName('jar') as AbstractArchiveTask
-        project.logger.debug("$project:j2objcTranslate must use ${jarTask.archivePath}")
-        translateClasspaths += jarTask.archivePath.absolutePath
-
-        nativeCompilation.dependsOnJ2objcLib(beforeProject)
     }
 
     /**
@@ -538,22 +556,47 @@ class J2objcConfig {
 
     protected boolean finalConfigured = false
     /**
-     * Configures the native build using.  Must be called at the very
+     * Configures the j2objc build.  Must be called at the very
      * end of your j2objcConfig block.
      */
-    // TODO: When Gradle makes it possible to modify a native build config
-    // after initial creation, we can remove this, and have methods on this object
-    // mutate the existing native model { } block.  See:
-    // https://discuss.gradle.org/t/problem-with-model-block-when-switching-from-2-2-1-to-2-4/9937
     @VisibleForTesting
     void finalConfigure() {
-        nativeCompilation.apply(project.file("${project.buildDir}/j2objcSrcGen"))
+        validateConfiguration()
+        // Conversion of compile and testCompile dependencies occurs optionally.
+        if (autoConfigureDeps) {
+            convertDeps()
+        }
+        // Resolution of j2objcTranslateSource dependencies occurs always.
+        // This lets users turn off autoConfigureDeps but manually set j2objcTranslateSource.
+        resolveDeps()
+        configureNativeCompilation()
+        configureTaskState()
         finalConfigured = true
+    }
 
+    protected void validateConfiguration() {
         assert destLibDir != null
         assert destSrcMainDir != null
         assert destSrcTestDir != null
+    }
 
+    protected void configureNativeCompilation() {
+        // TODO: When Gradle makes it possible to modify a native build config
+        // after initial creation, we can remove this, and have methods on this object
+        // mutate the existing native model { } block.  See:
+        // https://discuss.gradle.org/t/problem-with-model-block-when-switching-from-2-2-1-to-2-4/9937
+        nativeCompilation.apply(project.file("${project.buildDir}/j2objcSrcGen"))
+    }
+
+    protected void convertDeps() {
+        new DependencyConverter(project, this).configureAll()
+    }
+
+    protected void resolveDeps() {
+        new DependencyResolver(project, this).configureAll()
+    }
+
+    protected void configureTaskState() {
         // Disable only if explicitly present and not true.
         boolean debugEnabled = Boolean.parseBoolean(Utils.getLocalProperty(project, 'debug.enabled', 'true'))
         boolean releaseEnabled = Boolean.parseBoolean(Utils.getLocalProperty(project, 'release.enabled', 'true'))
@@ -622,5 +665,13 @@ class J2objcConfig {
                         "$nameArgs $rewrittenArgs")
             }
         }
+    }
+
+    @VisibleForTesting
+    void testingOnlyPrepConfigurations() {
+        // When testing we don't always want to apply the entire plugin
+        // before calling finalConfigure.
+        project.configurations.create('j2objcTranslation')
+        project.configurations.create('j2objcLinkage')
     }
 }

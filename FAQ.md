@@ -31,6 +31,7 @@ Paste the results below, replacing existing contents.
 - [Error: implicit declaration of function 'JreRelease' is invalid in C99 [-Werror,-Wimplicit-function-declaration] JreRelease(this$0_)](#error-implicit-declaration-of-function-jrerelease-is-invalid-in-c99--werror-wimplicit-function-declaration-jrereleasethis0_)
 - [How do I disable a plugin task?](#how-do-i-disable-a-plugin-task)
 - [How do I setup dependencies with J2ObjC?](#how-do-i-setup-dependencies-with-j2objc)
+- [How do I setup a dependency to a third-party Java library?](#how-do-i-setup-a-dependency-to-a-third-party-java-library)
 - [How do I setup a dependency on a Java project?](#how-do-i-setup-a-dependency-on-a-java-project)
 - [How do I setup a dependency on a prebuilt native library?](#how-do-i-setup-a-dependency-on-a-prebuilt-native-library)
 - [How do I setup a dependency on a native library project?](#how-do-i-setup-a-dependency-on-a-native-library-project)

@@ -23,7 +23,7 @@ public class ExtendedCubeTest {
 
     @Test
     public void testToString() {
-        Assert.assertEquals("[ExtendedCube 7]", new ExtendedCube(7).toString());
+        Assert.assertEquals("{\"dimension\":7}", new ExtendedCube(7).toString());
     }
 
     @Test

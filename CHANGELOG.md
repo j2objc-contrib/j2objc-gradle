@@ -1,7 +1,20 @@
 To see everything that has changed between version vA.B.C and vX.Y.Z, visit:
 https://github.com/j2objc-contrib/j2objc-gradle/compare/vA.B.C...vX.Y.Z
 
-# Prelease Alphas
+# Prerelease Alphas
+
+## vNext (HEAD)
+Functionality:
+* Automatic dependency resolution for Maven jars and Gradle projects #420
+* Proper limitation of functionality on non-Mac platforms #396
+* Embedded docs and versioning info for easier debugging #395
+
+Code quality:
+* Continuous integration on Mac #406 and on Windows #401
+* Added end to end tests on OSX (running j2objc) #409 #411 etc.
+* Unit tests pass on Windows #404
+* Prevent publishing of bad releases #395 #398
+* Docs updates (various)
 
 ## v0.4.2-alpha
 Functionality:

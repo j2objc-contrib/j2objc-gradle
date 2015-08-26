@@ -18,6 +18,9 @@ package com.example;
 
 import java.lang.Override;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import com.google.common.base.Joiner;
 
 public class ExtendedCube extends Cube {
@@ -28,7 +31,8 @@ public class ExtendedCube extends Cube {
 
     @Override
     public String toString() {
-        return String.format("[ExtendedCube %d]", dimension);
+        Gson gson = new GsonBuilder().create();
+        return gson.toJson(this);
     }
 
     @Override
