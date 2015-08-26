@@ -16,7 +16,7 @@ Paste the results below, replacing existing contents.
 -->
 - [How do I develop with Xcode?](#how-do-i-develop-with-xcode)
 - [How can I speed up my build?](#how-can-i-speed-up-my-build)
-- [What libraries work out-of-the-box?](#what-libraries-work-out-of-the-box)
+- [What libraries are linked by default?](#what-libraries-are-linked-by-default)
 - [What is the recommended folder structure for my app?](#what-is-the-recommended-folder-structure-for-my-app)
 - [What tasks does the plugin add to my project?](#what-tasks-does-the-plugin-add-to-my-project)
 - [What version of Gradle do I need?](#what-version-of-gradle-do-i-need)
@@ -69,7 +69,7 @@ J2OBJC_RELEASE_ENABLED=false ./gradlew build
 
 The `local.properties` value overrides the environment variable, if present.
 
-### What libraries work out-of-the-box?
+### What libraries are linked by default?
 
 A number of standard libraries are included with the J2ObjC releases and linked
 by default when using the plugin. To add other libraries, see the FAQs about

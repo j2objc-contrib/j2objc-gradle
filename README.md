@@ -46,12 +46,11 @@ j2objcConfig {
 }
 ```
 
-Info on additional `j2objcConfig` settings are in [J2objcConfig.groovy](https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcConfig.groovy#L30).
-
-If your `shared` project depends on
-any other projects or third-party libraries, you may need to 
-[add them manually](FAQ.md#how-do-i-setup-dependencies-with-j2objc) if they aren't
-[included out-of-the-box](FAQ.md#what-libraries-work-out-of-the-box).
+Info on additional `j2objcConfig` settings are in
+[J2objcConfig.groovy](https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcConfig.groovy#L30).
+If your `shared` project depends on any other projects or third-party libraries, you may
+need to [add them manually](FAQ.md#how-do-i-setup-dependencies-with-j2objc) if they aren't
+[linked by default](FAQ.md#what-libraries-are-linked-by-default).
 
 Within the Android application's `android/build.gradle`, make it dependent on the `shared` project:
 
