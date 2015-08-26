@@ -85,6 +85,23 @@ class J2objcPlugin implements Plugin<Project> {
             // specified in j2objcConfig (or associated defaults in J2objcConfig).
             File j2objcSrcGenDir = file("${buildDir}/j2objcSrcGen")
 
+            // These configurations are groups of artifacts and dependencies for the plugin build
+            // https://docs.gradle.org/current/dsl/org.gradle.api.artifacts.Configuration.html
+            configurations {
+                // When j2objcConfig.autoConfigureDeps is true, this configuration
+                // will have source paths automatically added to it.  You can add
+                // *source* JARs/directories yourself as well.
+                j2objcTranslation {
+                    description = 'J2ObjC Java source dependencies that need to be ' +
+                                  'transitively translated via --build-closure'
+                }
+                // Currently, we can only handle Project dependencies already translated to Objective-C.
+                j2objcLinkage {
+                    description = 'J2ObjC native library dependencies that need to be ' +
+                                  'linked into the final library, and do not need translation'
+                }
+            }
+
             // Produces a modest amount of output
             logging.captureStandardOutput LogLevel.INFO
 

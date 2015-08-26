@@ -80,6 +80,7 @@ class J2objcConfigTest {
         J2objcConfig ext = new J2objcConfig(proj)
 
         assert !ext.finalConfigured
+        ext.testingOnlyPrepConfigurations()
         ext.finalConfigure()
         assert ext.finalConfigured
     }
@@ -91,6 +92,7 @@ class J2objcConfigTest {
         assert !ext.finalConfigured
         ext.translateOnlyMode = true
 
+        ext.testingOnlyPrepConfigurations()
         ext.finalConfigure()
         assert ext.finalConfigured
     }
@@ -102,6 +104,7 @@ class J2objcConfigTest {
         assert !ext.finalConfigured
         ext.translateOnlyMode = true
 
+        ext.testingOnlyPrepConfigurations()
         ext.finalConfigure()
         assert ext.finalConfigured
     }
@@ -116,6 +119,7 @@ class J2objcConfigTest {
         expectedException.expectMessage('Mac OS X is required for Native Compilation of translated code')
 
         assert !ext.finalConfigured
+        ext.testingOnlyPrepConfigurations()
         ext.finalConfigure()
         assert ext.finalConfigured
     }
@@ -130,6 +134,7 @@ class J2objcConfigTest {
         expectedException.expectMessage('Mac OS X is required for Native Compilation of translated code')
 
         assert !ext.finalConfigured
+        ext.testingOnlyPrepConfigurations()
         ext.finalConfigure()
         assert ext.finalConfigured
     }
