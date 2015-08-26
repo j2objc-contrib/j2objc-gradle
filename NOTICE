@@ -1,0 +1,27 @@
+j2objc-gradle - Gradle plugin for j2objc (Java to Objective-C transpiler)
+https://github.com/j2objc-contrib/j2objc-gradle
+
+Copyright (c) 2015 the authors of j2objc-gradle
+
+Main Contributors:
+  Advay Mengle @advayDev1 <source@madvay.com>
+  Bruno Bowden @brunobowden <github@brunobowden.com>
+  Michael Gorski @confile <mail@michaelgorski.de>
+  
+Thanks:
+  Peter Niederweiser @pniederw <peter@pniederw.com>
+  Sterling Greene @big-guy <sterling.greene@gradleware.com>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this software except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+This serves as the NOTICE under Section 4 d of the License.
