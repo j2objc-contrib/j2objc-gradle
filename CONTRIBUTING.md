@@ -168,6 +168,121 @@ Running `build` also runs all the unit tests:
 ./gradlew build
 ```
 
+### Cross Platform Testing
+The plugin is designed to work on Mac OS X but also has limited support on Windows and Linux.
+The unit tests are designed to run across all platforms. This minimizes the chance that a
+developer working on one platform can break the build on another platform.
+
+#### Separators
+All the tests should be written using forward slashes for paths and `:` as the path separator
+(the standard for Linux and Mac OS X). MockProjectExec and other methods will automatically
+convert `\` to `/` and ':' to ';' on **on Windows only**.
+
+Separators are the main issue working across platforms. For the "file separator",
+`java.io.File.separator` separates path components in a directory hierarchy. This is `/` on
+Linux and Mac OS X and `\` on Windows. For the "path separator", `java.io.File.pathSeparator`
+separates paths on the command line. This is `:` on Linux and Mac OS X and `;` on Windows.
+
+
+#### Absolute Paths
+Absolute path detection is usually done by checking if it `startswith('/')`. For Windows,
+an absolute path has to start with the volume, e.g. `C:\`. When passing absolute paths
+to `proj.file(...)`, it must be prefixed with `C:` (the only volume used in testing).
+That should be done by using `TestingUtils.windowsNoFakeAbsolutePath(...)`. The following
+is a simple example that tests the OS specific behaviour of `proj.file(...)`:
+
+```groovy
+@Test
+public void testProjFile() {
+    String absolutePath = TestingUtils.windowsNoFakeAbsolutePath('/ABSOLUTE_PATH')
+    String actual = proj.file(absolutePath).absolutePath
+    // proj.file on Windows will convert '/' to '\', so convert back again
+    assert absolutePath == TestingUtils.windowsToForwardSlash(actual)
+}
+```
+
+#### Command Lines
+Windows doesn't support `echo hello` directly, instead you must run `cmd /C echo hello`.
+The `demandExecAndReturn(...)` methods allow you to supply a substitute set of arguments
+to replace the initial executable. For example the following will typically test for the
+execution of the command: `echo hello`. On Windows however, it will replace the first
+element with the second array, testing for the command `cmd /C echo hello`.
+
+```groovy
+mockProjectExec.demandExecAndReturn(
+        ['echo', 'hello'],
+        // windows substitute args
+        ['cmd', '/C', 'echo'])
+```
+
+#### Fake OS
+To get better coverage for a particular OS, without needing to run the unit-tests
+on that OS, it is possible to use the `setFakeOSXXXX()` methods. This has limited
+functionality and won't replace the native separators as used by java.io.File.
+When this is used, the `@Before` test method should always use the reset `setFakeOSNone()`
+to make the unit tests more hermetic. Within the particular test, use
+`Utils.setFakeOSWindows()` or similar for Linux or Mac OS X.
+
+In order for the test to pass, the main code under test must use `Utils.fileSeparator()`
+and `Utils.pathSeparator()`. These methods will respect the setFakeOSXXXX methods
+and return the separators for the faked OS. In the example below, the `testMethod_native`
+test uses the native platform on which the test is run, so it will act differently across
+multiple platforms. The `testMethod_windows` fakes the Windows OS. As long as the method
+under test uses `Utils.fileSeparator()`, the test will run the Windows code across all
+platforms.
+
+```groovy
+// File: Mine.groovy
+
+// Method can be used on both platforms
+public static void method() {
+    String executableIn = 'echo'
+    List<String> argsIn = ['hello']
+    // This conditional check if the fake OS has been set
+    if (Utils.isWindows()) {
+        executableIn = 'cmd'
+        argsIn = ['/C', 'echo', 'hello']
+    }
+    Utils.projectExec(project, null, null, null, {
+                executable executableIn
+                args argsIn
+                setStandardOutput null
+                setErrorOutput null
+            })
+}
+
+
+// File: MineTest.groovy
+
+// Default to native OS except for most tests
+@Before
+void setUp() {
+    Utils.setFakeOSNone()
+}
+
+// Uses native platform (most tests should be like this)
+@Test
+public void testMethod_native() {
+    mockProjectExec.demandExecAndReturn(
+            // Linux / Mac OS X uses only these arguments
+            ['echo', 'hello'],
+            // Windows will substitute these arguments
+            ['cmd', '/C', 'echo'])
+    Mine.method()
+}
+
+// Forces Windows platform test
+@Test
+public void testMethod_windows() {
+    Utils.setFakeOSWindows()
+    mockProjectExec.demandExecAndReturn(
+            // Making the test invalid on Linux / Mac OS X ensures that setFakeOSWindows works
+            ['INVALID-MUST-BE-SUBSTITUTED', 'hello'],
+            // All platforms will substitute these arguments due to the fake OS
+            ['cmd', '/C', 'echo'])
+    Mine.method()
+}
+```
 
 ### Preparing your pull request for submission
 Say you have a pull request ready for submission into the main repository - it has
@@ -267,22 +382,24 @@ or patch numbers.
 2.  As a separate commit, update the version number in `build.gradle`, removing the
 `-SNAPSHOT` suffix if any, and add a brief section at the top of
 [CHANGELOG.md](CHANGELOG.md) indicating key functionality and quality improvements.
-File a PR, and merge that PR into the release branch.
-3.  Tag the merge commit where that PR is merged into master as `vX.Y.Z` and push
-that tag to the repository.  It is important that this is not the commit for the PR.
-Since you are working directly off master, you must manually verify that no additional
-commits/PRs have been merged that you don't want in the release. Finally, verify that the
-build is Successful on Travis CI at the specific commit you are about to tag."
+File a PR, review and merge as normal.
+3. Get the commit SHA after the PR is merged from the
+[commit history](https://github.com/j2objc-contrib/j2objc-gradle/commits/master)
+(`cfdc1aa` used in example below).
+4. Verify that the specific commit SHA build Successful on all platforms. You may need
+to look in to the build history to confirm the specific SHA.
+5. Tag the merge commit where that PR is merged into master as `vX.Y.Z` and push
+that tag to the repository. Since you are working directly off master, you must manually
+verify that no additional commits/PRs have been merged that you don't want in the release.
 ```sh
 git tag -a v0.4.1-alpha cfdc1aa
 git push upstream v0.4.1-alpha
 ```
-4.  Do a clean build and then publish the new version to https://plugins.gradle.org<br>
+6.  Do a clean build and then publish the new version to https://plugins.gradle.org<br>
 ```sh
 ./gradlew clean build publishPlugins
 ```
-
-5.  Push a new PR that increments build.gradle to `vX.Y.(Z+1)-SNAPSHOT`.  `-SNAPSHOT`
+7.  Push a new PR that increments build.gradle to `vX.Y.(Z+1)-SNAPSHOT`.  `-SNAPSHOT`
 is standard convention for marking an unofficial build (if users happen to get their
 hands on one built directly from source).
 
