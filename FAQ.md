@@ -1,6 +1,139 @@
 # FAQ
 (for contributors, see [CONTRIBUTING.md](CONTRIBUTING.md))
 
+__Table of Contents__
+<!--
+To update the TOC,
+open a debugging console on the FAQ.md page on GitHub
+and execute:
+  $('article>h3').map(function(i){
+    var txt = $(this).text();
+    var href= $(this).find('a').attr('href');
+    return "- [" + txt + "](" + href + ")";
+  }).get().join('\n');
+  
+Paste the results below, replacing existing contents.
+-->
+- [How do I develop with Xcode?](#how-do-i-develop-with-xcode)
+- [How can I speed up my build?](#how-can-i-speed-up-my-build)
+- [What libraries work out-of-the-box?](#what-libraries-work-out-of-the-box)
+- [What is the recommended folder structure for my app?](#what-is-the-recommended-folder-structure-for-my-app)
+- [What tasks does the plugin add to my project?](#what-tasks-does-the-plugin-add-to-my-project)
+- [What version of Gradle do I need?](#what-version-of-gradle-do-i-need)
+- [How do I solve the Eclipse error message Obtaining Gradle model...?](#how-do-i-solve-the-eclipse-error-message-obtaining-gradle-model)
+- [How do I properly pass multiple arguments to J2ObjC?](#how-do-i-properly-pass-multiple-arguments-to-j2objc)
+- [Why is my clean build failing?](#why-is-my-clean-build-failing)
+- [How do I include Java files from additional source directories?](#how-do-i-include-java-files-from-additional-source-directories)
+- [How do I develop with Swift?](#how-do-i-develop-with-swift)
+- [How do I enable ARC for my Objective-C classes?](#how-do-i-enable-arc-for-my-objective-c-classes)
+- [How do I call finalConfigure()?](#how-do-i-call-finalconfigure)
+- [Why is my Android build so much slower after adding j2objc?](#why-is-my-android-build-so-much-slower-after-adding-j2objc)
+- [Error: implicit declaration of function 'JreRelease' is invalid in C99 [-Werror,-Wimplicit-function-declaration] JreRelease(this$0_)](#error-implicit-declaration-of-function-jrerelease-is-invalid-in-c99--werror-wimplicit-function-declaration-jrereleasethis0_)
+- [How do I disable a plugin task?](#how-do-i-disable-a-plugin-task)
+- [How do I setup dependencies with J2ObjC?](#how-do-i-setup-dependencies-with-j2objc)
+- [How do I setup a dependency on a Java project?](#how-do-i-setup-a-dependency-on-a-java-project)
+- [How do I setup a dependency on a prebuilt native library?](#how-do-i-setup-a-dependency-on-a-prebuilt-native-library)
+- [How do I setup a dependency on a native library project?](#how-do-i-setup-a-dependency-on-a-native-library-project)
+- [Cycle Finder Basic Setup](#cycle-finder-basic-setup)
+- [Cycle Finder Advanced Setup](#cycle-finder-advanced-setup)
+- [How do I develop on Windows or Linux?](#how-do-i-develop-on-windows-or-linux)
+
+
+### How do I develop with Xcode?
+
+When using the `j2objcTask`, open the `.xcworkspace` file in Xcode. If the `.xcodeproj` file
+is opened in Xcode then CocoaPods will fail. This will appear as an Xcode build time error:
+
+    library not found for -lPods-IOS-APP-j2objc-shared
+
+Also see the FAQ note on [developing with Swift](#how-do-i-develop-with-swift).
+
+
+### How can I speed up my build?
+
+You can reduce the build time by 50% by skipping the release binaries by adding the
+following to your root level `local.properties` file:
+
+```properties
+j2objc.release.enabled=false
+```
+
+This is helpful for a tight modify-compile-test loop using only debug binaries.
+You can also do this for `j2objc.debug.enabled`.
+
+If you'd rather just disable release builds for a particular run of the command line:
+
+```sh
+J2OBJC_RELEASE_ENABLED=false ./gradlew build
+```
+
+The `local.properties` value overrides the environment variable, if present.
+
+### What libraries work out-of-the-box?
+
+A number of standard libraries are included with the J2ObjC releases and linked
+by default when using the plugin. To add other libraries, see the FAQs about
+[dependencies](#how-do-i-setup-dependencies-with-j2objc).
+The standard libraries are:
+
+    guava
+    javax_inject
+    jsr305
+    junit
+    mockito
+    protobuf_runtime - TODO: https://github.com/j2objc-contrib/j2objc-gradle/issues/327
+
+
+### What is the recommended folder structure for my app?
+
+This is the suggested folder structure. It also shows a number of generated files and
+folders that aren't committed to your repository (marked with .gitignore). Files are
+shown before folders, so it is not in strict alphabetical order.
+
+    workspace
+    ├── .gitignore                     // Add Ignores: local.properties, build/, Pod/
+    ├── build.gradle
+    ├── local.properties               // sdk.dir=<Android SDK> and j2objc.home=<J2ObjC>, .gitignore
+    ├── settings.gradle                // include ':android', ':shared'
+    ├── android
+    │   ├── build.gradle               // dependencies { compile project(':shared') }
+    │   └── src/...                    // src/main/java/... and more, only Android specific code
+    ├── ios
+    │   ├── IOS-APP.xcworkspace        // Xcode workspace
+    │   ├── IOS-APP.xcodeproj          // Xcode project, which is modified by j2objcXcode / CocoaPods
+    │   ├── Podfile                    // j2objcXcode modifies this file for use by CocoaPods, committed
+    │   ├── IOS-APP/...                // j2objcXcode configures dependency on j2objcOutputs/{libs|src}
+    │   ├── IOS-APPTests/...           // j2objcXcode configures as above but with "debug" buildType
+    │   └── Pods/...                   // generated by CocoaPods for Xcode, .gitignore
+    └── shared
+        ├── build.gradle               // apply 'java' then 'j2objc' plugins
+        ├── build                      // generated build directory, .gitignore
+        │   ├── ...                    // other build output
+        │   ├── binaries/...           // Contains test binary: testJ2objcExecutable/debug/testJ2objc
+        │   ├── j2objc-shared.podspec  // j2objcXcode generates these settings to modify Xcode
+        │   └── j2objcOutputs/...      // j2objcAssemble copies libraries and headers here
+        ├── lib                        // library dependencies, must have source code for translation
+        │   ├── lib-with-src.jar       // library with source can be translated, see FAQ on how to use
+        │   └── libpreBuilt.a          // library prebuilt for ios, see FAQ on how to use
+        └── src/...                    // src/main/java/... shared code for translation
+
+
+### What tasks does the plugin add to my project?
+
+These are the main tasks for the plugin:
+
+    j2objcCycleFinder - Find memory cycles that can cause leaks, see FAQ for more details
+    j2objcTranslate   - Translates Java source to Objective-C
+    j2objcAssemble    - Outputs packed libraries, source & resources to build/j2objcOutputs
+    j2objcTest        - Runs all JUnit tests in the translated code
+    j2objcBuild       - Runs j2objcAssemble and j2objcTest, doesn't run j2objcXcode
+    j2objcXcode       - Xcode updated with libraries, headers & resources (uses CocoaPods)
+
+Running the `build` task from the Gradle Java plugin will automatically run the j2objcBuild command
+and all the previous tasks (which it depends on). Only the `j2objcXcode` task needs to be manually
+run. Note that you can use the Gradle shorthand of `$ gradlew jA` to do the `j2objcAssemble` task.
+The other shorthand expressions are `jCF, jTr, jA, jTe, jB and jX`.
+
 
 ### What version of Gradle do I need?
 
