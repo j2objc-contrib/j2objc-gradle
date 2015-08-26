@@ -11,7 +11,7 @@ and execute:
     var href= $(this).find('a').attr('href');
     return "- [" + txt + "](" + href + ")";
   }).get().join('\n');
-  
+
 Paste the results below, replacing existing contents.
 -->
 - [How do I develop with Xcode?](#how-do-i-develop-with-xcode)
@@ -25,6 +25,8 @@ Paste the results below, replacing existing contents.
 - [Why is my clean build failing?](#why-is-my-clean-build-failing)
 - [How do I include Java files from additional source directories?](#how-do-i-include-java-files-from-additional-source-directories)
 - [How do I develop with Swift?](#how-do-i-develop-with-swift)
+- [How do I solve 'File not found' import error in Xcode?](#how-do-i-solve-file-not-found-import-error-in-xcode)
+- [How do I work with Package Prefixes?](#how-do-i-work-with-package-prefixes)
 - [How do I enable ARC for my Objective-C classes?](#how-do-i-enable-arc-for-my-objective-c-classes)
 - [How do I call finalConfigure()?](#how-do-i-call-finalconfigure)
 - [Why is my Android build so much slower after adding j2objc?](#why-is-my-android-build-so-much-slower-after-adding-j2objc)
@@ -198,9 +200,10 @@ sourceSets {
 
 ### How do I develop with Swift?
 
-To work with Swift in Xcode, you need to configure a [bridging header](https://developer.apple.com/library/ios/documentation/Swift/Conceptual/BuildingCocoaApps/MixandMatch.html#//apple_ref/doc/uid/TP40014216-CH10-XID_81).
-Within that bridging header, include the file needed for using the JRE and any classes that you'd like
-to access from Swift code.
+To work with Swift in Xcode, you need to configure a
+[bridging header](https://developer.apple.com/library/ios/documentation/Swift/Conceptual/BuildingCocoaApps/MixandMatch.html#//apple_ref/doc/uid/TP40014216-CH10-XID_81).
+Within that bridging header, include the files needed for using the JRE and any classes that
+you'd like to access from Swift code. Also see the FAQ item on [file not found](#how-do-i-solve-file-not-found-import-error-in-xcode) errors.
 
 ```objective-c
 // File: ios/IOS-APP/IOS-APP-bridging-header.h
@@ -213,6 +216,51 @@ to access from Swift code.
 // Included from `shared/build/j2objcOutputs/src/main/objc`
 #import "MyClassOne.h"
 #import "MyClassTwo.h"
+```
+
+### How do I solve 'File not found' import error in Xcode?
+
+This is typically caused by a limitation of Xcode that expects all the source to be in a
+top-level directory. You need to use the `--no-package-directories` argument to flatten
+the hierarchy. The plugin will warn if two files are mapped to a conflicting name.
+
+```groovy
+j2objcConfig {
+    translateArgs '--no-package-directories'
+    ...
+}
+```
+
+Example error:
+
+```
+Bridging-Header.h:6:9: note: in file included from Bridging-Header.h:6:
+#import "MyClass.h"
+        ^
+Template.h:10:10: error: 'com/test/AnotherClass.h' file not found
+#include "com/test/AnotherClass.h"
+```
+
+### How do I work with Package Prefixes?
+
+For the class `com.example.dir.MyClass`, J2ObjC will by default translate the name to
+`ComExampleDirMyClass`, which is a long name to use. With package prefixes, you can shorten it
+to something much more manageable, like `CedMyClass`. See the example below on how to do this.
+Also see the reference docs on [package name prefixes](http://j2objc.org/docs/Package-Prefixes.html).
+
+```groovy
+// File: build.gradle
+j2objcConfig {
+    translateArgs '--prefixes', 'resources/prefixes.properties'
+    ...
+}
+```
+
+```
+// File: resources/prefixes.properties
+// Storing at this location allows Class.forName(javaName) to work for mapped class.
+com.example.dir: Ced
+com.example.dir.subdir: Ceds
 ```
 
 
