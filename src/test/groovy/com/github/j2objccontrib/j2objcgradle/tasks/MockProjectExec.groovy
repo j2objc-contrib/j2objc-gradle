@@ -44,8 +44,11 @@ class MockProjectExec {
 
     private Project project
     private String j2objcHome
-    private static final String j2objcHomeStd = '/J2OBJC_HOME'
-    private static final String projectDirStd = '/PROJECT_DIR'
+
+    // Windows backslashes are converted to forward slashes for easier verification
+    private String initWorkingDir = '/INIT_WORKING_DIR'
+    private static final String j2objcHomeCanonicalized = '/J2OBJC_HOME'
+    private static final String projectDirCanonicalized = '/PROJECT_DIR'
 
     private MockFor mockForProj = new MockFor(Project)
     private ExecSpec execSpec = new ExecHandleBuilder()
@@ -55,8 +58,10 @@ class MockProjectExec {
         this.project = project
         this.j2objcHome = j2objcHome
 
+        initWorkingDir = TestingUtils.windowsNoFakeAbsolutePath(initWorkingDir)
+
         // This prevents the test error: "Cannot convert relative path . to an absolute file."
-        execSpec.setWorkingDir('/INIT_WORKING_DIR')
+        execSpec.setWorkingDir(initWorkingDir)
 
         // TODO: find a more elegant way to do this that doesn't require intercepting all methods
         // http://stackoverflow.com/questions/31129003/mock-gradle-project-exec-using-metaprogramming
@@ -124,7 +129,7 @@ class MockProjectExec {
         if (proxyInstance == null) {
             proxyInstance = mockForProj.proxyInstance()
         }
-        return ( Project ) proxyInstance
+        return (Project) proxyInstance
     }
 
     void verify() {
@@ -146,7 +151,7 @@ class MockProjectExec {
     void demandCopyAndReturn(
             @ClosureParams(value = SimpleType.class, options = "org.gradle.api.file.CopySpec")
             @DelegatesTo(CopySpec)
-                   Closure expectedClosure) {
+                    Closure expectedClosure) {
 
         mockForProj.demand.copy { Closure closure ->
 
@@ -219,12 +224,33 @@ class MockProjectExec {
         }
     }
 
-    void demandExecAndReturn(List<String> expectedCommandLine) {
-        demandExecAndReturn(null, expectedCommandLine, null, null, null)
+    void demandExecAndReturn(
+            List<String> expectedCommandLine,
+            List<String> expectedWindowsExecutableAndArgs) {
+        demandExecAndReturn(
+                null, expectedCommandLine, expectedWindowsExecutableAndArgs, null, null, null)
     }
 
     void demandExecAndReturn(
-            String expectWorkingDir, List<String> expectedCommandLine,
+            List<String> expectedCommandLine) {
+        demandExecAndReturn(
+                null, expectedCommandLine, null, null, null, null)
+    }
+
+    void demandExecAndReturn(
+            String expectWorkingDir,
+            List<String> expectedCommandLine,
+            String stdout, String stderr,
+            Exception exceptionToThrow) {
+        demandExecAndReturn(
+                // Empty expectedWindowsExecutableAndArgs
+                expectWorkingDir, expectedCommandLine, null, stdout, stderr, exceptionToThrow)
+    }
+
+    void demandExecAndReturn(
+            String expectWorkingDir,
+            List<String> expectedCommandLine,
+            List<String> expectedWindowsExecutableAndArgs,
             String stdout, String stderr,
             Exception exceptionToThrow) {
 
@@ -234,29 +260,54 @@ class MockProjectExec {
 
             ExecSpec execSpec = new ExecHandleBuilder()
             // This prevents the test error: "Cannot convert relative path . to an absolute file."
-            execSpec.setWorkingDir('/INIT_WORKING_DIR')
+
+            execSpec.setWorkingDir(initWorkingDir)
 
             ConfigureUtil.configure(closure, execSpec)
 
-            assert expectedCommandLine[0] == execSpec.getExecutable().replace(j2objcHome, j2objcHomeStd)
-            expectedCommandLine.remove(0)
+            // Substitute first entry in command line with Windows specific executable and args
+            // Example for translateTask:
+            //   Before: ['j2objc', expectedArgs...]
+            //   After:  ['java', '-jar', '/J2OBJC_HOME/lib/j2objc.jar', expectedArgs...]
+            if (Utils.isWindows() && expectedWindowsExecutableAndArgs != null) {
+                expectedCommandLine.remove(0)
+                expectedCommandLine.addAll(0, expectedWindowsExecutableAndArgs)
+            }
 
-            List<String> canonicalizedArgs = execSpec.getArgs().collect { String arg ->
-                return arg
+            String expectedExecutable = expectedCommandLine.remove(0)
+            assert TestingUtils.windowsToForwardSlash(expectedExecutable) ==
+                   TestingUtils.windowsToForwardSlash(execSpec.getExecutable())
+                           .replace(j2objcHome, j2objcHomeCanonicalized)
+
+            // Actual Arguments => canonicalize to simplify writing unit tests
+            List<String> actualArgsCanonicalized = execSpec.getArgs().collect { String arg ->
+                return TestingUtils.windowsToForwardSlash(arg)
                         // Use '/J2OBJC_HOME' in unit tests
-                        .replace(j2objcHome, j2objcHomeStd)
+                        .replace(TestingUtils.windowsToForwardSlash(j2objcHome), j2objcHomeCanonicalized)
                         // Use '/PROJECT_DIR' in unit tests
-                        .replace(project.projectDir.path, projectDirStd)
-                        // Use ':' as path separator in unit tests, converted to ';' for Windows
-                        .replace(':', File.pathSeparator)
+                        .replace(TestingUtils.windowsToForwardSlash(project.projectDir.absolutePath), projectDirCanonicalized)
             }
-            assert expectedCommandLine == canonicalizedArgs
+            // Expected Arguments => Windows replacement
+            // 1) pathSeparator replace, switching ':' for ';'
+            // 2) separator replace, switching '\\' for '/'
+            List<String> expectedArgsCanonicalized = expectedCommandLine.collect { String arg ->
+                assert !arg.contains('\\')
+                if (Utils.isWindows()) {
+                    assert 'C:' == TestingUtils.windowsAbsolutePathPrefix
+                    // Hacky way of preserving 'C:' prefix for absolute paths
+                    arg = TestingUtils.windowsToForwardSlash(arg).replace(':', ';').replace('C;', 'C:')
+                }
+                return arg
+            }
+            assert expectedArgsCanonicalized == actualArgsCanonicalized
+
+            // WorkingDir
+            String actualWorkingDir =
+                    TestingUtils.windowsToForwardSlash(execSpec.getWorkingDir().absolutePath)
             if (expectWorkingDir == null) {
-                // Check that it wasn't modified unexpectedly
-                assert '/INIT_WORKING_DIR' == execSpec.getWorkingDir().absolutePath
-            } else {
-                assert expectWorkingDir == execSpec.getWorkingDir().absolutePath
+                expectWorkingDir = initWorkingDir
             }
+            assert TestingUtils.windowsToForwardSlash(expectWorkingDir) == actualWorkingDir
 
             if (stdout) {
                 execSpec.getStandardOutput().write(stdout.getBytes('utf-8'))

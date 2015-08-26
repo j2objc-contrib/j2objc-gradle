@@ -43,20 +43,20 @@ class AssembleSourceTaskTest {
         // Expected Activity
         MockProjectExec mockProjectExec = new MockProjectExec(proj, '/J2OBJC_HOME')
         mockProjectExec.demandDeleteAndReturn(
-                "$proj.projectDir/build/j2objcOutputs/src/main/objc")
+                proj.file('build/j2objcOutputs/src/main/objc').absolutePath)
         mockProjectExec.demandCopyAndReturn({
                 includeEmptyDirs = false
-                from "$proj.projectDir/build/j2objcSrcGen"
-                into "$proj.projectDir/build/j2objcOutputs/src/main/objc"
+                from proj.file('build/j2objcSrcGen').absolutePath
+                into proj.file('build/j2objcOutputs/src/main/objc').absolutePath
                 exclude "**/*Test.h"
                 exclude "**/*Test.m"
         })
         mockProjectExec.demandDeleteAndReturn(
-                "$proj.projectDir/build/j2objcOutputs/src/test/objc")
+                proj.file('build/j2objcOutputs/src/test/objc').absolutePath)
         mockProjectExec.demandCopyAndReturn({
             includeEmptyDirs = false
-            from "$proj.projectDir/build/j2objcSrcGen"
-            into "$proj.projectDir/build/j2objcOutputs/src/test/objc"
+            from proj.file('build/j2objcSrcGen').absolutePath
+            into proj.file('build/j2objcOutputs/src/test/objc').absolutePath
             include "**/*Test.h"
             include "**/*Test.m"
         })

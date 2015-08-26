@@ -43,37 +43,40 @@ class J2objcConfigTest {
 
     @Before
     void setUp() {
+        // Default to native OS except for specific tests
+        Utils.setFakeOSNone()
         proj = ProjectBuilder.builder().build()
     }
 
     @Test
     void testConstructor() {
         J2objcConfig ext = new J2objcConfig(proj)
-        String projectDir = proj.projectDir.absolutePath
 
-        assert ext.destSrcMainDir == projectDir + '/build/j2objcOutputs/src/main'
-        assert ext.destSrcTestDir == projectDir + '/build/j2objcOutputs/src/test'
-        assert ext.destLibDir == projectDir + '/build/j2objcOutputs/lib'
+        assert proj.file('build/j2objcOutputs/src/main').absolutePath == ext.destSrcMainDir
+        assert proj.file('build/j2objcOutputs/src/test').absolutePath == ext.destSrcTestDir
+        assert proj.file('build/j2objcOutputs/lib').absolutePath == ext.destLibDir
     }
 
     @Test
     // All variations of main/test and objc/resources
     void testGetDestDirFile_AllVariations() {
         J2objcConfig ext = new J2objcConfig(proj)
-        String pDir = proj.projectDir.absolutePath
 
-        assert pDir + '/build/j2objcOutputs/lib' == ext.getDestLibDirFile().absolutePath
-        assert pDir + '/build/j2objcOutputs/src/main/objc' == ext.getDestSrcDirFile('main', 'objc').absolutePath
-        assert pDir + '/build/j2objcOutputs/src/test/objc' == ext.getDestSrcDirFile('test', 'objc').absolutePath
-        assert pDir + '/build/j2objcOutputs/src/main/resources' == ext.getDestSrcDirFile('main', 'resources')
-                .absolutePath
-        assert pDir + '/build/j2objcOutputs/src/test/resources' == ext.getDestSrcDirFile('test', 'resources')
-                .absolutePath
+        assert proj.file('build/j2objcOutputs/lib').absolutePath ==
+               ext.getDestLibDirFile().absolutePath
+        assert proj.file('build/j2objcOutputs/src/main/objc').absolutePath ==
+               ext.getDestSrcDirFile('main', 'objc').absolutePath
+        assert proj.file('build/j2objcOutputs/src/test/objc').absolutePath ==
+               ext.getDestSrcDirFile('test', 'objc').absolutePath
+        assert proj.file('build/j2objcOutputs/src/main/resources').absolutePath ==
+               ext.getDestSrcDirFile('main', 'resources').absolutePath
+        assert proj.file('build/j2objcOutputs/src/test/resources').absolutePath ==
+               ext.getDestSrcDirFile('test', 'resources').absolutePath
     }
 
     @Test
     void testFinalConfigure_MacOSX() {
-        Utils.fakeOSName = 'Mac OS X'
+        Utils.setFakeOSMacOSX()
         J2objcConfig ext = new J2objcConfig(proj)
 
         assert !ext.finalConfigured
@@ -82,8 +85,8 @@ class J2objcConfigTest {
     }
 
     @Test
-    void testFinalConfigure_nonMacOSX_translateOnlyMode() {
-        Utils.fakeOSName = 'Windows'
+    void testFinalConfigure_LinuxTranslateOnlyMode() {
+        Utils.setFakeOSLinux()
         J2objcConfig ext = new J2objcConfig(proj)
         assert !ext.finalConfigured
         ext.translateOnlyMode = true
@@ -92,10 +95,35 @@ class J2objcConfigTest {
         assert ext.finalConfigured
     }
 
-    // This protect against trying the native compile on a nonMacOSX system
     @Test
-    void testFinalConfigure_nonMacOSX_unsupported() {
-        Utils.fakeOSName = 'Windows'
+    void testFinalConfigure_WindowsTranslateOnlyMode() {
+        Utils.setFakeOSWindows()
+        J2objcConfig ext = new J2objcConfig(proj)
+        assert !ext.finalConfigured
+        ext.translateOnlyMode = true
+
+        ext.finalConfigure()
+        assert ext.finalConfigured
+    }
+
+    // This warns against doing a native compile on a nonMacOSX system
+    @Test
+    void testFinalConfigure_LinuxIsUnsupported() {
+        Utils.setFakeOSLinux()
+        J2objcConfig ext = new J2objcConfig(proj)
+
+        expectedException.expect(InvalidUserDataException.class)
+        expectedException.expectMessage('Mac OS X is required for Native Compilation of translated code')
+
+        assert !ext.finalConfigured
+        ext.finalConfigure()
+        assert ext.finalConfigured
+    }
+
+    // This warns against doing a native compile on a nonMacOSX system
+    @Test
+    void testFinalConfigure_WindowsIsUnsupported() {
+        Utils.setFakeOSWindows()
         J2objcConfig ext = new J2objcConfig(proj)
 
         expectedException.expect(InvalidUserDataException.class)

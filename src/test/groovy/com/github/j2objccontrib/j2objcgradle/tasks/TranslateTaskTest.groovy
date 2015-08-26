@@ -35,7 +35,8 @@ class TranslateTaskTest {
 
     @Before
     void setUp() {
-        Utils.fakeOSName = 'Mac OS X'
+        // Default to native OS except for specific tests
+        Utils.setFakeOSNone()
         (proj, j2objcHome, j2objcConfig) = TestingUtils.setupProject(
                 new TestingUtils.ProjectConfig(applyJavaPlugin: true, createJ2objcConfig: true))
     }
@@ -47,7 +48,7 @@ class TranslateTaskTest {
     void translate_BasicArguments() {
         TranslateTask j2objcTranslate = (TranslateTask) proj.tasks.create(
                 name: 'j2objcTranslate', type: TranslateTask) {
-            srcGenDir = proj.file("${proj.buildDir}/j2objcSrcGen")
+            srcGenDir = proj.file(proj.file('build/j2objcSrcGen').absolutePath)
         }
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
@@ -56,6 +57,12 @@ class TranslateTaskTest {
                 '-d', '/PROJECT_DIR/build/j2objcSrcGen',
                 '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java',
                 '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/PROJECT_DIR/build/classes'
+        ],
+        // expectedWindowsExecutableAndArgs
+        [
+                'java',
+                '-jar',
+                '/J2OBJC_HOME/lib/j2objc.jar'
         ])
 
         j2objcTranslate.translate(genNonIncrementalInputs())
@@ -65,20 +72,24 @@ class TranslateTaskTest {
 
     @Test
     void translate_Windows() {
-        Utils.fakeOSName = 'Windows'
+        Utils.setFakeOSWindows()
         TranslateTask j2objcTranslate = (TranslateTask) proj.tasks.create(
                 name: 'j2objcTranslate', type: TranslateTask) {
-            srcGenDir = proj.file("${proj.buildDir}/j2objcSrcGen")
+            srcGenDir = proj.file(proj.file('build/j2objcSrcGen').absolutePath)
         }
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
         mockProjectExec.demandExecAndReturn([
-                'java',
-                '-jar',
-                '/J2OBJC_HOME/lib/j2objc.jar',
+                'INVALID-NEEDS-WINDOWS-SUBSTITUTION',
                 '-d', '/PROJECT_DIR/build/j2objcSrcGen',
-                '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java',
-                '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/PROJECT_DIR/build/classes'
+                '-sourcepath', '/PROJECT_DIR/src/main/java;/PROJECT_DIR/src/test/java',
+                '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar;/J2OBJC_HOME/lib/j2objc_guava.jar;/J2OBJC_HOME/lib/j2objc_junit.jar;/J2OBJC_HOME/lib/jre_emul.jar;/J2OBJC_HOME/lib/javax.inject-1.jar;/J2OBJC_HOME/lib/jsr305-3.0.0.jar;/J2OBJC_HOME/lib/mockito-core-1.9.5.jar;/PROJECT_DIR/build/classes'
+        ],
+        // expectedWindowsExecutableAndArgs
+        [
+                'java',
+                 '-jar',
+                 '/J2OBJC_HOME/lib/j2objc.jar',
         ])
 
         j2objcTranslate.translate(genNonIncrementalInputs())
@@ -90,12 +101,15 @@ class TranslateTaskTest {
     void translate_J2objcConfig() {
         TranslateTask j2objcTranslate = (TranslateTask) proj.tasks.create(
                 name: 'j2objcTranslate', type: TranslateTask) {
-            srcGenDir = proj.file("${proj.buildDir}/j2objcSrcGen")
+            srcGenDir = proj.file('build/j2objcSrcGen')
         }
         // Tests multiple values with absolute and relative paths
-        j2objcConfig.generatedSourceDirs('/ABS-GENPATH1', 'REL-GENPATH2')
-        j2objcConfig.translateSourcepaths('/ABS-SOURCEPATH1', 'REL-SOURCEPATH2')
-        j2objcConfig.translateClasspaths('/ABS-CLASSPATH1', 'REL-CLASSPATH2')
+        String absGenPath = TestingUtils.windowsNoFakeAbsolutePath('/ABS-GENPATH')
+        String absSourcePath = TestingUtils.windowsNoFakeAbsolutePath('/ABS-SOURCEPATH')
+        String absClassPath = TestingUtils.windowsNoFakeAbsolutePath('/ABS-CLASSPATH')
+        j2objcConfig.generatedSourceDirs('REL-GENPATH', absGenPath)
+        j2objcConfig.translateSourcepaths('REL-SOURCEPATH', absSourcePath)
+        j2objcConfig.translateClasspaths('REL-CLASSPATH', absClassPath)
         j2objcConfig.translateJ2objcLibs = ['J2OBJC-LIB1', 'J2OBJC-LIB2']
         j2objcConfig.translateArgs('-ARG1', '-ARG2')
         // TODO: add testing for translatePattern
@@ -107,9 +121,15 @@ class TranslateTaskTest {
         mockProjectExec.demandExecAndReturn([
                 '/J2OBJC_HOME/j2objc',
                 '-d', '/PROJECT_DIR/build/j2objcSrcGen',
-                '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java:/ABS-SOURCEPATH1:/PROJECT_DIR/REL-SOURCEPATH2:/ABS-GENPATH1:/PROJECT_DIR/REL-GENPATH2',
-                '-classpath', '/ABS-CLASSPATH1:/PROJECT_DIR/REL-CLASSPATH2:/J2OBJC_HOME/lib/J2OBJC-LIB1:/J2OBJC_HOME/lib/J2OBJC-LIB2:/PROJECT_DIR/build/classes',
+                '-sourcepath', "/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java:/PROJECT_DIR/REL-SOURCEPATH:$absSourcePath:/PROJECT_DIR/REL-GENPATH:$absGenPath",
+                '-classpath', "/PROJECT_DIR/REL-CLASSPATH:$absClassPath:/J2OBJC_HOME/lib/J2OBJC-LIB1:/J2OBJC_HOME/lib/J2OBJC-LIB2:/PROJECT_DIR/build/classes",
                 '-ARG1', '-ARG2',
+        ],
+        // expectedWindowsExecutableAndArgs
+        [
+                'java',
+                '-jar',
+                '/J2OBJC_HOME/lib/j2objc.jar'
         ])
 
         j2objcTranslate.translate(genNonIncrementalInputs())
