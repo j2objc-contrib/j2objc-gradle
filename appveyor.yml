@@ -1,4 +1,4 @@
-version: {build}.{branch}
+version: build{build}.{branch}
 pull_requests:
   do_not_increment_build_number: true
 branches:
