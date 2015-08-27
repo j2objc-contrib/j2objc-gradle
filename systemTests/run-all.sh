@@ -34,5 +34,11 @@ function runTest {
 runTest simple1
 
 # Two gradle projects, `extended` depends on `base`.  They also both test
-# dependency on built-in j2objc libraries, like Guava.
+# dependency on built-in j2objc libraries, like Guava, and build-closure
+# based translation of an external library, Gson.
 runTest multiProject1
+
+# Two gradle projects, `extended` depends on `base`. Both of them depend
+# on project `third_party_gson`, which fully translates and compiles an
+# external library (Google's Gson). This library is used in both `extended` and `base`.
+runTest externalLibrary1

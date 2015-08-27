@@ -91,16 +91,32 @@ class J2objcPlugin implements Plugin<Project> {
                 // When j2objcConfig.autoConfigureDeps is true, this configuration
                 // will have source paths automatically added to it.  You can add
                 // *source* JARs/directories yourself as well.
-                j2objcTranslation {
+                j2objcTranslationClosure {
                     description = 'J2ObjC Java source dependencies that need to be ' +
-                                  'transitively translated via --build-closure'
+                                  'partially translated via --build-closure'
                 }
+
+                // If you want to translate an entire source library, regardless of which parts of the
+                // library code your own code depends on, use this configuration.  This
+                // will also cause the library to be Java compiled, since you cannot translate
+                // a library with j2objc that does not successfully compile in Java.
+                // So for example:
+                //   dependencies { j2objcTranslation 'com.google.code.gson:gson:2.3.1:sources' }
+                // will cause your project to produce a full gson Java classfile Jar AND a
+                // j2objc-translated static native library.
+                j2objcTranslation {
+                    description = 'J2ObjC Java source libraries that should be fully translated ' +
+                                  'and built as stand-alone native libraries'
+                }
+
                 // Currently, we can only handle Project dependencies already translated to Objective-C.
                 j2objcLinkage {
                     description = 'J2ObjC native library dependencies that need to be ' +
                                   'linked into the final library, and do not need translation'
                 }
             }
+
+            DependencyResolver.configureSourceSets(project)
 
             // Produces a modest amount of output
             logging.captureStandardOutput LogLevel.INFO
