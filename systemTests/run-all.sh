@@ -40,5 +40,10 @@ runTest multiProject1
 
 # Two gradle projects, `extended` depends on `base`. Both of them depend
 # on project `third_party_gson`, which fully translates and compiles an
-# external library (Google's Gson). This library is used in both `extended` and `base`.
+# external library (Google's Gson); and also `third_party_guava` which
+# does the same for Guava. These libraries are used in both `extended` and `base`.
+# We must rename the include directory while this test runs, otherwise the
+# code builds against the translated Guava headers provided in the j2objc dist.
+mv localJ2objcDist/j2objcDist/include/com/google/common localJ2objcDist/j2objcDist/include/com/google/common-bak
 runTest externalLibrary1
+mv localJ2objcDist/j2objcDist/include/com/google/common-bak localJ2objcDist/j2objcDist/include/com/google/common

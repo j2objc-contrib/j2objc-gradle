@@ -22,19 +22,43 @@ repositories {
 }
 
 dependencies {
+    // Most recent versions of Guava's dependencies, as inferred from Guava 18's POM file
+    // (which does not specify version at all).
+    // They are all annotations only.
+    compile 'com.google.j2objc:j2objc-annotations:0.9.8'
+    compile 'com.google.code.findbugs:jsr305:3.0.0'
+    compile 'com.google.errorprone:error_prone_annotations:2.0.4'
+    compile 'org.codehaus.mojo:animal-sniffer-annotations:1.14'
+
     // j2objcTranslation causes the entire specified library
     // to be translated and built into a standalone Objective C library.
     // j2objcTranslation must always be passed a *source* jar,
     // therefore, note the ':sources' classifier.
-    j2objcTranslation 'com.google.code.gson:gson:2.3.1:sources'
+    j2objcTranslation 'com.google.guava:guava:18.0:sources'
 }
 
 j2objcConfig {
-    filenameCollisionCheck false
+    // Per https://github.com/google/j2objc/blob/0.9.8.1/guava/README.txt
+    translatePattern {
+        exclude 'com/google/common/reflect/ClassPath.java'
+    }
+
     // For now, default config links in prebuilt Guava; that defeats the point.
     translateJ2objcLibs.remove("j2objc_guava.jar")
     linkJ2objcLibs.remove("guava")
 
+    // Approximation of https://github.com/google/j2objc/blob/0.9.8.1/guava/Makefile
+    translateArgs "--segmented-headers",
+            "--extract-unsequenced",
+            "--batch-translate-max=300",
+            "--hide-private-members",
+            "--final-methods-as-functions",
+            "-q"
+
+    // Iterators and the like are common names across packages.  This library must
+    // be compiled with full directory paths.
+    filenameCollisionCheck false
+    autoConfigureDeps true
     // Almost always there are no tests provided in an external source jar.
     testMinExpectedTests 0
     finalConfigure()
