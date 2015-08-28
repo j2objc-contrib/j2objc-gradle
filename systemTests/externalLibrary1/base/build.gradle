@@ -23,13 +23,17 @@ repositories {
 
 dependencies {
     // Intentionally testing e2e use of a built-in j2objc library, Guava.
-    compile 'com.google.guava:guava:17.0'
+    compile project(':third_party_guava')
     // Normally we would reference this as compile "com.google.code.gson:gson:2.3.1"
     compile project(':third_party_gson')
     testCompile 'junit:junit:4.12'
 }
 
 j2objcConfig {
+    // For now, default config links in prebuilt Guava; that defeats the point.
+    translateJ2objcLibs.remove("j2objc_guava.jar")
+    linkJ2objcLibs.remove("guava")
+
     autoConfigureDeps true
 
     finalConfigure()

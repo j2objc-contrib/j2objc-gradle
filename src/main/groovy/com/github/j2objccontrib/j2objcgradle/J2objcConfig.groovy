@@ -258,7 +258,7 @@ class J2objcConfig {
     boolean autoConfigureDeps = false
 
     /**
-     * Additional libraries that are part of the j2objc distribution.
+     * Additional Java libraries that are part of the j2objc distribution.
      * <p/>
      * For example:
      * <pre>
@@ -276,6 +276,18 @@ class J2objcConfig {
             // Libraries that don't need CycleFinder fixes
             "javax.inject-1.jar", "jsr305-3.0.0.jar",
             "mockito-core-1.9.5.jar"]
+
+    /**
+     * Additional native libraries that are part of the j2objc distribution.
+     * <p/>
+     * For example:
+     * <pre>
+     * linkJ2objcLibs = ["guava", "jsr305"]
+     * </pre>
+     */
+    // J2objc default libraries, from $J2OBJC_HOME/lib/..., without '.a' extension.
+    // TODO: auto add libraries based on java dependencies, warn on version differences
+    List<String> linkJ2objcLibs = ['guava', 'j2objc_main', 'javax_inject', 'jsr305']
 
 
     // TODO: warn if different versions than testCompile from Java plugin
