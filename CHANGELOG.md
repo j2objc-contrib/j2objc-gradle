@@ -6,6 +6,7 @@ https://github.com/j2objc-contrib/j2objc-gradle/compare/vA.B.C...vX.Y.Z
 ## vNext (HEAD)
 Functionality:
 * Automatic dependency resolution for Maven jars and Gradle projects #420
+* Build external Java libraries (with source) into standalone native libraries #431
 * Proper limitation of functionality on non-Mac platforms #396
 * Embedded docs and versioning info for easier debugging #395
 

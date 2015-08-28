@@ -26,8 +26,15 @@ import org.gradle.api.artifacts.SelfResolvingDependency
 
 /**
  * Converts `[test]compile` dependencies to their
- * `j2objcTranslation` and/or `j2objcLinkage` equivalents, depending on the type
- * of dependency and whether or not they are already provided in native code.
+ * `j2objcTranslationClosure` and/or `j2objcLinkage` equivalents, depending on the type
+ * of dependency and whether or not they are already provided in native code:
+ * <p/>
+ * External classfile .jar libraries you depend on via `compile` or `testCompile` will be
+ * converted to `j2objcTranslationClosure` dependencies of the corresponding source .jar libraries.
+ * Gradle projects you depend on via `compile` or `testCompile` will be converted to
+ * `j2objcLinkage` dependencies of the corresponding generated Objective C include headers
+ * and static library.  See {@link DependencyResolver} for details on the differences
+ * between these configurations.
  * <p/>
  * They will be resolved to appropriate `j2objc` constructs using DependencyResolver.
  */
@@ -79,7 +86,7 @@ class DependencyConverter {
     protected void visitSelfResolvingDependency(
             SelfResolvingDependency dep) {
         project.logger.debug("j2objc dependency converter: Translating file dep: $dep")
-        project.configurations.getByName('j2objcTranslation').dependencies.add(
+        project.configurations.getByName('j2objcTranslationClosure').dependencies.add(
                 dep.copy())
     }
 
@@ -103,12 +110,12 @@ class DependencyConverter {
         String group = dep.group == null ? '' : dep.group
         String version = dep.version == null ? '' : dep.version
         // TODO: Make this less fragile.  What if sources don't exist for this artifact?
-        project.dependencies.add('j2objcTranslation', "${group}:${dep.name}:${version}:sources")
+        project.dependencies.add('j2objcTranslationClosure', "${group}:${dep.name}:${version}:sources")
     }
 
     protected void visitGenericDependency(Dependency dep) {
         project.logger.warn("j2objc dependency converter: Unknown dependency type: $dep; copying naively")
-        project.configurations.getByName('j2objcTranslation').dependencies.add(
+        project.configurations.getByName('j2objcTranslationClosure').dependencies.add(
                 dep.copy())
     }
 }

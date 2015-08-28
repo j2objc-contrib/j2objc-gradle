@@ -15,7 +15,6 @@
  */
 
 package com.github.j2objccontrib.j2objcgradle
-
 import groovy.transform.CompileStatic
 import groovy.transform.PackageScope
 import org.gradle.api.InvalidUserDataException
@@ -23,11 +22,37 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.artifacts.SelfResolvingDependency
+import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.plugins.JavaPlugin
+import org.gradle.api.plugins.JavaPluginConvention
+import org.gradle.api.tasks.Copy
+import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.bundling.AbstractArchiveTask
-
+import org.gradle.api.tasks.util.PatternSet
 /**
- * Resolves `j2objcTranslation` and 'j2objcLinkage' dependencies into their `j2objc` constructs.
+ * Resolves `j2objc*` dependencies into their `j2objc` constructs:
+ * <p/>
+ * <ul>
+ * <li><b>j2objcTranslationClosure</b> - The plugin will translate only the subset of
+ * the configuration's source jars that are actually used by this project's
+ * code (via --build-closure), and
+ * compile and link the translated code directly into this project's libraries.
+ * Note that if multiple projects use j2objcTranslationClosure with the same
+ * external library, you will likely get duplicate symbol definition errors
+ * when linking them together.  Consider instead creating a separate Gradle
+ * project for that external library using j2objcTranslation.
+ * </li>
+ * <li><b>j2objcTranslation</b> - The plugin will translate the entire source jar
+ * provided in this configuration. Usually, this configuration is used
+ * to translate a single external Java library into a standalone Objective C library, that
+ * can then be linked (via j2objcLinkage) into your projects.
+ * </li>
+ * <li><b>j2objcLinkage</b> - The plugin will include the headers of, and link to
+ * the static library within, the referenced project.  Usually this configuration
+ * is used with other projects (your own, or external libraries translated
+ * with j2objcTranslation) that the J2ObjC Gradle Plugin has also been applied to.
+ * </li>
+ * </ul>
  */
 @PackageScope
 @CompileStatic
@@ -42,18 +67,57 @@ class DependencyResolver {
     }
 
     void configureAll() {
+        project.configurations.getByName('j2objcTranslationClosure').each { File it ->
+            // These are the resolved files, NOT the dependencies themselves.
+            // Usually source jars.
+            visitTranslationClosureFile(it)
+        }
         project.configurations.getByName('j2objcTranslation').each { File it ->
             // These are the resolved files, NOT the dependencies themselves.
-            visitTranslateFile(it)
+            // Usually source jars.
+            visitTranslationSourceJar(it)
         }
         project.configurations.getByName('j2objcLinkage').dependencies.each {
             visitLink(it)
         }
     }
 
-    protected void visitTranslateFile(File depFile) {
+    protected void visitTranslationClosureFile(File depFile) {
         j2objcConfig.translateSourcepaths(depFile.absolutePath)
         j2objcConfig.enableBuildClosure()
+    }
+
+    private static final String EXTRACTION_TASK_NAME = 'j2objcTranslatedLibraryExtraction'
+
+    /**
+     * Adds to the main java sourceSet a to-be-generated directory that contains the contents
+     * of `j2objcTranslation` dependency libraries (if any).
+     */
+    static void configureSourceSets(Project project) {
+        JavaPluginConvention javaConvention = project.getConvention().getPlugin(JavaPluginConvention)
+        SourceSet sourceSet = javaConvention.sourceSets.findByName(SourceSet.MAIN_SOURCE_SET_NAME)
+        String dir = "${project.buildDir}/translationExtraction"
+        sourceSet.java.srcDirs(project.file(dir))
+        Copy copy = project.tasks.create(EXTRACTION_TASK_NAME, Copy,
+                {Copy task ->
+                    task.into(project.file(dir))
+                    // If two libraries define the same file, fail early.
+                    task.duplicatesStrategy = DuplicatesStrategy.FAIL
+                })
+        project.tasks.getByName(sourceSet.compileJavaTaskName).dependsOn(copy)
+    }
+
+    // Copy contents of sourceJarFile to build/translationExtraction
+    protected void visitTranslationSourceJar(File sourceJarFile) {
+        if (!sourceJarFile.absolutePath.endsWith('.jar')) {
+            String msg = "`j2objcTranslation` dependencies can only handle " +
+                         "source jar files, not ${sourceJarFile.absolutePath}"
+            throw new InvalidUserDataException(msg)
+        }
+        PatternSet pattern = new PatternSet()
+        pattern.include('**/*.java')
+        Copy copy = project.tasks.getByName(EXTRACTION_TASK_NAME) as Copy
+        copy.from(project.zipTree(sourceJarFile).matching(pattern))
     }
 
     protected void visitLink(Dependency dep) {

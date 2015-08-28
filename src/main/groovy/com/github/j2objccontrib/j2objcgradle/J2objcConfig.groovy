@@ -323,11 +323,12 @@ class J2objcConfig {
     /**
      * @see #dependsOnJ2objcLib(org.gradle.api.Project)
      * @deprecated Use `dependencies { j2objcLinkage project(':beforeProjectName') }` or
-     * `autoConfigDeps = true` instead.
+     * `autoConfigureDeps = true` instead.
      */
     // TODO: Do this automatically based on project dependencies.
     @Deprecated
     void dependsOnJ2objcLib(String beforeProjectName) {
+        //noinspection GrDeprecatedAPIUsage
         dependsOnJ2objcLib(project.project(beforeProjectName))
     }
 
@@ -346,10 +347,10 @@ class J2objcConfig {
      * is preferable and sufficient.
      *
      * @deprecated Use `dependencies { j2objcLinkage project(':beforeProjectName') }` or
-     * `autoConfigDeps=true` instead.
+     * `autoConfigureDeps=true` instead.
      */
     // TODO: Phase this API out, and have J2ObjC-applied project dependencies controlled
-    // solely via `j2objcLink` configuration.
+    // solely via `j2objcLinkage` configuration.
     @CompileStatic(TypeCheckingMode.SKIP)
     @Deprecated
     void dependsOnJ2objcLib(Project beforeProject) {
@@ -671,6 +672,7 @@ class J2objcConfig {
     void testingOnlyPrepConfigurations() {
         // When testing we don't always want to apply the entire plugin
         // before calling finalConfigure.
+        project.configurations.create('j2objcTranslationClosure')
         project.configurations.create('j2objcTranslation')
         project.configurations.create('j2objcLinkage')
     }
