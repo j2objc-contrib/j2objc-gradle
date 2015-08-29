@@ -287,7 +287,7 @@ class J2objcConfig {
      */
     // J2objc default libraries, from $J2OBJC_HOME/lib/..., without '.a' extension.
     // TODO: auto add libraries based on java dependencies, warn on version differences
-    List<String> linkJ2objcLibs = ['guava', 'j2objc_main', 'javax_inject', 'jsr305']
+    List<String> linkJ2objcLibs = ['guava', 'j2objc_main', 'javax_inject', 'jsr305', 'jre_emul']
 
 
     // TODO: warn if different versions than testCompile from Java plugin
