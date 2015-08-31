@@ -53,6 +53,13 @@ class J2objcConfig {
 
     final protected Project project
 
+    /**
+     * Default list of architectures to enable. This supports the most commonly
+     * needed architectures: 32-bit and 64-bit iOS builds and running the
+     * iOS simulator on a 64-bit Mac.
+     */
+    public final String DEFAULT_ENABLED_ARCHS ="ios_arm64,ios_armv7,ios_x86_64"
+
     J2objcConfig(Project project) {
         assert project != null
         this.project = project
@@ -372,53 +379,38 @@ class J2objcConfig {
     }
 
     /**
-     * Which architectures will be built and supported in packed ('fat') libraries.
-     * <p/>
-     * The three ios_arm* architectures are for iPhone and iPad devices, while
-     * ios_i386 and ios_x86_64 are for their simulators.
-     * <p/>
-     * Adding an unrecognized new architecture here will fail.
-     * <p/>
-     * Removing an architecture here will cause that architecture not to be built
-     * and corresponding gradle tasks to not be created.
-     * <p/>
-     * <pre>
-     * supportedArchs = ['ios_arm64']  // Only build libraries for 64-bit iOS devices
-     * </pre>
-     *
-     * @see NativeCompilation#ALL_SUPPORTED_ARCHS
-     */
-    // Public to allow assignment of array of targets as shown in example
-    List<String> supportedArchs = NativeCompilation.ALL_SUPPORTED_ARCHS.clone() as List<String>
-
-    /**
      * An architecture is active if it is both supported ({@link #supportedArchs})
      * and enabled in the current environment via the comma-separated j2objc.enabledArchs
      * value in local.properties.
      * <p/>
-     * If no j2objc.enabledArchs value is specified in local.properties, all supported
-     * architectures are also active, otherwise the intersection of supportedArchs
-     * and j2objc.enabledArchs is used.
+     * If no j2objc.enabledArchs value is specified in local.properties, then it defaults
+     * to DEFAULT_ENABLED_ARCHS.
+     *
+     * @see #DEFAULT_ENABLED_ARCHS
      */
     List<String> getActiveArchs() {
         // null is the default value, since an explicit empty string means no architectures
         // are enabled.
-        String archsCsv = Utils.getLocalProperty(project, 'enabledArchs', null)
-        if (archsCsv == null) {
-            return supportedArchs
-        }
+        String archsCsv = Utils.getLocalProperty(
+                project, 'enabledArchs', DEFAULT_ENABLED_ARCHS)
+
+        assert archsCsv != null
         List<String> enabledArchs = archsCsv.split(',').toList()
         // Given `j2objc.enabledArchs=` we will have one architecture of empty string,
         // instead we want no architectures at all in this case.
         enabledArchs.remove('')
-        List<String> invalidArchs = enabledArchs.minus(
-                NativeCompilation.ALL_SUPPORTED_ARCHS.clone() as List<String>).toList()
+
+        // Throw error for any unknown architectures
+        List<String> allSupportedArchs =
+                NativeCompilation.ALL_SUPPORTED_ARCHS.clone() as List<String>
+        List<String> invalidArchs = enabledArchs.minus(allSupportedArchs).toList()
         if (!invalidArchs.isEmpty()) {
             throw new InvalidUserDataException("Invalid 'enabledArchs' entry: " + invalidArchs.join(', '))
         }
+
         // Keep the return value sorted to prevent changes in intersection ordering
         // from forcing a rebuild.
-        return supportedArchs.intersect(enabledArchs).toList().sort()
+        return allSupportedArchs.intersect(enabledArchs).toList().sort()
     }
 
     // TEST
@@ -619,6 +611,10 @@ class J2objcConfig {
 
         if (!translateOnlyMode) {
             Utils.requireMacOSX('Native Compilation of translated code task')
+            if (releaseEnabled && debugEnabled) {
+                project.logger.info("Local development builds can be sped up by disabling release builds:")
+                project.logger.info("https://github.com/j2objc-contrib/j2objc-gradle/blob/master/FAQ.md#how-can-i-speed-up-my-build")
+            }
         }
 
         project.tasks.all { Task task ->
