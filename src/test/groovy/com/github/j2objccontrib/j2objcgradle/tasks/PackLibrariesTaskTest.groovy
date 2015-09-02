@@ -76,11 +76,9 @@ class PackLibrariesTaskTest {
                         '-create',
                         '-output', "/PROJECT_DIR/build/packedBinaries/$proj.name-j2objcStaticLibrary/iosDebug/lib$proj.name-j2objc.a",
 
-                        "/PROJECT_DIR/build/binaries/$proj.name-j2objcStaticLibrary/${NativeCompilation.ALL_SUPPORTED_ARCHS[0]}Debug/lib$proj.name-j2objc.a",
-                        "/PROJECT_DIR/build/binaries/$proj.name-j2objcStaticLibrary/${NativeCompilation.ALL_SUPPORTED_ARCHS[1]}Debug/lib$proj.name-j2objc.a",
-                        "/PROJECT_DIR/build/binaries/$proj.name-j2objcStaticLibrary/${NativeCompilation.ALL_SUPPORTED_ARCHS[2]}Debug/lib$proj.name-j2objc.a",
-                        "/PROJECT_DIR/build/binaries/$proj.name-j2objcStaticLibrary/${NativeCompilation.ALL_SUPPORTED_ARCHS[3]}Debug/lib$proj.name-j2objc.a",
-                        "/PROJECT_DIR/build/binaries/$proj.name-j2objcStaticLibrary/${NativeCompilation.ALL_SUPPORTED_ARCHS[4]}Debug/lib$proj.name-j2objc.a"
+                        "/PROJECT_DIR/build/binaries/$proj.name-j2objcStaticLibrary/ios_arm64Debug/lib$proj.name-j2objc.a",
+                        "/PROJECT_DIR/build/binaries/$proj.name-j2objcStaticLibrary/ios_armv7Debug/lib$proj.name-j2objc.a",
+                        "/PROJECT_DIR/build/binaries/$proj.name-j2objcStaticLibrary/ios_x86_64Debug/lib$proj.name-j2objc.a"
                 ])
         assert NativeCompilation.ALL_SUPPORTED_ARCHS.size() == 5, 'Need to update list of arguments above'
 

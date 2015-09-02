@@ -221,8 +221,9 @@ class J2objcConfigTest {
     void testSupportedAndEnabledArchs_NoLocalProperties() {
         // there is no local.properties file in this case
         J2objcConfig j2objcConfig = new J2objcConfig(proj)
-        Assert.assertEqualsNoOrder(j2objcConfig.activeArchs.toArray(),
-                j2objcConfig.supportedArchs.toArray())
+        Assert.assertEqualsNoOrder(
+                j2objcConfig.activeArchs.toArray(),
+                ['ios_arm64','ios_armv7','ios_x86_64'] as String[])
     }
 
     @Test
@@ -242,6 +243,17 @@ class J2objcConfigTest {
     }
 
     @Test
+    void testSupportedAndEnabledArchs_AllEnabledArchsSpecified() {
+        String allSupported = NativeCompilation.ALL_SUPPORTED_ARCHS.join(',')
+        J2objcConfig j2objcConfig = TestingUtils.setupProjectJ2objcConfig(
+                new TestingUtils.ProjectConfig(createJ2objcConfig: true,
+                        extraLocalProperties: ["j2objc.enabledArchs=$allSupported".toString()]))
+        Assert.assertEqualsNoOrder(
+                j2objcConfig.activeArchs.toArray(),
+                ['ios_arm64','ios_armv7','ios_armv7s','ios_i386','ios_x86_64'] as String[])
+    }
+
+    @Test
     void testSupportedAndEnabledArchs_EmptyEnabledArchSpecified() {
         J2objcConfig j2objcConfig = TestingUtils.setupProjectJ2objcConfig(
                 new TestingUtils.ProjectConfig(createJ2objcConfig: true,
@@ -253,7 +265,8 @@ class J2objcConfigTest {
     void testSupportedAndEnabledArchs_NoEnabledArchsSpecified() {
         J2objcConfig j2objcConfig = TestingUtils.setupProjectJ2objcConfig(
                 new TestingUtils.ProjectConfig(createJ2objcConfig: true))
-        Assert.assertEqualsNoOrder(j2objcConfig.activeArchs.toArray(),
-                j2objcConfig.supportedArchs.toArray())
+        Assert.assertEqualsNoOrder(
+                j2objcConfig.activeArchs.toArray(),
+                ['ios_arm64','ios_armv7','ios_x86_64'] as String[])
     }
 }

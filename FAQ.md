@@ -54,23 +54,40 @@ Also see the FAQ note on [developing with Swift](#how-do-i-develop-with-swift).
 
 ### How can I speed up my build?
 
-You can reduce the build time by 50% by skipping the release binaries by adding the
-following to your root level `local.properties` file:
+You can reduce the build time by 75% by skipping the release binaries and only building
+for a subset of the architectures. The following `local.properties` will skip the release
+build and only target the modern architectures. This works for a typical developer using
+a 64-bit iPhone (5S or later) and running the iOS simulator on a 64-bit Mac (most Intel
+Macs from 2010 onwards). Developing on an iPhone 5 or earlier will require the `ios_armv7`
+architecture.
 
 ```properties
+# File: local.properties
 j2objc.release.enabled=false
+
+# Builds only for 64-bit iPhone and 64-bit Mac iOS Simulator
+j2objc.enabledArchs=ios_arm64,ios_x86_64
 ```
 
 This is helpful for a tight modify-compile-test loop using only debug binaries.
-You can also do this for `j2objc.debug.enabled`.
+The final build (of your continuous build) should build both the debug and release
+builds. You can also do this for `j2objc.debug.enabled`.
 
-If you'd rather just disable release builds for a particular run of the command line:
+If you'd rather just disable release builds for a particular run of the command line
+(the `local.properties` value overrides the environment variable, if present).
 
 ```sh
 J2OBJC_RELEASE_ENABLED=false ./gradlew build
 ```
 
-The `local.properties` value overrides the environment variable, if present.
+The `enabledArchs` options are as follows:
+
+* 'ios_arm64' => iPhone 5S, 6, 6 Plus
+* 'ios_armv7' => iPhone 4, 4S, 5
+* 'ios_i386' => iOS Simulator on 32-bit OS X
+* 'ios_x86_64' => iOS Simulator on 64-bit OS X
+
+
 
 ### What libraries are linked by default?
 
@@ -413,8 +430,8 @@ j2objcConfig {
 ```
 
 The library will be linked in and the headers available for inclusion. All prebuilt libraries
-must be fat binaries with the architectures defined by `supportedArchs` in
-[j2objcConfig.groovy](https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcConfig.groovy).
+must be fat binaries with the architectures defined by `enabledArchs`, explained in the FAQ for
+[How can I speed up my build?](#how-can-i-speed-up-my-build).
 
 
 ### How do I setup a dependency on a native library project?
