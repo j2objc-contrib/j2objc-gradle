@@ -377,19 +377,28 @@ class J2objcConfig {
      * The three ios_arm* architectures are for iPhone and iPad devices, while
      * ios_i386 and ios_x86_64 are for their simulators.
      * <p/>
-     * Adding an unrecognized new architecture here will fail.
+     * By default, only common modern iOS architectures will be built:
+     * ios_arm64, ios_armv7, ios_x86_64.  You may choose to add any of the remaining
+     * entries from NativeCompilation.ALL_SUPPORTED_ARCHS (ios_i386 and ios_armv7s)
+     * to support all possible iOS architectures. Listing any new architectures outside of
+     * ALL_SUPPORTED_ARCHS will fail the build.
      * <p/>
      * Removing an architecture here will cause that architecture not to be built
      * and corresponding gradle tasks to not be created.
-     * <p/>
      * <pre>
      * supportedArchs = ['ios_arm64']  // Only build libraries for 64-bit iOS devices
      * </pre>
-     *
+     * The options are:
+     * <ul>
+     * <li>'ios_arm64' => iPhone 5S, 6, 6 Plus
+     * <li>'ios_armv7' => iPhone 4, 4S, 5
+     * <li>'ios_i386' => iOS Simulator on 32-bit OS X
+     * <li>'ios_x86_64' => iOS Simulator on 64-bit OS X
+     * </ul>
      * @see NativeCompilation#ALL_SUPPORTED_ARCHS
      */
     // Public to allow assignment of array of targets as shown in example
-    List<String> supportedArchs = NativeCompilation.ALL_SUPPORTED_ARCHS.clone() as List<String>
+    List<String> supportedArchs = ['ios_arm64', 'ios_armv7', 'ios_x86_64']
 
     /**
      * An architecture is active if it is both supported ({@link #supportedArchs})

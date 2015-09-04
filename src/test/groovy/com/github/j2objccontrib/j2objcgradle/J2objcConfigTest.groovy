@@ -230,6 +230,15 @@ class J2objcConfigTest {
         J2objcConfig j2objcConfig = TestingUtils.setupProjectJ2objcConfig(
                 new TestingUtils.ProjectConfig(createJ2objcConfig: true,
                         extraLocalProperties: ['j2objc.enabledArchs=ios_armv7,ios_armv7s']))
+        assert j2objcConfig.activeArchs == ['ios_armv7']
+    }
+
+    @Test
+    void testSupportedAndEnabledArchs_SubsetEnabledArchsSpecifiedWithAdditionalSupportedArchs() {
+        J2objcConfig j2objcConfig = TestingUtils.setupProjectJ2objcConfig(
+                new TestingUtils.ProjectConfig(createJ2objcConfig: true,
+                        extraLocalProperties: ['j2objc.enabledArchs=ios_armv7,ios_armv7s']))
+        j2objcConfig.supportedArchs += 'ios_armv7s'
         assert j2objcConfig.activeArchs == ['ios_armv7', 'ios_armv7s']
     }
 
