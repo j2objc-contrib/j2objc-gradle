@@ -1,6 +1,9 @@
 To see everything that has changed between version vA.B.C and vX.Y.Z, visit:
 https://github.com/j2objc-contrib/j2objc-gradle/compare/vA.B.C...vX.Y.Z
 
+Change numbers below are github.com pull requests; peruse #NNN at:
+https://github.com/j2objc-contrib/j2objc-gradle/pull/NNN
+
 # Prerelease Alphas
 
 ## vNext (HEAD)
@@ -9,6 +12,7 @@ Functionality:
 * Build external Java libraries (with source) into standalone native libraries #431
 * Proper limitation of functionality on non-Mac platforms #396
 * Embedded docs and versioning info for easier debugging #395
+* Default supported architectures reduced to modern devices only (arm64, armv7, x86_64) #448
 
 Code quality:
 * Continuous integration on Mac #406 and on Windows #401
