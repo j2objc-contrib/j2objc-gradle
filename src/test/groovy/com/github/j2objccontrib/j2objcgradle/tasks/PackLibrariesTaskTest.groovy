@@ -15,16 +15,13 @@
  */
 
 package com.github.j2objccontrib.j2objcgradle.tasks
-
 import com.github.j2objccontrib.j2objcgradle.J2objcConfig
-import com.github.j2objccontrib.j2objcgradle.NativeCompilation
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
-
 /**
  * TestTask tests.
  */
@@ -76,13 +73,11 @@ class PackLibrariesTaskTest {
                         '-create',
                         '-output', "/PROJECT_DIR/build/packedBinaries/$proj.name-j2objcStaticLibrary/iosDebug/lib$proj.name-j2objc.a",
 
-                        "/PROJECT_DIR/build/binaries/$proj.name-j2objcStaticLibrary/${NativeCompilation.ALL_SUPPORTED_ARCHS[0]}Debug/lib$proj.name-j2objc.a",
-                        "/PROJECT_DIR/build/binaries/$proj.name-j2objcStaticLibrary/${NativeCompilation.ALL_SUPPORTED_ARCHS[1]}Debug/lib$proj.name-j2objc.a",
-                        "/PROJECT_DIR/build/binaries/$proj.name-j2objcStaticLibrary/${NativeCompilation.ALL_SUPPORTED_ARCHS[2]}Debug/lib$proj.name-j2objc.a",
-                        "/PROJECT_DIR/build/binaries/$proj.name-j2objcStaticLibrary/${NativeCompilation.ALL_SUPPORTED_ARCHS[3]}Debug/lib$proj.name-j2objc.a",
-                        "/PROJECT_DIR/build/binaries/$proj.name-j2objcStaticLibrary/${NativeCompilation.ALL_SUPPORTED_ARCHS[4]}Debug/lib$proj.name-j2objc.a"
+                        "/PROJECT_DIR/build/binaries/$proj.name-j2objcStaticLibrary/${j2objcConfig.supportedArchs[0]}Debug/lib$proj.name-j2objc.a",
+                        "/PROJECT_DIR/build/binaries/$proj.name-j2objcStaticLibrary/${j2objcConfig.supportedArchs[1]}Debug/lib$proj.name-j2objc.a",
+                        "/PROJECT_DIR/build/binaries/$proj.name-j2objcStaticLibrary/${j2objcConfig.supportedArchs[2]}Debug/lib$proj.name-j2objc.a"
                 ])
-        assert NativeCompilation.ALL_SUPPORTED_ARCHS.size() == 5, 'Need to update list of arguments above'
+        assert j2objcConfig.supportedArchs.size() == 3, 'Need to update list of arguments above'
 
         PackLibrariesTask j2objcPackLibraries =
                 (PackLibrariesTask) proj.tasks.create(name: 'j2objcPackLibraries', type: PackLibrariesTask) {
