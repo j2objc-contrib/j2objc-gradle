@@ -263,6 +263,12 @@ com.example.dir: Ced
 com.example.dir.subdir: Ceds
 ```
 
+As of J2ObjC verion 0.9.8 you can also use wildcards in your prefixes file. 
+This will map packages such as com.example.dirandcom.example.dir.subdirboth to Ceds.
+
+```
+com.example.dir.*: Ceds
+````
 
 ### How do I enable ARC for my Objective-C classes?
 
