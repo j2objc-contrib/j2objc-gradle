@@ -6,11 +6,11 @@ __Table of Contents__
 To update the TOC,
 open a debugging console on the FAQ.md page on GitHub
 and execute:
-  $('article>h3').map(function(i){
+  console.log($('article>h3').map(function(i){
     var txt = $(this).text();
     var href= $(this).find('a').attr('href');
     return "- [" + txt + "](" + href + ")";
-  }).get().join('\n');
+  }).get().join('\n'));
 
 Paste the results below, replacing existing contents.
 -->
@@ -264,7 +264,7 @@ com.example.dir.subdir: Ceds
 ```
 
 As of J2ObjC verion 0.9.8 you can also use wildcards in your prefixes file. 
-This will map packages such as com.example.dirandcom.example.dir.subdirboth to Ceds.
+This will map packages such as com.example.dirandcom.example.dir.subdir both to Ceds.
 
 ```
 com.example.dir.*: Ceds
