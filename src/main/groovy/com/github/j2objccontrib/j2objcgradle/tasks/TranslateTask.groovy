@@ -51,8 +51,10 @@ class TranslateTask extends DefaultTask {
             allFiles = allFiles.matching(J2objcConfig.from(project).translatePattern)
         }
         FileCollection ret = allFiles
+        ret = Utils.mapSourceFiles(project, ret, getTranslateSourceMapping())
+
         if (additionalSrcFiles != null) {
-            ret = allFiles.plus(additionalSrcFiles)
+            ret = ret.plus(additionalSrcFiles)
         }
         return ret
     }
@@ -98,6 +100,9 @@ class TranslateTask extends DefaultTask {
 
     @Input
     List<String> getTranslateJ2objcLibs() { return J2objcConfig.from(project).translateJ2objcLibs }
+
+    @Input
+    Map<String, String> getTranslateSourceMapping() { return J2objcConfig.from(project).translateSourceMapping }
 
     @Input
     boolean getFilenameCollisionCheck() { return J2objcConfig.from(project).filenameCollisionCheck }

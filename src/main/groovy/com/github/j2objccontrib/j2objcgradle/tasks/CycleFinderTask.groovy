@@ -36,7 +36,7 @@ import org.gradle.api.tasks.TaskAction
 class CycleFinderTask extends DefaultTask {
 
     @InputFiles
-    FileTree getSrcInputFiles() {
+    FileCollection getSrcInputFiles() {
         // Note that translatePattern does not need to be an @Input because it is
         // solely an input to this method, which is already an input (via @InputFiles).
         FileTree allFiles = Utils.srcSet(project, 'main', 'java')
@@ -45,7 +45,7 @@ class CycleFinderTask extends DefaultTask {
         if (J2objcConfig.from(project).translatePattern != null) {
             ret = allFiles.matching(J2objcConfig.from(project).translatePattern)
         }
-        return ret
+        return Utils.mapSourceFiles(project, ret, getTranslateSourceMapping())
     }
 
     // All input files that could affect translation output, except those in j2objc itself.
@@ -81,6 +81,9 @@ class CycleFinderTask extends DefaultTask {
 
     @Input
     List<String> getTranslateJ2objcLibs() { return J2objcConfig.from(project).translateJ2objcLibs }
+
+    @Input
+    Map<String, String> getTranslateSourceMapping() { return J2objcConfig.from(project).translateSourceMapping }
 
     @Input
     boolean getFilenameCollisionCheck() { return J2objcConfig.from(project).filenameCollisionCheck }
