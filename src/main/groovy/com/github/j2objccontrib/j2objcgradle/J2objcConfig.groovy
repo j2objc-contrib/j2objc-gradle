@@ -333,6 +333,26 @@ class J2objcConfig {
     }
 
     /**
+     * A mapping from source file names (in the project Java sourcesets) to alternate
+     * source files.
+     * Both before and after names (keys and values) are evaluated using project.file(...).
+     * <p/>
+     * Mappings can be used to have completely different implementations in your Java
+     * jar vs. your Objective-C library.  This can be especially useful when compiling
+     * a third-party library and you need to provide non-trivial OCNI implementations
+     * in Objective-C.
+     */
+    Map<String, String> translateSourceMapping = [:]
+
+    /**
+     * Adds a new source mapping.
+     * @see #translateSourceMapping
+     */
+    void translateSourceMapping(String before, String after) {
+        translateSourceMapping.put(before, after)
+    }
+
+    /**
      * @see #dependsOnJ2objcLib(org.gradle.api.Project)
      * @deprecated Use `dependencies { j2objcLinkage project(':beforeProjectName') }` or
      * `autoConfigureDeps = true` instead.

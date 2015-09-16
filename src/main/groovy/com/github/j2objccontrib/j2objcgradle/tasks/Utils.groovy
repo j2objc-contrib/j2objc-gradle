@@ -585,4 +585,16 @@ class Utils {
     static boolean projectMkDir(Project proj, Object path) {
         return proj.mkdir(path)
     }
+
+    static FileCollection mapSourceFiles(Project proj, FileCollection files,
+                                         Map<String, String> sourceMapping) {
+        for (String before : sourceMapping.keySet()) {
+            if (files.contains(proj.file(before))) {
+                // Replace the before file with the after file.
+                files = files.minus(proj.files(before)).plus(
+                        proj.files(sourceMapping.get(before)))
+            }
+        }
+        return files
+    }
 }
