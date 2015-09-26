@@ -1,3 +1,6 @@
+Please keep in mind that your "Contribution(s)" are submitted under
+the [Apache 2.0 License](LICENSE).
+
 ### Quick start
 
 1. Fork it clicking on the top right "Fork" button
