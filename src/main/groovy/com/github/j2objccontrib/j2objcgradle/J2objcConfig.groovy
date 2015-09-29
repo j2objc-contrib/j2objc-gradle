@@ -612,14 +612,24 @@ class J2objcConfig {
      */
     String xcodeProjectDir = null
     /**
-     * Xcode app target the generated library should be linked to.
+     * Xcode app targets that should be linked to the generated library.
      *
-     * This will automatically add linkage for any target that starts with the
-     * same name. This should include any Test and Watch targets. For the example of
-     * xcodeTarget == 'IOS-APP', it will add targets for 'IOS-APPTests',
-     * 'IOS-APP WatchKit App' & 'IOS-APP WatchKit Extension' (if they exist).
+     * This will automatically add linkage for any target in the specified list.
+     * This should include any Test and Watch targets if needed.
      */
-    String xcodeTarget = null
+    List<String> xcodeTargets = new ArrayList<>()
+    /**
+     * Add targets within Xcode to link to the shared library.
+     *
+     * If empty (default), all targets defined within the Xcode project will
+     * be linked to the generated library1
+     *
+     * @param xcodeTargets links targets to generated library.
+     */
+    void xcodeTargets(String... xcodeTargets) {
+        appendArgs(this.xcodeTargets, 'xcodeTargets', xcodeTargets)
+    }
+
 
 
     protected boolean finalConfigured = false
