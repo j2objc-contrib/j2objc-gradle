@@ -295,7 +295,7 @@ class Utils {
                         "To disable this check (which may overwrite files), modify build.gradle:\n" +
                         "\n" +
                         "j2objcConfig {\n" +
-                        "    filenameCollisionCheck false\n" +
+                        "    forceFilenameCollisionCheck false\n" +
                         "}\n"
                 throw new InvalidUserDataException(message)
             }

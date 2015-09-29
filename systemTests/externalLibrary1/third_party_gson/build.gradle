@@ -30,7 +30,7 @@ dependencies {
 }
 
 j2objcConfig {
-    filenameCollisionCheck false
+    forceFilenameCollisionCheck false
     // For now, default config links in prebuilt Guava; that defeats the point.
     translateJ2objcLibs.remove("j2objc_guava.jar")
     linkJ2objcLibs.remove("guava")

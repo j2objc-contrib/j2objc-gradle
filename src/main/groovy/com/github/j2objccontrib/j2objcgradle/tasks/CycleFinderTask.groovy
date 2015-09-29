@@ -86,7 +86,7 @@ class CycleFinderTask extends DefaultTask {
     Map<String, String> getTranslateSourceMapping() { return J2objcConfig.from(project).translateSourceMapping }
 
     @Input
-    boolean getFilenameCollisionCheck() { return J2objcConfig.from(project).filenameCollisionCheck }
+    boolean getFilenameCollisionCheck() { return J2objcConfig.from(project).getFilenameCollisionCheck() }
 
 
     // Output required for task up-to-date checks

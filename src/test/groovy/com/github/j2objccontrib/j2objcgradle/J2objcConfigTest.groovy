@@ -75,6 +75,20 @@ class J2objcConfigTest {
     }
 
     @Test
+    void testFilenameCollisionCheckIsSet_Default() {
+        J2objcConfig ext = new J2objcConfig(proj)
+        assert !ext.getFilenameCollisionCheck()
+    }
+
+    @Test
+    void testFilenameCollisionCheckIsSet_NoPackageDirectories() {
+        J2objcConfig ext = new J2objcConfig(proj)
+        ext.translateArgs('--no-package-directories')
+        assert !ext.forceFilenameCollisionCheck
+        assert ext.getFilenameCollisionCheck()
+    }
+
+    @Test
     void testFinalConfigure_MacOSX() {
         Utils.setFakeOSMacOSX()
         J2objcConfig ext = new J2objcConfig(proj)
