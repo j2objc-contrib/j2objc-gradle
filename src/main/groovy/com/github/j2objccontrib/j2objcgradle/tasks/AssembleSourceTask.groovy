@@ -34,7 +34,9 @@ class AssembleSourceTask extends DefaultTask {
 
     // Generated ObjC source files
     @InputDirectory
-    File srcGenDir
+    File srcGenMainDir
+    @InputDirectory
+    File srcGenTestDir
 
 
     @OutputDirectory
@@ -82,25 +84,16 @@ class AssembleSourceTask extends DefaultTask {
     void copyMainSource() {
         Utils.projectCopy(project, {
             includeEmptyDirs = false
-            from srcGenDir
+            from srcGenMainDir
             into getDestSrcMainObjcDirFile()
-            // TODO: this isn't precise, main source can be suffixed with Test as well.
-            // Would be best to somehow keep the metadata about whether a file was from the
-            // main sourceset or the test sourceset.
-            // Don't copy the test code
-            exclude "**/*Test.h"
-            exclude "**/*Test.m"
         })
     }
 
     void copyTestSource() {
         Utils.projectCopy(project, {
             includeEmptyDirs = false
-            from srcGenDir
+            from srcGenTestDir
             into getDestSrcTestObjcDirFile()
-            // Only copy the test code
-            include "**/*Test.h"
-            include "**/*Test.m"
         })
     }
 }

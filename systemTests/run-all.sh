@@ -15,7 +15,7 @@
 # limitations under the License.
 
 # Fail if anything fails.
-set -e
+set -ev
 
 function runTest {
     TEST_DIR=$1
@@ -24,7 +24,11 @@ function runTest {
     pushd $TEST_DIR
     ./gradlew wrapper
     ./gradlew clean
+    # If we fail, try again with lots of logging.
     ./gradlew build
+    # Dump out listings of the files generated for manual debugging/verification.
+    ls -R1c build/j2objcOutputs || echo No such outputs
+    ls -R1c */build/j2objcOutputs || echo No such outputs
     popd
 }
 

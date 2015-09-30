@@ -36,33 +36,46 @@ import org.gradle.api.tasks.incremental.InputFileDetails
 @CompileStatic
 class TranslateTask extends DefaultTask {
 
-    // Source files outside of the Java sourceSets of main and test.
-    FileCollection additionalSrcFiles
+    // Source files outside of the Java main sourceSet.
+    FileCollection additionalMainSrcFiles
 
-    // Source files part of the Java sourceSets of main and test.
+    // Note that neither additionalMainSrcFiles nor translatePattern need
+    // to be @Inputs because they are solely inputs to the 2 methods below, which
+    // are already @InputFiles.
+
+    // Source files part of the Java main sourceSet.
     @InputFiles
-    FileCollection getSrcFiles() {
-        // Note that neither additionalSrcFiles nor translatePattern need
-        // to be @Inputs because they are solely inputs to this method, which
-        // is already an input.
+    FileCollection getMainSrcFiles() {
         FileTree allFiles = Utils.srcSet(project, 'main', 'java')
-        allFiles += Utils.srcSet(project, 'test', 'java')
         if (J2objcConfig.from(project).translatePattern != null) {
             allFiles = allFiles.matching(J2objcConfig.from(project).translatePattern)
         }
         FileCollection ret = allFiles
         ret = Utils.mapSourceFiles(project, ret, getTranslateSourceMapping())
 
-        if (additionalSrcFiles != null) {
-            ret = ret.plus(additionalSrcFiles)
+        if (additionalMainSrcFiles != null) {
+            ret = ret.plus(additionalMainSrcFiles)
         }
+        return ret
+    }
+
+    // Source files part of the Java test sourceSet.
+    @InputFiles
+    FileCollection getTestSrcFiles() {
+        FileTree allFiles = Utils.srcSet(project, 'test', 'java')
+        if (J2objcConfig.from(project).translatePattern != null) {
+            allFiles = allFiles.matching(J2objcConfig.from(project).translatePattern)
+        }
+        FileCollection ret = allFiles
+        ret = Utils.mapSourceFiles(project, ret, getTranslateSourceMapping())
         return ret
     }
 
     // All input files that could affect translation output, except those in j2objc itself.
     @InputFiles
     FileCollection getAllInputFiles() {
-        FileCollection allFiles = getSrcFiles()
+        FileCollection allFiles = getMainSrcFiles()
+        allFiles += getTestSrcFiles()
         allFiles += project.files(getTranslateClasspaths())
         allFiles += project.files(getTranslateSourcepaths())
         allFiles += project.files(getGeneratedSourceDirs())
@@ -110,18 +123,23 @@ class TranslateTask extends DefaultTask {
 
     // Generated ObjC files
     @OutputDirectory
-    File srcGenDir
+    File srcGenMainDir
+
+    @OutputDirectory
+    File srcGenTestDir
 
 
     @TaskAction
     void translate(IncrementalTaskInputs inputs) {
         List<String> translateArgs = getTranslateArgs()
         // Don't evaluate this expensive property multiple times.
-        FileCollection originalSrcFiles = getSrcFiles()
+        FileCollection originalMainSrcFiles = getMainSrcFiles()
+        FileCollection originalTestSrcFiles = getTestSrcFiles()
 
-        logger.debug("All source files: " + originalSrcFiles.getFiles().size())
+        logger.debug("Main source files: " + originalMainSrcFiles.getFiles().size())
+        logger.debug("Test source files: " + originalTestSrcFiles.getFiles().size())
 
-        FileCollection srcFilesChanged
+        FileCollection mainSrcFilesChanged, testSrcFilesChanged
         if (('--build-closure' in translateArgs) && !J2objcConfig.from(project).UNSAFE_incrementalBuildClosure) {
             // We cannot correctly perform incremental compilation with --build-closure.
             // Consider the example where src/main/Something.java is deleted, we would not
@@ -130,65 +148,69 @@ class TranslateTask extends DefaultTask {
             // if the user requests it with the UNSAFE_incrementalBuildClosure argument.
             // TODO: One correct way to incrementally compile with --build-closure would be to use
             // allInputFiles someway, but this will require some research.
-            Utils.projectClearDir(project, srcGenDir)
-            srcFilesChanged = originalSrcFiles
+            Utils.projectClearDir(project, srcGenMainDir)
+            Utils.projectClearDir(project, srcGenTestDir)
+            mainSrcFilesChanged = originalMainSrcFiles
+            testSrcFilesChanged = originalTestSrcFiles
         } else {
             boolean nonSourceFileChanged = false
-            srcFilesChanged = project.files()
+            mainSrcFilesChanged = project.files()
+            testSrcFilesChanged = project.files()
             inputs.outOfDate(new Action<InputFileDetails>() {
                 @Override
                 void execute(InputFileDetails details) {
                     // We must filter by srcFiles, since all possible input files are @InputFiles to this task.
-                    if (originalSrcFiles.contains(details.file)) {
-                        logger.debug("New or Updated file: " + details.file)
-                        srcFilesChanged += project.files(details.file)
+                    if (originalMainSrcFiles.contains(details.file)) {
+                        logger.debug("New or Updated main file: " + details.file)
+                        mainSrcFilesChanged += project.files(details.file)
+                    } else if (originalTestSrcFiles.contains(details.file)) {
+                        logger.debug("New or Updated test file: " + details.file)
+                        testSrcFilesChanged += project.files(details.file)
                     } else {
                         nonSourceFileChanged = true
                         logger.debug("New or Updated non-source file: " + details.file)
                     }
                 }
             })
-            List<String> removedFileNames = new ArrayList<>()
+            List<String> removedMainFileNames = new ArrayList<>()
+            List<String> removedTestFileNames = new ArrayList<>()
             inputs.removed(new Action<InputFileDetails>() {
                 @Override
                 void execute(InputFileDetails details) {
                     // We must filter by srcFiles, since all possible input files are @InputFiles to this task.
-                    if (originalSrcFiles.contains(details.file)) {
-                        logger.debug("Removed file: " + details.file.name)
+                    if (originalMainSrcFiles.contains(details.file)) {
+                        logger.debug("Removed main file: " + details.file.name)
                         String nameWithoutExt = details.file.name.toString().replaceFirst("\\..*", "")
-                        removedFileNames += nameWithoutExt
+                        removedMainFileNames += nameWithoutExt
+                    } else if (originalTestSrcFiles.contains(details.file)) {
+                        logger.debug("Removed test file: " + details.file.name)
+                        String nameWithoutExt = details.file.name.toString().replaceFirst("\\..*", "")
+                        removedTestFileNames += nameWithoutExt
                     } else {
                         nonSourceFileChanged = true
                         logger.debug("Removed non-source file: " + details.file)
                     }
                 }
             })
-            logger.debug("Removed files: " + removedFileNames.size())
+            logger.debug("Removed main files: " + removedMainFileNames.size())
+            logger.debug("Removed test files: " + removedTestFileNames.size())
 
-            logger.debug("New or Updated files: " + srcFilesChanged.getFiles().size())
-            FileCollection unchangedSrcFiles = originalSrcFiles - srcFilesChanged
-            logger.debug("Unchanged files: " + unchangedSrcFiles.getFiles().size())
+            logger.debug("New or Updated main files: " + mainSrcFilesChanged.getFiles().size())
+            logger.debug("New or Updated test files: " + testSrcFilesChanged.getFiles().size())
+
+            FileCollection unchangedMainSrcFiles = originalMainSrcFiles - mainSrcFilesChanged
+            FileCollection unchangedTestSrcFiles = originalTestSrcFiles - testSrcFilesChanged
+            logger.debug("Unchanged main files: " + unchangedMainSrcFiles.getFiles().size())
+            logger.debug("Unchanged test files: " + unchangedTestSrcFiles.getFiles().size())
 
             if (!nonSourceFileChanged) {
                 // All changes were within srcFiles (i.e. in a Java source-set).
                 int translatedFiles = 0
-                if (srcGenDir.exists()) {
-                    FileCollection destFiles = project.files(project.fileTree(
-                            dir: srcGenDir, includes: ["**/*.h", "**/*.m"]))
-
-                    // With --build-closure, files outside the source set can end up in the srcGen
-                    // directory from prior translations.
-                    // So only remove translated .h and .m files which has no corresponding .java files anymore
-                    destFiles.each { File file ->
-                        String nameWithoutExt = file.name.toString().replaceFirst("\\..*", "")
-                        // TODO: Check for --no-package-directories when deciding whether
-                        // to compare file name vs. full path.
-                        if (removedFileNames.contains(nameWithoutExt)) {
-                            file.delete()
-                        }
-                    }
-                    // compute the number of translated files
-                    translatedFiles = destFiles.getFiles().size()
+                if (srcGenMainDir.exists()) {
+                    translatedFiles += deleteRemovedFiles(removedMainFileNames, srcGenMainDir)
+                }
+                if (srcGenTestDir.exists()) {
+                    translatedFiles += deleteRemovedFiles(removedTestFileNames, srcGenTestDir)
                 }
 
                 // add java classpath base to classpath for incremental translation
@@ -208,13 +230,70 @@ class TranslateTask extends DefaultTask {
                 // A change outside of the source set directories has occurred, so an incremental build isn't possible.
                 // The most common such change is in the JAR for a dependent library, for example if Java project
                 // that this project depends on had its source changed and was recompiled.
-                Utils.projectClearDir(project, srcGenDir)
-                srcFilesChanged = originalSrcFiles
+                Utils.projectClearDir(project, srcGenMainDir)
+                Utils.projectClearDir(project, srcGenTestDir)
+                mainSrcFilesChanged = originalMainSrcFiles
+                testSrcFilesChanged = originalTestSrcFiles
             }
         }
 
         if (getFilenameCollisionCheck()) {
-            Utils.filenameCollisionCheck(getSrcFiles())
+            Utils.filenameCollisionCheck(getMainSrcFiles())
+            Utils.filenameCollisionCheck(getTestSrcFiles())
+        }
+
+        // Translate main code.
+        UnionFileCollection sourcepathDirs = new UnionFileCollection([
+                project.files(Utils.srcSet(project, 'main', 'java').getSrcDirs()),
+                project.files(getTranslateSourcepaths()),
+                project.files(getGeneratedSourceDirs())
+        ])
+        doTranslate(sourcepathDirs, srcGenMainDir, translateArgs, mainSrcFilesChanged)
+
+        // Translate test code. Tests are never built with --build-closure; otherwise
+        // we will get duplicate symbol errors.
+        // There is an edge-case that will fail: if the main and test code depend on
+        // some other library X AND use --build-closure to translate X AND the API of X
+        // needed by the test code is not a subset of the API of X used by the main
+        // code, compilation will fail. The solution is to just build the whole library
+        // X as a separate j2objc project and depend on it.
+        List<String> testTranslateArgs = new ArrayList<>(translateArgs)
+        testTranslateArgs.removeAll('--build-closure')
+        sourcepathDirs = new UnionFileCollection([
+                project.files(Utils.srcSet(project, 'main', 'java').getSrcDirs()),
+                project.files(Utils.srcSet(project, 'test', 'java').getSrcDirs()),
+                project.files(getTranslateSourcepaths()),
+                project.files(getGeneratedSourceDirs())
+        ])
+        doTranslate(sourcepathDirs, srcGenTestDir, testTranslateArgs, testSrcFilesChanged)
+    }
+
+    int deleteRemovedFiles(List<String> removedFileNames, File dir) {
+        FileCollection destFiles = project.files(project.fileTree(
+                dir: dir, includes: ["**/*.h", "**/*.m"]))
+
+        // With --build-closure, files outside the source set can end up in the srcGen
+        // directory from prior translations.
+        // So only remove translated .h and .m files which has no corresponding .java files anymore
+        destFiles.each { File file ->
+            String nameWithoutExt = file.name.toString().replaceFirst("\\..*", "")
+            // TODO: Check for --no-package-directories when deciding whether
+            // to compare file name vs. full path.
+            if (removedFileNames.contains(nameWithoutExt)) {
+                file.delete()
+            }
+        }
+        // compute the number of translated files
+        return destFiles.getFiles().size()
+    }
+
+    void doTranslate(UnionFileCollection sourcepathDirs, File srcDir, List<String> translateArgs,
+                     FileCollection srcFilesToTranslate) {
+        int num = srcFilesToTranslate.getFiles().size()
+        logger.info("Translating $num files with j2objc...")
+        if (srcFilesToTranslate.getFiles().size() == 0) {
+            logger.info("No files to translate; skipping j2objc execution")
+            return
         }
 
         String j2objcExecutable = "${getJ2objcHome()}/j2objc"
@@ -224,13 +303,6 @@ class TranslateTask extends DefaultTask {
             windowsOnlyArgs.add('-jar')
             windowsOnlyArgs.add("${getJ2objcHome()}/lib/j2objc.jar".toString())
         }
-
-        UnionFileCollection sourcepathDirs = new UnionFileCollection([
-                project.files(Utils.srcSet(project, 'main', 'java').getSrcDirs()),
-                project.files(Utils.srcSet(project, 'test', 'java').getSrcDirs()),
-                project.files(getTranslateSourcepaths()),
-                project.files(getGeneratedSourceDirs())
-        ])
 
         String sourcepathArg = Utils.joinedPathArg(sourcepathDirs)
 
@@ -254,7 +326,7 @@ class TranslateTask extends DefaultTask {
                 }
 
                 // Arguments
-                args "-d", srcGenDir
+                args "-d", srcDir
                 args "-sourcepath", sourcepathArg
                 args "-classpath", classpathArg
                 translateArgs.each { String translateArg ->
@@ -262,7 +334,7 @@ class TranslateTask extends DefaultTask {
                 }
 
                 // File Inputs
-                srcFilesChanged.each { File file ->
+                srcFilesToTranslate.each { File file ->
                     args file.path
                 }
 
@@ -270,7 +342,7 @@ class TranslateTask extends DefaultTask {
                 setErrorOutput stderr
             })
 
-        } catch(Exception exception) {
+        } catch (Exception exception) {
             // TODO: match on common failures and provide useful help
             throw exception
         }

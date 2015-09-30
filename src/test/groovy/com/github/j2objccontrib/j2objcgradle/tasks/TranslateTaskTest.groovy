@@ -15,7 +15,6 @@
  */
 
 package com.github.j2objccontrib.j2objcgradle.tasks
-
 import com.github.j2objccontrib.j2objcgradle.J2objcConfig
 import org.gradle.api.Action
 import org.gradle.api.Project
@@ -23,7 +22,6 @@ import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 import org.gradle.api.tasks.incremental.InputFileDetails
 import org.junit.Before
 import org.junit.Test
-
 /**
  * TranslateTask tests.
  */
@@ -39,6 +37,11 @@ class TranslateTaskTest {
         Utils.setFakeOSNone()
         (proj, j2objcHome, j2objcConfig) = TestingUtils.setupProject(
                 new TestingUtils.ProjectConfig(applyJavaPlugin: true, createJ2objcConfig: true))
+
+        proj.file('src/main/java/com/example').mkdirs()
+        proj.file('src/main/java/com/example/Main.java').write("// Fake")
+        proj.file('src/test/java/com/example').mkdirs()
+        proj.file('src/test/java/com/example/Verify.java').write("// Fake")
     }
 
     // TODO: add java source files to the test cases
@@ -48,15 +51,17 @@ class TranslateTaskTest {
     void translate_BasicArguments() {
         TranslateTask j2objcTranslate = (TranslateTask) proj.tasks.create(
                 name: 'j2objcTranslate', type: TranslateTask) {
-            srcGenDir = proj.file(proj.file('build/j2objcSrcGen').absolutePath)
+            srcGenMainDir = proj.file(proj.file('build/j2objcSrcGenMain').absolutePath)
+            srcGenTestDir = proj.file(proj.file('build/j2objcSrcGenTest').absolutePath)
         }
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
         mockProjectExec.demandExecAndReturn([
                 '/J2OBJC_HOME/j2objc',
-                '-d', '/PROJECT_DIR/build/j2objcSrcGen',
-                '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java',
-                '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/PROJECT_DIR/build/classes'
+                '-d', '/PROJECT_DIR/build/j2objcSrcGenMain',
+                '-sourcepath', '/PROJECT_DIR/src/main/java',
+                '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/PROJECT_DIR/build/classes',
+                '/PROJECT_DIR/src/main/java/com/example/Main.java'
         ],
         // expectedWindowsExecutableAndArgs
         [
@@ -65,7 +70,21 @@ class TranslateTaskTest {
                 '/J2OBJC_HOME/lib/j2objc.jar'
         ])
 
-        j2objcTranslate.translate(genNonIncrementalInputs())
+        mockProjectExec.demandExecAndReturn([
+                '/J2OBJC_HOME/j2objc',
+                '-d', '/PROJECT_DIR/build/j2objcSrcGenTest',
+                '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java',
+                '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/PROJECT_DIR/build/classes',
+                '/PROJECT_DIR/src/test/java/com/example/Verify.java'
+        ],
+        // expectedWindowsExecutableAndArgs
+        [
+                'java',
+                '-jar',
+                '/J2OBJC_HOME/lib/j2objc.jar'
+        ])
+
+        j2objcTranslate.translate(genNonIncrementalInputs(proj))
 
         mockProjectExec.verify()
     }
@@ -75,15 +94,17 @@ class TranslateTaskTest {
         Utils.setFakeOSWindows()
         TranslateTask j2objcTranslate = (TranslateTask) proj.tasks.create(
                 name: 'j2objcTranslate', type: TranslateTask) {
-            srcGenDir = proj.file(proj.file('build/j2objcSrcGen').absolutePath)
+            srcGenMainDir = proj.file(proj.file('build/j2objcSrcGenMain').absolutePath)
+            srcGenTestDir = proj.file(proj.file('build/j2objcSrcGenTest').absolutePath)
         }
 
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
         mockProjectExec.demandExecAndReturn([
                 'INVALID-NEEDS-WINDOWS-SUBSTITUTION',
-                '-d', '/PROJECT_DIR/build/j2objcSrcGen',
-                '-sourcepath', '/PROJECT_DIR/src/main/java;/PROJECT_DIR/src/test/java',
-                '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar;/J2OBJC_HOME/lib/j2objc_guava.jar;/J2OBJC_HOME/lib/j2objc_junit.jar;/J2OBJC_HOME/lib/jre_emul.jar;/J2OBJC_HOME/lib/javax.inject-1.jar;/J2OBJC_HOME/lib/jsr305-3.0.0.jar;/J2OBJC_HOME/lib/mockito-core-1.9.5.jar;/PROJECT_DIR/build/classes'
+                '-d', '/PROJECT_DIR/build/j2objcSrcGenMain',
+                '-sourcepath', '/PROJECT_DIR/src/main/java',
+                '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar;/J2OBJC_HOME/lib/j2objc_guava.jar;/J2OBJC_HOME/lib/j2objc_junit.jar;/J2OBJC_HOME/lib/jre_emul.jar;/J2OBJC_HOME/lib/javax.inject-1.jar;/J2OBJC_HOME/lib/jsr305-3.0.0.jar;/J2OBJC_HOME/lib/mockito-core-1.9.5.jar;/PROJECT_DIR/build/classes',
+                '/PROJECT_DIR/src/main/java/com/example/Main.java'
         ],
         // expectedWindowsExecutableAndArgs
         [
@@ -92,7 +113,21 @@ class TranslateTaskTest {
                  '/J2OBJC_HOME/lib/j2objc.jar',
         ])
 
-        j2objcTranslate.translate(genNonIncrementalInputs())
+        mockProjectExec.demandExecAndReturn([
+                'INVALID-NEEDS-WINDOWS-SUBSTITUTION',
+                '-d', '/PROJECT_DIR/build/j2objcSrcGenTest',
+                '-sourcepath', '/PROJECT_DIR/src/main/java;/PROJECT_DIR/src/test/java',
+                '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar;/J2OBJC_HOME/lib/j2objc_guava.jar;/J2OBJC_HOME/lib/j2objc_junit.jar;/J2OBJC_HOME/lib/jre_emul.jar;/J2OBJC_HOME/lib/javax.inject-1.jar;/J2OBJC_HOME/lib/jsr305-3.0.0.jar;/J2OBJC_HOME/lib/mockito-core-1.9.5.jar;/PROJECT_DIR/build/classes',
+                '/PROJECT_DIR/src/test/java/com/example/Verify.java'
+        ],
+        // expectedWindowsExecutableAndArgs
+        [
+                'java',
+                '-jar',
+                '/J2OBJC_HOME/lib/j2objc.jar',
+        ])
+
+        j2objcTranslate.translate(genNonIncrementalInputs(proj))
 
         mockProjectExec.verify()
     }
@@ -101,7 +136,8 @@ class TranslateTaskTest {
     void translate_J2objcConfig() {
         TranslateTask j2objcTranslate = (TranslateTask) proj.tasks.create(
                 name: 'j2objcTranslate', type: TranslateTask) {
-            srcGenDir = proj.file('build/j2objcSrcGen')
+            srcGenMainDir = proj.file('build/j2objcSrcGenMain')
+            srcGenTestDir = proj.file('build/j2objcSrcGenTest')
         }
         // Tests multiple values with absolute and relative paths
         String absGenPath = TestingUtils.windowsNoFakeAbsolutePath('/ABS-GENPATH')
@@ -120,10 +156,25 @@ class TranslateTaskTest {
         MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
         mockProjectExec.demandExecAndReturn([
                 '/J2OBJC_HOME/j2objc',
-                '-d', '/PROJECT_DIR/build/j2objcSrcGen',
+                '-d', '/PROJECT_DIR/build/j2objcSrcGenMain',
+                '-sourcepath', "/PROJECT_DIR/src/main/java:/PROJECT_DIR/REL-SOURCEPATH:$absSourcePath:/PROJECT_DIR/REL-GENPATH:$absGenPath",
+                '-classpath', "/PROJECT_DIR/REL-CLASSPATH:$absClassPath:/J2OBJC_HOME/lib/J2OBJC-LIB1:/J2OBJC_HOME/lib/J2OBJC-LIB2:/PROJECT_DIR/build/classes",
+                '-ARG1', '-ARG2',
+                '/PROJECT_DIR/src/main/java/com/example/Main.java'
+        ],
+        // expectedWindowsExecutableAndArgs
+        [
+                'java',
+                '-jar',
+                '/J2OBJC_HOME/lib/j2objc.jar'
+        ])
+        mockProjectExec.demandExecAndReturn([
+                '/J2OBJC_HOME/j2objc',
+                '-d', '/PROJECT_DIR/build/j2objcSrcGenTest',
                 '-sourcepath', "/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java:/PROJECT_DIR/REL-SOURCEPATH:$absSourcePath:/PROJECT_DIR/REL-GENPATH:$absGenPath",
                 '-classpath', "/PROJECT_DIR/REL-CLASSPATH:$absClassPath:/J2OBJC_HOME/lib/J2OBJC-LIB1:/J2OBJC_HOME/lib/J2OBJC-LIB2:/PROJECT_DIR/build/classes",
                 '-ARG1', '-ARG2',
+                '/PROJECT_DIR/src/test/java/com/example/Verify.java'
         ],
         // expectedWindowsExecutableAndArgs
         [
@@ -132,20 +183,47 @@ class TranslateTaskTest {
                 '/J2OBJC_HOME/lib/j2objc.jar'
         ])
 
-        j2objcTranslate.translate(genNonIncrementalInputs())
+
+        j2objcTranslate.translate(genNonIncrementalInputs(proj))
 
         mockProjectExec.verify()
     }
 
 
     // Utility Method
-    private static IncrementalTaskInputs genNonIncrementalInputs() {
+    private static IncrementalTaskInputs genNonIncrementalInputs(Project proj) {
         IncrementalTaskInputs incrementalTaskInputs = new IncrementalTaskInputs() {
             @Override
             boolean isIncremental() { return false }
 
             @Override
-            void outOfDate(Action<? super InputFileDetails> outOfDateAction) {}
+            void outOfDate(Action<? super InputFileDetails> outOfDateAction) {
+                proj.files('src/main/java/com/example/Main.java',
+                           'src/test/java/com/example/Verify.java').each {
+                    final File file ->
+                    outOfDateAction.execute(new InputFileDetails() {
+                        @Override
+                        boolean isAdded() {
+                            return true
+                        }
+
+                        @Override
+                        boolean isModified() {
+                            return false
+                        }
+
+                        @Override
+                        boolean isRemoved() {
+                            return false
+                        }
+
+                        @Override
+                        File getFile() {
+                            return file
+                        }
+                    })
+                }
+            }
 
             @Override
             void removed(Action<? super InputFileDetails> removedAction) {}
