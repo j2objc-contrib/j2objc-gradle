@@ -292,11 +292,20 @@ class J2objcConfig {
 
     // TODO: warn if different versions than testCompile from Java plugin
     /**
-     * Makes sure that the translated filenames don't collide.
+     * Force filename collision check so prohibit two files with same name.
      * <p/>
-     * Recommended if you choose to use --no-package-directories.
+     * This will automatically be set to true when translateArgs contains
+     * '--no-package-directories'. That flag flattens the directory structure
+     * and will overwrite files with the same name.
      */
-    boolean filenameCollisionCheck = true
+    boolean forceFilenameCollisionCheck = false
+
+    // All access to filenameCollisionCheck should be done through this function
+    boolean getFilenameCollisionCheck() {
+        if (translateArgs.contains('--no-package-directories'))
+            return true
+        return forceFilenameCollisionCheck
+    }
 
     /**
      * Sets the filter on files to translate.

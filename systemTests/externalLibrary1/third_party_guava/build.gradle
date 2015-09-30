@@ -57,7 +57,7 @@ j2objcConfig {
 
     // Iterators and the like are common names across packages.  This library must
     // be compiled with full directory paths.
-    filenameCollisionCheck false
+    forceFilenameCollisionCheck false
     autoConfigureDeps true
     // Almost always there are no tests provided in an external source jar.
     testMinExpectedTests 0

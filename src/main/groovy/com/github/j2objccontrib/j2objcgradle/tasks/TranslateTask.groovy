@@ -105,7 +105,7 @@ class TranslateTask extends DefaultTask {
     Map<String, String> getTranslateSourceMapping() { return J2objcConfig.from(project).translateSourceMapping }
 
     @Input
-    boolean getFilenameCollisionCheck() { return J2objcConfig.from(project).filenameCollisionCheck }
+    boolean getFilenameCollisionCheck() { return J2objcConfig.from(project).getFilenameCollisionCheck() }
 
 
     // Generated ObjC files
