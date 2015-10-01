@@ -85,7 +85,8 @@ class J2objcPlugin implements Plugin<Project> {
 
             // This is an intermediate directory only.  Clients should use only directories
             // specified in j2objcConfig (or associated defaults in J2objcConfig).
-            File j2objcSrcGenDir = file("${buildDir}/j2objcSrcGen")
+            File j2objcSrcGenMainDir = file("${buildDir}/j2objcSrcGenMain")
+            File j2objcSrcGenTestDir = file("${buildDir}/j2objcSrcGenTest")
 
             // These configurations are groups of artifacts and dependencies for the plugin build
             // https://docs.gradle.org/current/dsl/org.gradle.api.artifacts.Configuration.html
@@ -138,12 +139,13 @@ class J2objcPlugin implements Plugin<Project> {
                     dependsOn: 'j2objcPreBuild') {
                 group 'build'
                 description "Translates all the java source files in to Objective-C using 'j2objc'"
-                additionalSrcFiles = files(
+                additionalMainSrcFiles = files(
                         fileTree(dir: "build/source/apt",
                                 include: "**/*.java")
                 )
-                // Output directory of 'j2objcTranslate', input for all other tasks
-                srcGenDir = j2objcSrcGenDir
+                // Output directories of 'j2objcTranslate', input for all other tasks
+                srcGenMainDir = j2objcSrcGenMainDir
+                srcGenTestDir = j2objcSrcGenTestDir
             }
 
             // j2objcCycleFinder is disabled by default as it's complex to use and understand.
@@ -213,7 +215,8 @@ class J2objcPlugin implements Plugin<Project> {
                     dependsOn: ['j2objcTranslate']) {
                 group 'build'
                 description 'Copies final generated source to assembly directories'
-                srcGenDir = j2objcSrcGenDir
+                srcGenMainDir = j2objcSrcGenMainDir
+                srcGenTestDir = j2objcSrcGenTestDir
             }
             tasks.create(name: 'j2objcAssembleDebug', type: AssembleLibrariesTask,
                     dependsOn: ['j2objcPackLibrariesDebug', 'j2objcAssembleSource']) {

@@ -88,13 +88,14 @@ class MockProjectExec {
                 // TODO: is there a way to do this automatically, e.g. coerceArgumentsToClasses?
                 if (name == 'files') {
                     // Coerce the arguments to match the signature of Project.files(Object... paths)
-                    assert 0 == args.size() || 1 == args.size()
                     if (args.size() == 0 ||  // files()
                         args.first() == null) {  // files(null)
                         return metaMethod?.invoke(delegate, [[] as Object[]] as Object[])
-                    } else {
+                    } else if (args.size() == 1) {
                         // files(ArrayList) possibly, so cast ArrayList to Object[]
                         return metaMethod?.invoke(delegate, [(Object[]) args.first()] as Object[])
+                    } else {
+                        return metaMethod?.invoke(delegate, [args] as Object[])
                     }
                 } else {
                     return metaMethod?.invoke(delegate, args)
@@ -217,10 +218,10 @@ class MockProjectExec {
     void demandDeleteThenMkDirAndReturn(String expectedPath) {
 
         mockForProj.demand.delete { Object path ->
-            assert expectedPath == getAbsolutePath(path)
+            assert expectedPath == getAbsolutePathFromObject(path)
         }
         mockForProj.demand.mkdir { Object path ->
-            assert expectedPath == getAbsolutePath(path)
+            assert expectedPath == getAbsolutePathFromObject(path)
         }
     }
 

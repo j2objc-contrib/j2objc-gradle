@@ -227,8 +227,9 @@ class TestTask extends DefaultTask {
     //   Before:  src/test/java/com/example/dir/SomeTest.java
     //   After:   com.example.dir.SomeTest or PREFIXSomeTest
     static List<String> getTestNames(Project proj, FileCollection srcFiles, Properties packagePrefixes) {
-
         List<String> testNames = srcFiles.collect { File file ->
+            // Back off to a fragile method that makes assumptions about source directories
+            // if that didn't work.
             // Comments indicate the value at the end of that statement
             String testName = proj.relativePath(file)  // src/test/java/com/example/dir/SomeTest.java
                             .replace('\\', '/')  // Windows backslashes converted to forward slash

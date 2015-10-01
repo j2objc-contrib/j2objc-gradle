@@ -46,24 +46,21 @@ class AssembleSourceTaskTest {
                 proj.file('build/j2objcOutputs/src/main/objc').absolutePath)
         mockProjectExec.demandCopyAndReturn({
                 includeEmptyDirs = false
-                from proj.file('build/j2objcSrcGen').absolutePath
+                from proj.file('build/j2objcSrcGenMain').absolutePath
                 into proj.file('build/j2objcOutputs/src/main/objc').absolutePath
-                exclude "**/*Test.h"
-                exclude "**/*Test.m"
         })
         mockProjectExec.demandDeleteAndReturn(
                 proj.file('build/j2objcOutputs/src/test/objc').absolutePath)
         mockProjectExec.demandCopyAndReturn({
             includeEmptyDirs = false
-            from proj.file('build/j2objcSrcGen').absolutePath
+            from proj.file('build/j2objcSrcGenTest').absolutePath
             into proj.file('build/j2objcOutputs/src/test/objc').absolutePath
-            include "**/*Test.h"
-            include "**/*Test.m"
         })
 
         AssembleSourceTask j2objcAssembleSource =
                 (AssembleSourceTask) proj.tasks.create(name: 'j2objcAS', type: AssembleSourceTask) {
-                    srcGenDir proj.file('build/j2objcSrcGen')
+                    srcGenMainDir proj.file('build/j2objcSrcGenMain')
+                    srcGenTestDir proj.file('build/j2objcSrcGenTest')
                 }
 
         j2objcAssembleSource.assembleSource()

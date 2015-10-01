@@ -278,7 +278,8 @@ class J2objcConfig {
             "mockito-core-1.9.5.jar"]
 
     /**
-     * Additional native libraries that are part of the j2objc distribution.
+     * Additional native libraries that are part of the j2objc distribution to link
+     * with the production code (and also the test code).
      * <p/>
      * For example:
      * <pre>
@@ -289,6 +290,13 @@ class J2objcConfig {
     // TODO: auto add libraries based on java dependencies, warn on version differences
     List<String> linkJ2objcLibs = ['guava', 'j2objc_main', 'javax_inject', 'jsr305']
 
+    /**
+     * Additional native libraries that are part of the j2objc distribution to link
+     * with the test code.
+     */
+    // J2objc default libraries, from $J2OBJC_HOME/lib/..., without '.a' extension.
+    // TODO: auto add libraries based on java dependencies, warn on version differences
+    List<String> linkJ2objcTestLibs = ['junit', 'mockito']
 
     // TODO: warn if different versions than testCompile from Java plugin
     /**
@@ -636,7 +644,8 @@ class J2objcConfig {
         // after initial creation, we can remove this, and have methods on this object
         // mutate the existing native model { } block.  See:
         // https://discuss.gradle.org/t/problem-with-model-block-when-switching-from-2-2-1-to-2-4/9937
-        nativeCompilation.apply(project.file("${project.buildDir}/j2objcSrcGen"))
+        nativeCompilation.apply(project.file("${project.buildDir}/j2objcSrcGenMain"),
+                                project.file("${project.buildDir}/j2objcSrcGenTest"))
     }
 
     protected void convertDeps() {
