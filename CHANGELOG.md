@@ -12,7 +12,7 @@ New functionality:
 * Build external Java libraries (with source) into standalone native libraries #431
 * Proper limitation of functionality on non-Mac platforms #396
 * Embedded docs and versioning info for easier debugging #395
-* Can specify a subset of J2ObjC libraries to link to #433
+* Specify a subset of J2ObjC libraries to link to #433
 * Map individual Java files to a separate version used only for J2ObjC translation #455
 * Projects no longer need to guarantee the Java plugin is applied before the J2ObjC Gradle plugin #453
 
