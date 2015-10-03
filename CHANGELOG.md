@@ -7,6 +7,10 @@ https://github.com/j2objc-contrib/j2objc-gradle/pull/NNN
 # Prerelease Alphas
 
 ## vNext (HEAD)
+
+(none yet)
+
+## v0.4.3-alpha
 New functionality:
 * Automatic dependency resolution for Maven jars and Gradle projects #420
 * Build external Java libraries (with source) into standalone native libraries #431
