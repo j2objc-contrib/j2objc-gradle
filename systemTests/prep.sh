@@ -14,21 +14,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-J2OBJC_VERSION=0.9.8.1
 mkdir localJ2objcDist
 mkdir common
 
 # Fail if any command fails
-set -e
+set -ev
 
 pushd localJ2objcDist
 
+DIST_DIR=j2objc-$J2OBJC_VERSION
+DIST_FILE=$DIST_DIR.zip
+
 # For developer local testing, don't keep redownloading the zip file.
-if [ ! -e j2objcDist.zip ]; then
-  curl -L https://github.com/google/j2objc/releases/download/$J2OBJC_VERSION/j2objc-$J2OBJC_VERSION.zip > j2objcDist.zip
-  unzip j2objcDist.zip
-  mv j2objc-$J2OBJC_VERSION j2objcDist
-  echo j2objc.home=$PWD/j2objcDist > ../common/local.properties
+if [ ! -e $DIST_FILE ]; then
+  curl -L https://github.com/google/j2objc/releases/download/$J2OBJC_VERSION/j2objc-$J2OBJC_VERSION.zip > $DIST_FILE
+  unzip $DIST_FILE
+  echo j2objc.home=$PWD/$DIST_DIR > ../common/local.properties
 fi
 
 popd
+

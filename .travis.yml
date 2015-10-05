@@ -18,17 +18,13 @@ matrix:
     # TODO: Replace with simply `os: osx` when Travis supports groovy
     # in their multi-OS beta.
     # TODO: Figure out how to set the JDK version on OS X.
-    # Currently we go with the experimental evidence that the default
-    # OS X image (that uses Xcode 6.1) has JDK 1.7:
-    # http://docs.travis-ci.com/user/languages/objective-c/#Xcode-6.1
-    # Having verified their other OS X images, this is the only version
-    # that has JDK 1.7:
-    # https://travis-ci.org/j2objc-contrib/j2objc-gradle/builds/77036011
     - os: osx
+      osx_image: xcode7
       language: objective-c
       env:
        - USING_OS=osx
-       - USING_XCODE=6.1
+       - USING_XCODE=7
+       - J2OBJC_VERSION=0.9.8.2.1
 
 branches:
   only:
@@ -46,8 +42,6 @@ install:
   # Don't spew graphic art.
   - export TERM=dumb
   - env
-  # We need JDK 7 specifically on OS X.  This will fail if there is no 1.7
-  - if [ "$USING_OS" = "osx" ]; then (/usr/libexec/java_home -v 1.7 -F -V); fi
   - java -Xmx32m -version && javac -J-Xmx32m -version
   - ./gradlew wrapper
   - ./gradlew dependencies

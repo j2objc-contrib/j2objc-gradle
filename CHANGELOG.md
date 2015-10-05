@@ -7,8 +7,15 @@ https://github.com/j2objc-contrib/j2objc-gradle/pull/NNN
 # Prerelease Alphas
 
 ## vNext (HEAD)
+New functionality:
+* Support for Xcode 7 and j2objc 0.9.8.2.1 #483
+* `J2objcConfig.minIosVersion` controls minimum iOS version #483
 
-(none yet)
+Breaking changes/functionality:
+* No longer supports Xcode 6 and lower or j2objc 0.9.8.2 and lower #483
+
+Code quality:
+* Multi-project integration tests disabled temporarily (system tests are used instead) #483
 
 ## v0.4.3-alpha
 New functionality:
