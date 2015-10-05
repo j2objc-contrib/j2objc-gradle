@@ -506,3 +506,23 @@ local.properties (the Mac OS X developers should not use this):
 # File: local.properties
 j2objc.translateOnlyMode=true
 ```
+
+
+### How do I fix `missing required architecture` linker warning?
+If you see a message similar to:
+```
+ld: warning: ignoring file /PATH/j2objcOutputs/lib/iosDebug/libPROJECT-j2objc.a,
+missing required architecture i386 in file /PATH/j2objcOutputs/lib/iosDebug/libPROJECT-j2objc.a
+(3 slices)
+```
+and additionally get linker errors, you are not building all the neccessary architectures.
+
+By default (for performance), we build only modern iOS device and simulator architectures.
+If you need i386 for older simulators, add the following to your build.gradle file:
+
+```gradle
+// File: build.gradle
+j2objcConfig {
+    supportedArchs += ['ios_i386']
+}
+```
