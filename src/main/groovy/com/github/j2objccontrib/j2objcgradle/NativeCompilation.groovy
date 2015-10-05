@@ -237,6 +237,9 @@ class NativeCompilation {
                             beforeProjects.each { Project beforeProject ->
                                 lib project: beforeProject.path, library: "${beforeProject.name}-j2objc", linkage: 'static'
                             }
+                            beforeTestProjects.each { Project beforeProject ->
+                                lib project: beforeProject.path, library: "${beforeProject.name}-j2objc", linkage: 'static'
+                            }
                             j2objcConfig.extraNativeLibs.each { Map nativeLibSpec ->
                                 lib nativeLibSpec
                             }
@@ -308,9 +311,10 @@ class NativeCompilation {
     }
 
     private List<Project> beforeProjects = []
+    private List<Project> beforeTestProjects = []
     @PackageScope
-    void dependsOnJ2objcLib(Project beforeProject) {
-        boolean added = beforeProjects.add(beforeProject)
+    void dependsOnJ2objcLib(Project beforeProject, boolean isTest) {
+        boolean added = (isTest ? beforeTestProjects : beforeProjects).add(beforeProject)
         assert added
     }
 }

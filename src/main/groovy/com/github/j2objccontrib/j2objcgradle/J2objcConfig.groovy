@@ -755,6 +755,8 @@ class J2objcConfig {
         // before calling finalConfigure.
         project.configurations.create('j2objcTranslationClosure')
         project.configurations.create('j2objcTranslation')
+        project.configurations.create('j2objcTestTranslation')
         project.configurations.create('j2objcLinkage')
+        project.configurations.create('j2objcTestLinkage')
     }
 }
