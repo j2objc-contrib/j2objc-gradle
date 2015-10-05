@@ -310,7 +310,7 @@ class XcodeTask extends DefaultTask {
         if (xcodeTargets.size() == 0) {
             xcodeTargets = podfileTargets
             if (logger) {
-                logger.debug("xcodeTargets is default of all targes: ${podfileTargets.join(', ')}")
+                logger.debug("xcodeTargets default is all targets: '${podfileTargets.join(', ')}'")
             }
         } else {
             for (xcodeTarget in xcodeTargets) {
