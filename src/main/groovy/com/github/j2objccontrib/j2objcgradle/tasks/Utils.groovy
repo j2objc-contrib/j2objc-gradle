@@ -242,6 +242,10 @@ class Utils {
         return j2objcHomeFile.absolutePath
     }
 
+    static String j2objcHasOsxDistribution(Project proj) {
+        return proj.file("${j2objcHome(proj)}/lib/macosx").exists()
+    }
+
     // Reads properties file and arguments from translateArgs (last argument takes precedence)
     //   --prefixes dir/prefixes.properties --prefix com.ex.dir=Short --prefix com.ex.dir2=Short2
     // TODO: separate this out to a distinct argument that's added to translateArgs
