@@ -40,6 +40,7 @@ Paste the results below, replacing existing contents.
 - [Cycle Finder Basic Setup](#cycle-finder-basic-setup)
 - [Cycle Finder Advanced Setup](#cycle-finder-advanced-setup)
 - [How do I develop on Windows or Linux?](#how-do-i-develop-on-windows-or-linux)
+- [How do I fix missing required architecture linker warning?](#how-do-i-fix-missing-required-architecture-linker-warning)
 
 
 ### How do I develop with Xcode?
@@ -505,4 +506,25 @@ local.properties (the Mac OS X developers should not use this):
 ```properties
 # File: local.properties
 j2objc.translateOnlyMode=true
+```
+
+
+### How do I fix `missing required architecture` linker warning?
+If you see a message similar to:
+```
+ld: warning: ignoring file /PATH/j2objcOutputs/lib/iosDebug/libPROJECT-j2objc.a,
+missing required architecture i386 in file /PATH/j2objcOutputs/lib/iosDebug/libPROJECT-j2objc.a
+(3 slices)
+```
+and additionally get linker errors, you are not building all the neccessary architectures.
+
+By default (for performance), we build only modern iOS device and simulator architectures.
+If you need i386 for older simulators (iPhone 5, 5c and earlier devices), add the following
+to your build.gradle file:
+
+```gradle
+// File: build.gradle
+j2objcConfig {
+    supportedArchs += ['ios_i386']
+}
 ```
