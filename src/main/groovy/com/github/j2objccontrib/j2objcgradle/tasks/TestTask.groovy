@@ -17,6 +17,7 @@
 package com.github.j2objccontrib.j2objcgradle.tasks
 
 import com.github.j2objccontrib.j2objcgradle.J2objcConfig
+import com.google.common.annotations.VisibleForTesting
 import groovy.transform.CompileStatic
 import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
@@ -31,6 +32,7 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
 import java.util.regex.Matcher
+import java.util.regex.Pattern
 
 /**
  * Test task to run all unit tests and verify results.
@@ -226,6 +228,8 @@ class TestTask extends DefaultTask {
     // depends on --prefixes dir/prefixes.properties in translateArgs
     //   Before:  src/test/java/com/example/dir/SomeTest.java
     //   After:   com.example.dir.SomeTest or PREFIXSomeTest
+    // TODO: Complexity is O(testCount * prefixCount), make more efficient if needed
+    @VisibleForTesting
     static List<String> getTestNames(Project proj, FileCollection srcFiles, Properties packagePrefixes) {
         List<String> testNames = srcFiles.collect { File file ->
             // Back off to a fragile method that makes assumptions about source directories
@@ -242,17 +246,40 @@ class TestTask extends DefaultTask {
             // Test Name: com.example.dir.SomeTest => PREFIXSomeTest
 
             // First match against the set of Java packages, excluding the filename
-            Matcher matcher = (testName =~ /^(([^.]+\.)+)[^.]+$/)  // (com.example.dir.)SomeTest
-            if (matcher.find()) {
-                String namespace = matcher.group(1)  // com.example.dir.
-                String namespaceChopped = namespace[0..-2]  // com.example.dir
-                if (packagePrefixes.containsKey(namespaceChopped)) {
-                    String prefix = packagePrefixes.getProperty(namespaceChopped)
-                    testName = testName.replace(namespace, prefix)  // PREFIXSomeTest
+            Matcher packageMatcher = (testName =~ /^(.+)\.([^.]+)$/)  // (com.example.dir.)SomeTest
+            if (packageMatcher.find()) {
+                String clazz = packageMatcher.group(packageMatcher.groupCount())  // SomeTest
+                String namespace = packageMatcher.group(1)  // com.example.dir
+
+                for (Map.Entry<Object, Object> property in packagePrefixes.entrySet()) {
+                    String keyStr = property.key as String
+                    String valStr = property.value as String
+                    assert null != keyStr
+                    assert null != valStr
+
+                    String keyRegex = wildcardToRegex(keyStr)
+                    Matcher keyMatcher = (namespace =~ keyRegex)
+                    if (keyMatcher.find()) {
+                        testName = valStr + clazz  // PrefixSomeTest
+                        break
+                    }
                 }
             }
-            return testName  // com.example.dir.SomeTest or PREFIXSomeTest
+            return testName  // com.example.dir.SomeTest or PrefixSomeTest
         }
         return testNames
+    }
+
+    @VisibleForTesting
+    // Adapted from J2ObjC's PackagePrefixes.wildcardToRegex()
+    // https://github.com/google/j2objc/blob/master/translator/src/main/java/com/google/devtools/j2objc/util/PackagePrefixes.java#L219
+    static String wildcardToRegex(String s) {
+        if (s.endsWith(".*")) {
+            // Include root package in regex. For example, foo.bar.* needs to match
+            // foo.bar, foo.bar.mumble, etc.
+            String root = s.substring(0, s.length() - 2).replace(".",  "\\.");
+            return String.format('^(%s|%s\\..*)$', root, root);
+        }
+        return String.format('^%s$', s.replace(".", "\\.").replace("\\*", ".*"));
     }
 }

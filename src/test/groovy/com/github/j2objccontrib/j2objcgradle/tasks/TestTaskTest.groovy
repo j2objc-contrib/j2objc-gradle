@@ -70,30 +70,60 @@ class TestTaskTest {
     @Test
     void testGetTestNames_PackagePrefixes() {
         Properties packagePrefixes = new Properties()
-        packagePrefixes.setProperty('com.example.parent', 'PrntPrefix')
-        packagePrefixes.setProperty('com.example.parent.subdir', 'SubPrefix')
-        packagePrefixes.setProperty('com.example.other', 'OthPrefix')
+        packagePrefixes.setProperty('com.example.parent', 'ParentPrefix')
+        packagePrefixes.setProperty('com.example.parent.subdir', 'SubDirPrefix')
+        packagePrefixes.setProperty('com.example.other', 'OtherPrefix')
+        packagePrefixes.setProperty('com.example.wildcard.*', 'WildcardPrefix')
 
         // These are nonsense paths for files that don't exist
         proj = ProjectBuilder.builder().build()
         FileCollection srcFiles = proj.files([
-                "${proj.rootDir}/src/test/java/com/example/parent/ParentOneClass.java",
-                "${proj.rootDir}/src/test/java/com/example/parent/ParentTwoClass.java",
-                "${proj.rootDir}/src/test/java/com/example/parent/subdir/SubdirClass.java",
-                "${proj.rootDir}/src/test/java/com/example/other/OtherClass.java",
-                "${proj.rootDir}/src/test/java/com/example/noprefix/NoPrefixClass.java"])
+                "${proj.rootDir}/src/test/java/com/example/parent/ParentOne.java",
+                "${proj.rootDir}/src/test/java/com/example/parent/ParentTwo.java",
+                "${proj.rootDir}/src/test/java/com/example/parent/subdir/Subdir.java",
+                "${proj.rootDir}/src/test/java/com/example/other/Other.java",
+                "${proj.rootDir}/src/test/java/com/example/wildcard/Wildcard.java",
+                "${proj.rootDir}/src/test/java/com/example/wildcard/subdir/SubDirWildcard.java",
+                "${proj.rootDir}/src/test/java/com/example/noprefix/NoPrefix.java"])
+
 
         List<String> testNames = TestTask.getTestNames(proj, srcFiles, packagePrefixes)
 
         List<String> expectedTestNames = [
-                "PrntPrefixParentOneClass",
-                "PrntPrefixParentTwoClass",
-                "SubPrefixSubdirClass",
-                "OthPrefixOtherClass",
+                "ParentPrefixParentOne",
+                "ParentPrefixParentTwo",
+                "SubDirPrefixSubdir",
+                "OtherPrefixOther",
+                "WildcardPrefixWildcard",
+                "WildcardPrefixSubDirWildcard",
                 // No package prefix in this case
-                "com.example.noprefix.NoPrefixClass"]
+                "com.example.noprefix.NoPrefix"]
 
         assert expectedTestNames == testNames
+    }
+
+    @Test
+    // Adapted from J2ObjC's PackagePrefixesTest.testWildcardToRegex()
+    // https://github.com/google/j2objc/blob/master/translator/src/test/java/com/google/devtools/j2objc/util/PackagePrefixesTest.java#L97
+    void testWildcardToRegex() throws IOException {
+        // Verify normal package name only matches itself.
+        String regex = TestTask.wildcardToRegex("com.example.dir");
+        assert '^com\\.example\\.dir$' == regex
+        assert 'com.example.dir'.matches(regex)
+        assert ! 'com example dir'.matches(regex) // Would match if wildcard wasn't converted.
+        assert ! 'com.example.dir.annotations'.matches(regex)
+
+        regex = TestTask.wildcardToRegex("foo.bar.*");
+        assert '^(foo\\.bar|foo\\.bar\\..*)$' == regex
+        assert 'foo.bar'.matches(regex)
+        assert 'foo.bar.mumble'.matches(regex)
+        assert 'foo.bar'.matches(regex)
+
+        regex = TestTask.wildcardToRegex("foo.\\*.bar");
+        assert '^foo\\..*\\.bar$' == regex
+        assert 'foo.some.bar'.matches(regex)
+        assert 'foo..bar'.matches(regex)
+        assert ! 'foobar'.matches(regex)
     }
 
     private void setupTask() {
