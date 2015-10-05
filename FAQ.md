@@ -40,6 +40,7 @@ Paste the results below, replacing existing contents.
 - [Cycle Finder Basic Setup](#cycle-finder-basic-setup)
 - [Cycle Finder Advanced Setup](#cycle-finder-advanced-setup)
 - [How do I develop on Windows or Linux?](#how-do-i-develop-on-windows-or-linux)
+- [How do I fix missing required architecture linker warning?](#how-do-i-fix-missing-required-architecture-linker-warning)
 
 
 ### How do I develop with Xcode?
