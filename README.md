@@ -42,8 +42,8 @@ plugins {
 
 // Plugin settings:
 j2objcConfig {
-    xcodeProjectDir '../ios'  // Xcode workspace directory (suggested directory name)
-    xcodeTarget 'IOS-APP'     // iOS app target name (replace with existing app name)
+    // Xcode workspace directory (suggested directory name)
+    xcodeProjectDir '../ios'
 
     finalConfigure()          // Must be last call to configuration
 }
@@ -51,6 +51,8 @@ j2objcConfig {
 
 Info on additional `j2objcConfig` settings are in
 [J2objcConfig.groovy](https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcConfig.groovy#L30).
+The default will link the transpiled code in to all of your Xcode build targets. To specify
+a subset, add a line for `xcodeTargets 'IOS-APP', 'IOS-APP-TESTS', 'WATCHKIT-APP', ...`.
 If your `shared` project depends on any other projects or third-party libraries, you may
 need to [add them manually](FAQ.md#how-do-i-setup-dependencies-with-j2objc) if they aren't
 [linked by default](FAQ.md#what-libraries-are-linked-by-default).

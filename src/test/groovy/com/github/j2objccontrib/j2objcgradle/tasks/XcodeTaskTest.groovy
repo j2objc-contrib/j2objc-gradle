@@ -46,11 +46,11 @@ class XcodeTaskTest {
     }
 
     @Test
-    void getPodFile_Valid() {
+    void getPodfileFile_Valid() {
         J2objcConfig j2objcConfig =
                 proj.extensions.create('j2objcConfig', J2objcConfig, proj)
         j2objcConfig.xcodeProjectDir = '../ios'
-        j2objcConfig.xcodeTarget = 'IOS-APP'
+        j2objcConfig.xcodeTargets = ['IOS-APP']
 
         XcodeTask j2objcXcode = (XcodeTask) proj.tasks.create(name: 'j2objcXcode', type: XcodeTask)
         j2objcXcode.verifyXcodeArgs()
@@ -62,11 +62,11 @@ class XcodeTaskTest {
 
     // Test that null xcode arguments cause the expected exception
     @Test(expected = InvalidUserDataException.class)
-    void getPodFile_Invalid() {
+    void getPodfileFile_Invalid() {
         J2objcConfig j2objcConfig =
                 proj.extensions.create('j2objcConfig', J2objcConfig, proj)
         assert null == j2objcConfig.xcodeProjectDir
-        assert null == j2objcConfig.xcodeTarget
+        assert 0 == j2objcConfig.xcodeTargets.size()
 
         XcodeTask j2objcXcode = (XcodeTask) proj.tasks.create(name: 'j2objcXcode', type: XcodeTask)
 
@@ -104,7 +104,7 @@ class XcodeTaskTest {
                         createJ2objcConfig: true))
 
         j2objcConfig.xcodeProjectDir = '../ios'
-        j2objcConfig.xcodeTarget = 'IOS-APP'
+        j2objcConfig.xcodeTargets = ['IOS-APP']
 
         // Needed for podspecDebug
         proj.file(proj.buildDir).mkdir()
@@ -136,6 +136,7 @@ class XcodeTaskTest {
         mockProjectExec.verify()
 
         // Podname and library name are reversed
+        String podNameMethod = "j2objc_${proj.name}"
         String podNameDebug = "j2objc-${proj.name}-debug"
         String podNameRelease = "j2objc-${proj.name}-release"
         // libName is the same for debug and release
@@ -143,13 +144,16 @@ class XcodeTaskTest {
 
         // Verify Podfile now has podspec references
         List<String> expectedPodfile = [
+                "def $podNameMethod",
+                "    pod '$podNameDebug', :configuration => ['Debug'], :path => '$proj.buildDir'",
+                "    pod '$podNameRelease', :configuration => ['Release'], :path => '$proj.buildDir'",
+                "end",
+                "",
                 "target 'IOS-APP' do",
-                // Newly added line
-                "pod '$podNameDebug', :configuration => ['Debug'], :path => '$proj.buildDir'",
-                "pod '$podNameRelease', :configuration => ['Release'], :path => '$proj.buildDir'",
+                "    $podNameMethod",
                 "end"]
-        List<String> readPodFileLines = podfile.readLines()
-        assert expectedPodfile == readPodFileLines
+        List<String> readPodfileLines = podfile.readLines()
+        assert expectedPodfile == readPodfileLines
 
         // Debug Podspec
         if (Utils.isWindowsNoFake()) {
@@ -207,7 +211,7 @@ class XcodeTaskTest {
                         createJ2objcConfig: true))
 
         j2objcConfig.xcodeProjectDir = 'ios'
-        j2objcConfig.xcodeTarget = 'IOS-APP'
+        j2objcConfig.xcodeTargets = ['IOS-APP']
 
         // Needed for podspec
         proj.file(proj.buildDir).mkdir()
@@ -290,14 +294,14 @@ class XcodeTaskTest {
                         applyJavaPlugin: true,
                         createJ2objcConfig: true))
         assert null == j2objcConfig.xcodeProjectDir
-        assert null == j2objcConfig.xcodeTarget
+        assert 0 == j2objcConfig.xcodeTargets.size()
 
         XcodeTask j2objcXcode = (XcodeTask) proj.tasks.create(name: 'j2objcXcode', type: XcodeTask)
 
         // Expect exception suggesting to configure j2objcConfig:
         expectedException.expect(InvalidUserDataException.class)
         expectedException.expectMessage("xcodeProjectDir '../ios'")
-        expectedException.expectMessage("xcodeTarget 'IOS-APP'")
+        expectedException.expectMessage("xcodeTargets 'IOS-APP', 'IOS-APPTests'")
 
         j2objcXcode.verifyXcodeArgs()
     }
@@ -308,7 +312,7 @@ class XcodeTaskTest {
                 "target 'IOS-APP' do",
                 "end"]
 
-        List<String> xcodeTargets = XcodeTask.extractXcodeTargets('IOS-APP', podFileLines)
+        List<String> xcodeTargets = XcodeTask.extractXcodeTargets(podFileLines)
 
         List<String> expectedXcodeTargets = ['IOS-APP']
         assert expectedXcodeTargets == xcodeTargets
@@ -326,7 +330,7 @@ class XcodeTaskTest {
                 "target 'IOS-APP WatchKit Extension' do",
                 "end"]
 
-        List<String> xcodeTargets = XcodeTask.extractXcodeTargets('IOS-APP', podFileLines)
+        List<String> xcodeTargets = XcodeTask.extractXcodeTargets(podFileLines)
 
         List<String> expectedXcodeTargets = [
                 'IOS-APP',
@@ -337,253 +341,212 @@ class XcodeTaskTest {
     }
 
     @Test
-    void testWriteUpdatedPodFileIfNeeded_Needed() {
+    void testWriteUpdatedPodfileIfNeeded_Needed() {
 
         // Write temp file that's deleted on exit
-        File PodFile = File.createTempFile("Podfile","")
-        PodFile.deleteOnExit()
-        PodFile.write(
+        File Podfile = File.createTempFile("Podfile","")
+        Podfile.deleteOnExit()
+        Podfile.write(
                 "target 'IOS-APP' do\n" +
                 "end")
 
-        XcodeTask.writeUpdatedPodFileIfNeeded(
-                PodFile, 'IOS-APP',
-                'j2objc-shared-debug', 'j2objc-shared-release',
-                '/Users/USERNAME/dev/workspace/shared/build')
+        XcodeTask.writeUpdatedPodfileIfNeeded(
+                Podfile, ['IOS-APP'], '/Users/USERNAME/dev/workspace/shared/build',
+                'j2objc_shared', 'j2objc-shared-debug', 'j2objc-shared-release', null)
 
         List<String> expectedLines = [
+                "def j2objc_shared",
+                "    pod 'j2objc-shared-debug', :configuration => ['Debug'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
+                "    pod 'j2objc-shared-release', :configuration => ['Release'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
+                "end",
+                "",
                 "target 'IOS-APP' do",
-                // Newly added lines
-                "pod 'j2objc-shared-debug', :configuration => ['Debug'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
-                "pod 'j2objc-shared-release', :configuration => ['Release'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
+                "    j2objc_shared",
                 "end"]
 
-        List<String> readPodFileLines = PodFile.readLines()
-        assert expectedLines == readPodFileLines
+        List<String> readPodfileLines = Podfile.readLines()
+        assert expectedLines == readPodfileLines
     }
 
     @Test
-    void testWriteUpdatedPodFileIfNeeded_NotNeeded() {
+    void testWriteUpdatedPodfileIfNeeded_NotNeeded() {
 
         // Write temp file that's deleted on exit
-        File PodFile = File.createTempFile("Podfile","")
-        PodFile.deleteOnExit()
-        PodFile.write(
-                "target 'IOS-APP' do\n" +
-                "pod 'j2objc-shared-debug', :configuration => ['Debug'], :path => '/Users/USERNAME/dev/workspace/shared/build'\n" +
-                "pod 'j2objc-shared-release', :configuration => ['Release'], :path => '/Users/USERNAME/dev/workspace/shared/build'\n" +
-                "end")
+        File Podfile = File.createTempFile("Podfile","")
+        Podfile.deleteOnExit()
+        List<String> writtenLines = [
+            "def j2objc_shared",
+            "    pod 'j2objc-shared-debug', :configuration => ['Debug'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
+            "    pod 'j2objc-shared-release', :configuration => ['Release'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
+            "end",
+            "",
+            "target 'IOS-APP' do",
+            "    j2objc_shared",
+            "end"]
 
-        XcodeTask.writeUpdatedPodFileIfNeeded(
-                PodFile, 'IOS-APP',
-                'j2objc-shared-debug', 'j2objc-shared-release',
-                '/Users/USERNAME/dev/workspace/shared/build')
+        Podfile.write(writtenLines.join('\n'))
 
-        // Same as before
-        List<String> expectedLines = [
-                "target 'IOS-APP' do",
-                "pod 'j2objc-shared-debug', :configuration => ['Debug'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
-                "pod 'j2objc-shared-release', :configuration => ['Release'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
-                "end"]
+        XcodeTask.writeUpdatedPodfileIfNeeded(
+                Podfile, ['IOS-APP'], '/Users/USERNAME/dev/workspace/shared/build',
+                'j2objc_shared', 'j2objc-shared-debug', 'j2objc-shared-release', null)
 
         // Missing verification that the file wasn't written but verifies it's the same as before
-        List<String> readPodFileLines = PodFile.readLines()
-        assert expectedLines == readPodFileLines
-    }
-
-    @Test(expected=InvalidUserDataException.class)
-    void testWriteUpdatedPodFileIfNeeded_TargetNotFound() {
-
-        // Write temp file that's deleted on exit
-        File PodFile = File.createTempFile("Podfile","")
-        PodFile.deleteOnExit()
-        PodFile.write(
-                "target 'IOS-APP' do\n" +
-                "end")
-
-        XcodeTask.writeUpdatedPodFileIfNeeded(
-                PodFile, 'TARGET-NOT-FOUND',
-                'j2objc-shared-debug', 'j2objc-shared-release',
-                '/Users/USERNAME/dev/workspace/shared/build')
+        List<String> readPodfileLines = Podfile.readLines()
+        assert writtenLines == readPodfileLines
     }
 
     @Test
-    void testWriteUpdatedPodFileIfNeeded_MultipleTargets() {
-
-        // Write temp file that's deleted on exit
-        File PodFile = File.createTempFile("Podfile","")
-        PodFile.deleteOnExit()
-        PodFile.write(
-                "target 'IOS-APP' do\n" +
-                "\n" +
-                "end\n" +
-                "\n" +
-                "target 'IOS-APP WatchKit App' do\n" +
-                "\n" +
-                "end")
-
-        XcodeTask.writeUpdatedPodFileIfNeeded(
-                PodFile, 'IOS-APP',
-                'j2objc-shared-debug', 'j2objc-shared-release',
-                '/Users/USERNAME/dev/workspace/shared/build')
-
-        List<String> expectedLines = [
+    void testUpdatePodfile_Complex() {
+        // 1) Clean up pod method
+        // 2) Add pod method to IOS-APP target
+        // 3) Remove pod method from IOS-APPTest target
+        List<String> podfileLines = [
+                "def j2objc_shared",
+                "    RANDOM-CRUFT-TO-BE-DELETED",
+                "    pod 'j2objc-shared-IGNORE', :configuration => ['Release'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
+                "end",
+                "",
                 "target 'IOS-APP' do",
                 "",
-                // Newly added lines
-                "pod 'j2objc-shared-debug', :configuration => ['Debug'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
-                "pod 'j2objc-shared-release', :configuration => ['Release'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
+                "    pod 'IGNORE1', :path => 'IGNORE'",
                 "end",
                 "",
                 "target 'IOS-APP WatchKit App' do",
-                "",
-                // Newly added lines
-                "pod 'j2objc-shared-debug', :configuration => ['Debug'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
-                "pod 'j2objc-shared-release', :configuration => ['Release'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
+                "    j2objc_shared",
+                "    pod 'IGNORE2', :path => 'IGNORE'",
                 "end"]
 
-        List<String> readPodFileLines = PodFile.readLines()
-        assert expectedLines == readPodFileLines
-    }
-
-    @Test
-    void testGetPodFileLinesIfChanged_UpToDate() {
-        List<String> podFileLines = [
-                "target 'IOS-APP' do",
-                "pod 'j2objc-shared-debug', :configuration => ['Debug'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
-                "end"]
-
-        List<String> newPodFileLines = XcodeTask.updatePodFileLines(
-                podFileLines, 'IOS-APP', 'j2objc-shared-debug', ['Debug'],
-                '/Users/USERNAME/dev/workspace/shared/build')
-
-        assert podFileLines == newPodFileLines
-    }
-
-    @Test
-    void testGetPodFileLinesIfChanged_PodPathMissing() {
-        List<String> podFileLines = [
-                "target 'IOS-APP' do",
-                "",
-                "end"]
-
-        List<String> newPodFileLines = XcodeTask.updatePodFileLines(
-                podFileLines, 'IOS-APP', 'j2objc-shared-debug', ['Debug'],
-                '/Users/USERNAME/dev/workspace/shared/build')
+        List<String> newPodfileLines = XcodeTask.updatePodfile(
+                podfileLines, ['IOS-APP'], '/Users/USERNAME/dev/workspace/shared/build',
+                'j2objc_shared', 'j2objc-shared-debug', 'j2objc-shared-release', null)
 
         List<String> expectedLines = [
+                "def j2objc_shared",
+                "    pod 'j2objc-shared-debug', :configuration => ['Debug'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
+                "    pod 'j2objc-shared-release', :configuration => ['Release'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
+                "end",
+                "",
                 "target 'IOS-APP' do",
                 "",
-                // Newly added line
-                "pod 'j2objc-shared-debug', :configuration => ['Debug'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
+                "    pod 'IGNORE1', :path => 'IGNORE'",
+                "    j2objc_shared",
+                "end",
+                "",
+                "target 'IOS-APP WatchKit App' do",
+                "    pod 'IGNORE2', :path => 'IGNORE'",
                 "end"]
 
-        assert expectedLines == newPodFileLines
+        assert expectedLines == newPodfileLines
     }
 
     @Test
-    void testGetPodFileLinesIfChanged_PodPathWrong() {
-        List<String> podFileLines = [
+    // If xcodeTargets == [], then include all targets
+    void testUpdatePodfile_DefaultsToAllTargets() {
+        List<String> podfileLines = [
                 "target 'IOS-APP' do",
-                "pod 'j2objc-shared-debug', :path => '/Users/WRONG/dev/workspace/shared/build'",
+                "    pod 'IGNORE1', :path => 'IGNORE'",
+                "end",
+                "",
+                "target 'IOS-APPTests' do",
+                "    pod 'IGNORE2', :path => 'IGNORE'",
+                "end",
+                "",
+                "target 'IOS-APP WatchKit App' do",
+                "    j2objc_shared",
+                "    pod 'IGNORE3', :path => 'IGNORE'",
                 "end"]
 
-        List<String> newPodFileLines = XcodeTask.updatePodFileLines(
-                podFileLines, 'IOS-APP',
-                'j2objc-shared-debug', ['Debug'],
-                '/Users/USERNAME/dev/workspace/shared/build')
+        List<String> newPodfileLines = XcodeTask.updatePodfile(
+                podfileLines, [], '/Users/USERNAME/dev/workspace/shared/build',
+                'j2objc_shared', 'j2objc-shared-debug', 'j2objc-shared-release', null)
 
         List<String> expectedLines = [
+                "def j2objc_shared",
+                "    pod 'j2objc-shared-debug', :configuration => ['Debug'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
+                "    pod 'j2objc-shared-release', :configuration => ['Release'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
+                "end",
+                "",
                 "target 'IOS-APP' do",
-                // Modified line
-                "pod 'j2objc-shared-debug', :configuration => ['Debug'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
-                "end"]
-
-        assert expectedLines == newPodFileLines
-    }
-
-    @Test
-    void testUpdatePodFileLines_CleansUpDuplicates() {
-        List<String> podFileLines = [
-                "target 'IOS-APP' do",
-                "pod 'pod1', :path => 'IGNORE'",
-                // Note the duplicated lines with the WRONG_PATH
-                "pod 'j2objc-shared-debug', :configuration => ['Debug'], :path => '/Users/WRONG_PATH_ONE/dev/workspace/shared/build'",
-                "pod 'j2objc-shared-debug', :configuration => ['Debug'], :path => '/Users/WRONG_PATH_TWO/dev/workspace/shared/build'",
-                "pod 'j2objc-oldname-debug', :path => 'IGNORE'",
-                "end"]
-
-        List<String> newPodFileLines = XcodeTask.updatePodFileLines(
-                podFileLines, 'IOS-APP', 'j2objc-shared-debug', ['Debug'],
-                '/Users/USERNAME/dev/workspace/shared/build')
-
-        List<String> expectedLines = [
-                "target 'IOS-APP' do",
-                "pod 'pod1', :path => 'IGNORE'",
-                "pod 'j2objc-shared-debug', :configuration => ['Debug'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
-                // Only cleans up podName that it's looking for, so this duplicate isn't fixed
-                "pod 'j2objc-oldname-debug', :path => 'IGNORE'",
-                "end"]
-
-        assert expectedLines == newPodFileLines
-    }
-
-    @Test
-    void testUpdatePodFileLines_Complex() {
-        // Updates incorrect path
-        // Cleans up duplicates
-        // Handles multiple Xcode Targets
-        List<String> podFileLines = [
-                "target 'WrongTarget' do",
-                "pod 'pod1', :path => 'IGNORE'",
+                "    pod 'IGNORE1', :path => 'IGNORE'",
+                "    j2objc_shared",
                 "end",
                 "",
-                "target 'Target' do",
-                "pod 'pod2', :path => 'IGNORE'",
-                // Note the two distinct wrong paths and duplicated entries
-                "pod 'j2objc-shared-debug', :configuration => '['Debug'], :path => '/Users/WRONG_PATH_ONE/dev/workspace/shared/build'",
-                "pod 'j2objc-shared-debug', :path => '/Users/WRONG_PATH_TWO/dev/workspace/shared/build'",
+                "target 'IOS-APPTests' do",
+                "    pod 'IGNORE2', :path => 'IGNORE'",
+                "    j2objc_shared",
                 "end",
                 "",
-                "target 'AnotherWrongTarget' do",
-                "",
-                "pod 'pod3', :path => 'IGNORE'",
+                "target 'IOS-APP WatchKit App' do",
+                "    j2objc_shared",
+                "    pod 'IGNORE3', :path => 'IGNORE'",
                 "end"]
 
-        List<String> newPodFileLines = XcodeTask.updatePodFileLines(
-                podFileLines, 'Target',
-                'j2objc-shared-debug', ['Debug'],
-                '/Users/USERNAME/dev/workspace/shared/build')
-
-        List<String> expectedLines = [
-                "target 'WrongTarget' do",
-                "pod 'pod1', :path => 'IGNORE'",
-                "end",
-                "",
-                "target 'Target' do",
-                "pod 'pod2', :path => 'IGNORE'",
-                // Note the fixed path, no duplicate
-                "pod 'j2objc-shared-debug', :configuration => ['Debug'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
-                "end",
-                "",
-                "target 'AnotherWrongTarget' do",
-                "",
-                "pod 'pod3', :path => 'IGNORE'",
-                "end"]
-
-        assert expectedLines == newPodFileLines
+        assert expectedLines == newPodfileLines
     }
 
     @Test(expected = InvalidUserDataException.class)
-    void testUpdatePodFileLines_XcodeTargetNotFound() {
+    void testUpdatePodfileTarget_TargetNotFound() {
         List<String> podFileLines = [
                 "target 'IOS-APP' do",
                 "pod 'j2objc-shared-debug', :path => '/Users/USERNAME/dev/workspace/shared/build'",
                 "end"]
 
-        XcodeTask.updatePodFileLines(
-                podFileLines, 'XCODE_TARGET_NOT_FOUND',
-                'j2objc-shared-debug', ['Debug'],
-                '/Users/USERNAME/dev/workspace/shared/build')
+        XcodeTask.updatePodfileTarget(
+                podFileLines, 'XCODE_TARGET_DOES_NOT_EXIST',
+                'j2objc_shared', true)
+    }
+
+    @Test
+    void testUpdatePodfileTarget_AddAndRemove() {
+        List<String> podfileTargetEmpty = [
+                "target 'IOS-APP' do",
+                "end"]
+
+        List<String> podfileTargetWithMethod = [
+                "target 'IOS-APP' do",
+                "    j2objc_shared",
+                "end"]
+
+        // Remove no-op
+        List<String> newPodfileLines = XcodeTask.updatePodfileTarget(
+                podfileTargetEmpty, 'IOS-APP', 'j2objc_shared', false)
+        assert newPodfileLines == newPodfileLines
+
+        // Add
+        newPodfileLines = XcodeTask.updatePodfileTarget(
+                podfileTargetEmpty, 'IOS-APP', 'j2objc_shared', true)
+        assert podfileTargetWithMethod == newPodfileLines
+
+        // Add no-op
+        newPodfileLines = XcodeTask.updatePodfileTarget(
+                podfileTargetEmpty, 'IOS-APP', 'j2objc_shared', true)
+        assert podfileTargetWithMethod == newPodfileLines
+
+        // Remove
+        newPodfileLines = XcodeTask.updatePodfileTarget(
+                podfileTargetEmpty, 'IOS-APP', 'j2objc_shared', false)
+        assert newPodfileLines == newPodfileLines
+    }
+
+    @Test
+    void testUpdatePodfileTarget_PreserveOrdering() {
+        List<String> podfileLines = [
+                "target 'TARGET_A' do",
+                "    pod 'IGNORE1', :path => 'IGNORE'",
+                "    j2objc_shared",
+                "end",
+                "",
+                "target 'TARGET_B' do",
+                "    j2objc_shared",
+                "    pod 'IGNORE2', :path => 'IGNORE'",
+                "end"]
+
+        List<String> newPodfileLines = XcodeTask.updatePodfileTarget(
+                podfileLines, 'TARGET_A', 'j2objc_shared', true)
+        newPodfileLines = XcodeTask.updatePodfileTarget(
+                newPodfileLines, 'TARGET_B', 'j2objc_shared', true)
+
+        // Preserves the ordering of the lines
+        assert podfileLines == newPodfileLines
     }
 }
