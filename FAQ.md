@@ -519,7 +519,8 @@ missing required architecture i386 in file /PATH/j2objcOutputs/lib/iosDebug/libP
 and additionally get linker errors, you are not building all the neccessary architectures.
 
 By default (for performance), we build only modern iOS device and simulator architectures.
-If you need i386 for older simulators, add the following to your build.gradle file:
+If you need i386 for older simulators (iPhone 5, 5c and earlier devices), add the following
+to your build.gradle file:
 
 ```gradle
 // File: build.gradle
