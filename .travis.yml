@@ -24,6 +24,7 @@ matrix:
       env:
        - USING_OS=osx
        - USING_XCODE=7
+       - J2OBJC_VERSION=0.9.8.2.1
 
 branches:
   only:

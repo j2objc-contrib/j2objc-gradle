@@ -48,6 +48,6 @@ runTest multiProject1
 # does the same for Guava. These libraries are used in both `extended` and `base`.
 # We must rename the include directory while this test runs, otherwise the
 # code builds against the translated Guava headers provided in the j2objc dist.
-mv localJ2objcDist/j2objcDist/include/com/google/common localJ2objcDist/j2objcDist/include/com/google/common-bak
+mv localJ2objcDist/j2objc-$J2OBJC_VERSION/include/com/google/common localJ2objcDist/j2objc-$J2OBJC_VERSION/include/com/google/common-bak
 runTest externalLibrary1
-mv localJ2objcDist/j2objcDist/include/com/google/common-bak localJ2objcDist/j2objcDist/include/com/google/common
+mv localJ2objcDist/j2objc-$J2OBJC_VERSION/include/com/google/common-bak localJ2objcDist/j2objc-$J2OBJC_VERSION/include/com/google/common

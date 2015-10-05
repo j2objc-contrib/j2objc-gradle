@@ -15,6 +15,7 @@
  */
 
 package com.github.j2objccontrib.j2objcgradle
+
 import com.github.j2objccontrib.j2objcgradle.tasks.Utils
 import groovy.transform.PackageScope
 import org.gradle.api.Action
@@ -28,6 +29,7 @@ import org.gradle.nativeplatform.NativeLibrarySpec
 import org.gradle.nativeplatform.toolchain.Clang
 import org.gradle.nativeplatform.toolchain.GccPlatformToolChain
 import org.gradle.platform.base.Platform
+
 /**
  * Compilation of libraries for debug/release and architectures listed below.
  */
@@ -53,13 +55,11 @@ class NativeCompilation {
             '-isysroot',
             '/Applications/Xcode.app/Contents/Developer/Platforms/' +
             'iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk',
-            '-mios-simulator-version-min=8.3',
     ]
     String[] iphoneClangArgs = [
             '-isysroot',
             '/Applications/Xcode.app/Contents/Developer/Platforms/' +
             'iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk',
-            '-miphoneos-version-min=8.3',
     ]
 
     void definePlatforms(NamedDomainObjectContainer<Platform> d, List<String> names) {
@@ -82,27 +82,27 @@ class NativeCompilation {
                 String[] compilerArgs = []
                 // Arguments specific to the linker.
                 String[] linkerArgs = []
+                J2objcConfig config = J2objcConfig.from(project)
                 String j2objcPath = Utils.j2objcHome(project)
                 switch (targetSpec) {
                     case TargetSpec.TARGET_IOS_DEVICE:
                         clangArgs += iphoneClangArgs
+                        clangArgs += ["-miphoneos-version-min=${config.minIosVersion}"]
                         linkerArgs += ["-L$j2objcPath/lib"]
                         break
                     case TargetSpec.TARGET_IOS_SIMULATOR:
                         clangArgs += simulatorClangArgs
+                        clangArgs += ["-mios-simulator-version-min=${config.minIosVersion}"]
                         linkerArgs += ["-L$j2objcPath/lib"]
                         break
                     case TargetSpec.TARGET_OSX:
-                        if (Utils.j2objcHasOsxDistribution(project)) {
-                            linkerArgs += ["-L$j2objcPath/lib/macosx"]
-                        } else {
+                        if (!Utils.j2objcHasOsxDistribution(project)) {
                             String msg = "J2ObjC distribution at $j2objcPath lacks a lib/macosx directory.\n" +
                                          "Please update to J2ObjC 0.9.8.2.1 or higher; earlier versions will\n" +
                                          "not work correctly with Xcode 7 or higher."
-                            project.logger.warn(msg)
-                            // We'll keep going - it works for people with Xcode 6.
-                            linkerArgs += ["-L$j2objcPath/lib"]
+                            throw new InvalidUserDataException(msg)
                         }
+                        linkerArgs += ["-L$j2objcPath/lib/macosx"]
                         linkerArgs += ['-framework', 'ExceptionHandling']
                         break
                 }

@@ -15,6 +15,7 @@
  */
 
 package com.github.j2objccontrib.j2objcgradle
+
 import com.github.j2objccontrib.j2objcgradle.tasks.Utils
 import com.google.common.annotations.VisibleForTesting
 import groovy.transform.CompileStatic
@@ -24,6 +25,7 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.util.PatternSet
 import org.gradle.util.ConfigureUtil
+
 /**
  * j2objcConfig is used to configure the plugin with the project's build.gradle.
  *
@@ -592,6 +594,13 @@ class J2objcConfig {
         extraNativeLibs.add(spec)
     }
 
+    /**
+     * The minimum iOS version to build against.  You cannot use APIs that are not supported
+     * in this version.
+     * <p/>
+     * See https://developer.apple.com/library/ios/documentation/DeveloperTools/Conceptual/cross_development/Configuring/configuring.html#//apple_ref/doc/uid/10000163i-CH1-SW2
+     */
+    String minIosVersion = '8.3'
 
     // XCODE
     /**
