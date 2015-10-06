@@ -549,4 +549,42 @@ class XcodeTaskTest {
         // Preserves the ordering of the lines
         assert podfileLines == newPodfileLines
     }
+
+    @Test
+    // For upgrade from v0.4.3 to v0.5.0
+    void testUpdatePodfileTarget_PodMethodUpgrade() {
+        List<String> podfileLines = [
+                // pod method should not be affected by removal of the old code
+                "def j2objc_shared",
+                "    pod 'j2objc-shared-debug', :configuration => ['Debug'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
+                "    pod 'j2objc-shared-release', :configuration => ['Release'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
+                "end",
+                "",
+                "target 'TARGET' do",
+                "    pod 'j2objc-shared-debug', :configuration => ['Debug'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
+                "    pod 'j2objc-shared-release', :configuration => ['Release'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
+                "    pod 'IGNORE2', :path => 'IGNORE'",
+                "end"]
+
+        List<String> expectedPodfileLines = [
+                "def j2objc_shared",
+                "    pod 'j2objc-shared-debug', :configuration => ['Debug'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
+                "    pod 'j2objc-shared-release', :configuration => ['Release'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
+                "end",
+                "",
+                "target 'TARGET' do",
+                "    pod 'IGNORE2', :path => 'IGNORE'",
+                "    j2objc_shared",
+                "end"]
+
+        // First update cleans up the Podfile, replacing within targets definitions with pod method
+        List<String> newPodfileLines = XcodeTask.updatePodfileTarget(
+                podfileLines, 'TARGET', 'j2objc_shared', true)
+        assert expectedPodfileLines == newPodfileLines
+
+        // Second update has no effect
+        newPodfileLines = XcodeTask.updatePodfileTarget(
+                newPodfileLines, 'TARGET', 'j2objc_shared', true)
+        assert expectedPodfileLines == newPodfileLines
+    }
 }

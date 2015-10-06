@@ -426,6 +426,15 @@ class XcodeTask extends DefaultTask {
                 withinXcodeTarget = true
 
             } else if (withinXcodeTarget) {
+
+                // For upgrade from v0.4.3 to v0.5.0, basically for Xcode 7
+                // TODO: remove code for plugin beta release as it's not necessary after upgrading
+                if (line.contains("pod 'j2objc")) {
+                    // Old pod lines that should be removed. Example:
+                    // pod 'j2objc-shared-debug', :configuration => ['Debug'], :path => '/Users/USERNAME/dev/taptap/base/build'
+                    skipWritingLine = true
+                }
+
                 if (line.contains(podNameMethod)) {
                     // skip copying this line
                     skipWritingLine = true
@@ -433,8 +442,8 @@ class XcodeTask extends DefaultTask {
                         // repeated podName lines, drop them as they should not be here
                     } else {
                         if (addPodMethod) {
-                            // write updated line the first time pod is seen
-                            // this makes for stable in place ordering
+                            // update existing pod method line
+                            // finding existing line makes for stable in place ordering
                             newPodfileLines.add(podMethodLine)
                         }
                         // If addPodMethod = false, then this line is dropped
@@ -444,7 +453,7 @@ class XcodeTask extends DefaultTask {
                     withinXcodeTarget = false
                     if (!podMethodProcessed) {
                         if (addPodMethod) {
-                            // no existing podName, so write that additional line
+                            // no existing pod method line, so add it
                             newPodfileLines.add(podMethodLine)
                         }
                         podMethodProcessed = true
