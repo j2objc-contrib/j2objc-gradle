@@ -52,7 +52,9 @@ class DependencyConverter {
             'com.google.guava:guava',
             'junit:junit',
             'org.mockito:mockito-core',
-            'com.google.j2objc:j2objc-annotations']
+            'com.google.j2objc:j2objc-annotations',
+            'org.hamcrest:hamcrest-core',
+            'com.google.protobuf:protobuf-java']
 
     DependencyConverter(Project project, J2objcConfig j2objcConfig) {
         this.project = project
