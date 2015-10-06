@@ -32,6 +32,6 @@ public class Cube {
     }
 
     public String exerciseGuava() {
-        return Joiner.on(' ').join('a', 'b', 'c');
+        return Joiner.on("BASE").join('a', 'b', 'c');
     }
 }

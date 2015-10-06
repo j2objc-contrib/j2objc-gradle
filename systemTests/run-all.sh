@@ -37,9 +37,10 @@ function runTest {
 # Simplest possible set-up.  A single project with no dependencies.
 runTest simple1
 
-# Two gradle projects, `extended` depends on `base`.  They also both test
+# Two main gradle projects, `extended` depends on `base`.  They also both test
 # dependency on built-in j2objc libraries, like Guava, and build-closure
-# based translation of an external library, Gson.
+# based translation of an external library, Gson.  They also both depend
+# depend on a third test-only gradle project, `testLib`.
 runTest multiProject1
 
 # TODO: Re-enable building Guava when we figure out how to deal with Java 8.

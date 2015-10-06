@@ -22,14 +22,9 @@ repositories {
 }
 
 dependencies {
-    compile project(':base')
     // Intentionally testing e2e use of a built-in j2objc library, Guava.
     compile 'com.google.guava:guava:17.0'
-    // NOTE: this is an external dependency. The plugin automatically downloads the source,
-    // translates and links it in to the compiled library. No further configuration is required.
-    compile 'com.google.code.gson:gson:2.3.1'
     testCompile 'junit:junit:4.12'
-    testCompile project(':testLib')
 }
 
 j2objcConfig {
