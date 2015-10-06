@@ -98,6 +98,9 @@ class J2objcPlugin implements Plugin<Project> {
                     description = 'J2ObjC Java source dependencies that need to be ' +
                                   'partially translated via --build-closure'
                 }
+                // There is no corresponding j2objcTestTranslationClosure - building test code with
+                // --build-closure will almost certainly cause duplicate symbols when linked with
+                // main code.
 
                 // If you want to translate an entire source library, regardless of which parts of the
                 // library code your own code depends on, use this configuration.  This
@@ -111,11 +114,24 @@ class J2objcPlugin implements Plugin<Project> {
                     description = 'J2ObjC Java source libraries that should be fully translated ' +
                                   'and built as stand-alone native libraries'
                 }
+                // Some libraries also provide their test source in a Jar. For example:
+                //   dependencies { compile 'org.apache.commons:commons-compress:1.10:test-sources' }
+                // will cause your project to compile and run full Commons Compress test suite
+                // in both Java and Objective-C.
+                j2objcTestTranslation {
+                    description = 'J2ObjC Java test source code that should be fully translated ' +
+                                  'and built as stand-alone tests'
+                }
 
                 // Currently, we can only handle Project dependencies already translated to Objective-C.
                 j2objcLinkage {
                     description = 'J2ObjC native library dependencies that need to be ' +
-                                  'linked into the final library, and do not need translation'
+                                  'linked into the final main library, and do not need translation'
+                }
+
+                j2objcTestLinkage {
+                    description = 'J2ObjC native library dependencies that need to be ' +
+                                  'linked into the final tests, and do not need translation'
                 }
             }
 

@@ -28,6 +28,6 @@ public class CubeTest {
 
     @Test
     public void testExerciseGuava() {
-        Assert.assertEquals("a b c", new Cube(7).exerciseGuava());
+        Assert.assertEquals(CubeTester.exerciseGuava("BASE"), new Cube(7).exerciseGuava());
     }
 }

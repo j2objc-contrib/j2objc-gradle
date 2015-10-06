@@ -277,7 +277,7 @@ class J2objcConfig {
             "j2objc_guava.jar", "j2objc_junit.jar", "jre_emul.jar",
             // Libraries that don't need CycleFinder fixes
             "javax.inject-1.jar", "jsr305-3.0.0.jar",
-            "mockito-core-1.9.5.jar"]
+            "mockito-core-1.9.5.jar", "hamcrest-core-1.3.jar", "protobuf_runtime.jar"]
 
     /**
      * Additional native libraries that are part of the j2objc distribution to link
@@ -290,7 +290,7 @@ class J2objcConfig {
      */
     // J2objc default libraries, from $J2OBJC_HOME/lib/..., without '.a' extension.
     // TODO: auto add libraries based on java dependencies, warn on version differences
-    List<String> linkJ2objcLibs = ['guava', 'javax_inject', 'jsr305']
+    List<String> linkJ2objcLibs = ['guava', 'javax_inject', 'jsr305', 'protobuf_runtime']
 
     /**
      * Additional native libraries that are part of the j2objc distribution to link
@@ -298,6 +298,7 @@ class J2objcConfig {
      */
     // J2objc default libraries, from $J2OBJC_HOME/lib/..., without '.a' extension.
     // TODO: auto add libraries based on java dependencies, warn on version differences
+    // Note: Hamcrest appears to be included within libjunit.a.
     List<String> linkJ2objcTestLibs = ['junit', 'mockito', 'j2objc_main']
 
     // TODO: warn if different versions than testCompile from Java plugin
@@ -755,6 +756,8 @@ class J2objcConfig {
         // before calling finalConfigure.
         project.configurations.create('j2objcTranslationClosure')
         project.configurations.create('j2objcTranslation')
+        project.configurations.create('j2objcTestTranslation')
         project.configurations.create('j2objcLinkage')
+        project.configurations.create('j2objcTestLinkage')
     }
 }

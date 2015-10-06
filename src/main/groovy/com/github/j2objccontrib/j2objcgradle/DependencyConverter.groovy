@@ -18,6 +18,7 @@ package com.github.j2objccontrib.j2objcgradle
 
 import groovy.transform.CompileStatic
 import groovy.transform.PackageScope
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ExternalModuleDependency
@@ -26,13 +27,13 @@ import org.gradle.api.artifacts.SelfResolvingDependency
 
 /**
  * Converts `[test]compile` dependencies to their
- * `j2objcTranslationClosure` and/or `j2objcLinkage` equivalents, depending on the type
+ * `j2objcTranslationClosure` and/or `j2objc[Test]Linkage` equivalents, depending on the type
  * of dependency and whether or not they are already provided in native code:
  * <p/>
- * External classfile .jar libraries you depend on via `compile` or `testCompile` will be
+ * External classfile .jar libraries you depend on via `compile` will be
  * converted to `j2objcTranslationClosure` dependencies of the corresponding source .jar libraries.
  * Gradle projects you depend on via `compile` or `testCompile` will be converted to
- * `j2objcLinkage` dependencies of the corresponding generated Objective C include headers
+ * `j2objcLinkage` or `j2objcTestLinkage` dependencies of the corresponding generated Objective C include headers
  * and static library.  See {@link DependencyResolver} for details on the differences
  * between these configurations.
  * <p/>
@@ -51,7 +52,9 @@ class DependencyConverter {
             'com.google.guava:guava',
             'junit:junit',
             'org.mockito:mockito-core',
-            'com.google.j2objc:j2objc-annotations']
+            'com.google.j2objc:j2objc-annotations',
+            'org.hamcrest:hamcrest-core',
+            'com.google.protobuf:protobuf-java']
 
     DependencyConverter(Project project, J2objcConfig j2objcConfig) {
         this.project = project
@@ -60,43 +63,54 @@ class DependencyConverter {
 
     void configureAll() {
         project.configurations.getByName('compile').dependencies.each {
-            visit(it)
+            visit(it, false)
         }
         project.configurations.getByName('testCompile').dependencies.each {
-            visit(it)
+            visit(it, true)
         }
     }
 
-    protected void visit(Dependency dep) {
+    protected void visit(Dependency dep, boolean isTest) {
         if (dep instanceof ProjectDependency) {
             // ex. `compile project(':peer1')`
-            visitProjectDependency(dep as ProjectDependency)
+            visitProjectDependency(dep as ProjectDependency, isTest)
         } else if (dep instanceof SelfResolvingDependency) {
             // ex. `compile fileTree(dir: 'libs', include: ['*.jar'])`
-            visitSelfResolvingDependency(dep as SelfResolvingDependency)
+            visitSelfResolvingDependency(dep as SelfResolvingDependency, isTest)
         } else if (dep instanceof ExternalModuleDependency) {
             // ex. `compile "com.google.code.gson:gson:2.3.1"`
-            visitExternalModuleDependency(dep as ExternalModuleDependency)
+            visitExternalModuleDependency(dep as ExternalModuleDependency, isTest)
         } else {
             // Everything else
-            visitGenericDependency(dep)
+            visitGenericDependency(dep, isTest)
+        }
+    }
+
+    protected void failOnBuildClosureForTests(Dependency dep, boolean isTest) {
+        if (isTest) {
+            String msg = "Cannot translate testCompile dependency $dep using --build-closure; " +
+                         "please build this as a separate Gradle project, and then add a testCompile " +
+                         "dependency to that project.\n" +
+                         "https://github.com/j2objc-contrib/j2objc-gradle/blob/master/dependencies.md#build-standalone-third-party-library"
+            throw new InvalidUserDataException(msg)
         }
     }
 
     protected void visitSelfResolvingDependency(
-            SelfResolvingDependency dep) {
+            SelfResolvingDependency dep, boolean isTest) {
+        failOnBuildClosureForTests(dep, isTest)
         project.logger.debug("j2objc dependency converter: Translating file dep: $dep")
         project.configurations.getByName('j2objcTranslationClosure').dependencies.add(
                 dep.copy())
     }
 
-    protected void visitProjectDependency(ProjectDependency dep) {
+    protected void visitProjectDependency(ProjectDependency dep, boolean isTest) {
         project.logger.debug("j2objc dependency converter: Linking Project: $dep")
-        project.configurations.getByName('j2objcLinkage').dependencies.add(
+        project.configurations.getByName(isTest ? 'j2objcTestLinkage' : 'j2objcLinkage').dependencies.add(
                 dep.copy())
     }
 
-    protected void visitExternalModuleDependency(ExternalModuleDependency dep) {
+    protected void visitExternalModuleDependency(ExternalModuleDependency dep, boolean isTest) {
         project.logger.debug("j2objc dependency converter: External module dep: $dep")
         // If the dep is already in the j2objc dist, ignore it.
         if (J2OBJC_DEFAULT_LIBS.contains("${dep.group}:${dep.name}".toString())) {
@@ -106,6 +120,7 @@ class DependencyConverter {
             project.logger.debug("-- Skipped J2OBJC_DEFAULT_LIB: $dep")
             return
         }
+        failOnBuildClosureForTests(dep, isTest)
         project.logger.debug("-- Copied as source: $dep")
         String group = dep.group == null ? '' : dep.group
         String version = dep.version == null ? '' : dep.version
@@ -113,7 +128,8 @@ class DependencyConverter {
         project.dependencies.add('j2objcTranslationClosure', "${group}:${dep.name}:${version}:sources")
     }
 
-    protected void visitGenericDependency(Dependency dep) {
+    protected void visitGenericDependency(Dependency dep, boolean isTest) {
+        failOnBuildClosureForTests(dep, isTest)
         project.logger.warn("j2objc dependency converter: Unknown dependency type: $dep; copying naively")
         project.configurations.getByName('j2objcTranslationClosure').dependencies.add(
                 dep.copy())

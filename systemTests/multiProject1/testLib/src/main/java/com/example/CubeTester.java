@@ -16,27 +16,11 @@
 
 package com.example;
 
-import java.lang.Override;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
 import com.google.common.base.Joiner;
 
-public class ExtendedCube extends Cube {
+public class CubeTester {
 
-    public ExtendedCube(int dimension) {
-        super(dimension);
-    }
-
-    @Override
-    public String toString() {
-        Gson gson = new GsonBuilder().create();
-        return gson.toJson(this);
-    }
-
-    @Override
-    public String exerciseGuava() {
-        return Joiner.on("EXT").join('a', 'b', 'c');
+    public static String exerciseGuava(String space) {
+        return Joiner.on(space).join('a', 'b', 'c');
     }
 }
