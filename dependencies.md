@@ -24,16 +24,16 @@ in [README.md](README.md) and the `autoConfigureDeps true` line.
 
 ## One j2objc project, plus simple external libraries
 __Requirements__
-* Single j2objc Java project `common`
+* Single j2objc Java project `shared`
 * Simple third-party libraries with source
 
 If your single Java project depends on one or more libraries in a standard Maven repository (such as
 Maven Central or jCenter) and each of those libraries provide their Java source in a `-sources.jar` file
-in that Maven repository, you can modify your `common/build.gradle` as follows.  We'll use Gson as the
+in that Maven repository, you can modify your `shared/build.gradle` as follows.  We'll use Gson as the
 example external library.
 
 ```gradle
-// Before: common/build.gradle
+// Before: shared/build.gradle
 dependencies {
     compile 'com.google.code.gson:gson'
     // (plus any other libraries provided by J2ObjC)
@@ -46,7 +46,7 @@ j2objcConfig {
 ```
 
 ```gradle
-// After: common/build.gradle
+// After: shared/build.gradle
 dependencies {
     // MODIFY: You must add a specific version number, if you did not have one before.
     compile 'com.google.code.gson:gson:2.3.1'
@@ -97,15 +97,15 @@ You can see many examples of configuring builds for third-party libraries
 
 ## Multiple projects and external libraries
 __Requirements__
-* Multiple j2objc Java projects: 'common' depends on 'base' 
+* Multiple j2objc Java projects: 'shared' depends on 'base' 
 * Simple third-party libraries
 
 With multiple Java projects and multiple external libraries, break up the problem.
 First follow the advice in [Multiple projects](#multiple-projects-built-in-libraries),
-on setting.  Next, for each external library, build a
+on configuring dependencies between the Java projects.  Next, for each external library, build a
 [standalone J2ObjC project](#build-standalone-third-party-library).  Finally, adjust
-your Java project build files as follows.  Consider that your `common` project depends on Gson,
-and you have already created a `third-party-gson/build.gradle`
+your Java project build files as follows.  If your `shared` project depends on Gson, for example,
+and you have already created a `third-party-gson/build.gradle`, then:
 
 ```gradle
 // Before: common/build.gradle
@@ -139,8 +139,53 @@ j2objcConfig {
 You can see an example
 [here](https://github.com/j2objc-contrib/j2objc-gradle/tree/master/systemTests/externalLibrary1).
 
+## Using native libraries built with Gradle (advanced)
+__Requirements__
+* One or more Java J2ObjC Gradle projects
+* Gradle native library project
+
+The dependency must use the Gradle [custom native library](https://docs.gradle.org/current/userguide/nativeBinaries.html#N15F82)
+If project `shared` depends on a library called someLibrary from native project A.
+Add to `shared/build.gradle`:
+
+```gradle
+// File: shared/build.gradle
+j2objcConfig {
+    extraNativeLib project: ':A', library: 'someLibrary', linkage: 'static'
+    finalConfigure()
+}
+```
+
+Note that J2ObjC does not understand this native library in any way - your Java code must still
+compile as always, ignoring this library.
+
+## Using prebuilt native libraries (advanced)
+__Requirements__
+* Existing static library (.a file) and header files
+
+For a Java and J2ObjC project `shared` that depends on library `libpreBuilt.a` pre-built outside
+of Gradle in directory /lib/SOMEPATH, with corresponding headers in /include/SOMEPATH.
+Add to `shared/build.gradle`:
+
+```gradle
+// File: shared/build.gradle
+j2objcConfig {
+    extraObjcCompilerArgs '-I/include/SOMEPATH'
+    extraLinkerArgs '-L/lib/SOMEPATH'
+    extraLinkerArgs '-lpreBuilt'
+}
+```
+
+The library will be linked in and the headers available for inclusion. All prebuilt libraries
+must be fat binaries with the architectures defined by `supportedArchs` in
+[j2objcConfig.groovy](https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcConfig.groovy).
+
+Note that J2ObjC does not understand this native library in any way - your Java code must still
+compile as always, ignoring this library.
+
 # Reference
-This describes the behavior of each dependency configuration used by the plugin.
+This describes the behavior of each J2objcConfig setting and dependency configuration used by the plugin
+for dependency management.
 Behavior sometimes depends on whether `autoConfigureDeps` is set to false (the
 default) or true.
 
@@ -152,18 +197,30 @@ dependencies (compile and testCompile) to J2ObjC dependencies.  Note that any
 J2ObjC dependencies (j2objcTranslationClosure, j2objcTranslation[Test], j2objcLinkage[Test])
 added manually always have effect.
 
+### extraNativeLib
+This creates a static library linkage between your main Objective C library and your test Objective C
+binary, and the specified Gradle native library.
+See [Gradle docs](https://docs.gradle.org/2.4/userguide/nativeBinaries.html#N160EF).
+
+### extraObjcCompilerArgs, extraLinkerArgs
+Arguments passed to these methods are added - without modification - to the Clang
+Objective C compiler and linker, respectively.
+See [Gradle docs](https://docs.gradle.org/2.4/userguide/nativeBinaries.html#N16030).
+
 ## Dependency configurations
 
 ### compile
-If `autoConfigureDeps` is false, has no effect.  When true,
+If `autoConfigureDeps` is false, has no effect related to J2ObjC.  When true,
 * for a project, creates a `j2objcLinkage` dependency on the project.
-* for an external module, creates a `j2objcTranslationClosure` dependency on the associated sources
+* for an external module already included in the J2ObjC distribution, has no additional effect (this will work automatically).
+* for any other external module, creates a `j2objcTranslationClosure` dependency on the associated sources
 Jar for the module.
 
 ### testCompile
-If `autoConfigureDeps` is false, has no effect.  When true,
+If `autoConfigureDeps` is false, has no effect related to J2ObjC.  When true,
 * for a project, creates a `j2objcLinkage` dependency on the project.
-* for an external module, fails immediately.  We cannot build tests using --build-closure due to the
+* for an external module already included in the J2ObjC distribution, has no additional effect (this will work automatically).
+* for any other external module, fails immediately.  We cannot build tests using --build-closure due to the
 risk of duplicate symbols.
 
 ### j2objcTranslationClosure
