@@ -32,13 +32,13 @@ has one root Gradle project (and zero or more subprojects), some or all of which
 `j2objc-gradle` plugin.  Locally you can run them as follows:
 
 ```sh
-# Once per git repository and/or new release of j2objc, run prep.
-pushd systemTests && ./prep.sh && popd
-# This downloads j2objc and prepares the environment.
+# Once per git repository and/or new release of j2objc,
+# run install.sh to download j2objc and prepares the environment.
+systemTests/install.sh
 
 # Every time you want to run the tests:
-./gradlew build && pushd systemTests && ./run-all.sh && popd
 # Normal Gradle build results will be displayed for each test project.
+./gradlew build && systemTests/run-all.sh
 ```
 
 These system tests are also run as part of OS X continuous integration builds on Travis.

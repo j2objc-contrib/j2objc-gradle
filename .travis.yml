@@ -24,7 +24,6 @@ matrix:
       env:
        - USING_OS=osx
        - USING_XCODE=7
-       - J2OBJC_VERSION=0.9.8.2.1
 
 branches:
   only:
@@ -46,7 +45,7 @@ install:
   - ./gradlew wrapper
   - ./gradlew dependencies
   # Prepare our system tests
-  - if [ "$USING_OS" = "osx" ]; then (pushd systemTests && ./prep.sh && popd); fi
+  - if [ "$USING_OS" = "osx" ]; then systemTests/install.sh; fi
 
 # If these steps fail, the build is 'failed' - i.e. we have a code defect.
 # We compile (assemble) and then build (which also tests) to capture build
@@ -55,4 +54,4 @@ script:
   - ./gradlew assemble
   - ./gradlew build
   # Run our system tests
-  - if [ "$USING_OS" = "osx" ]; then (pushd systemTests && ./run-all.sh && popd); fi
+  - if [ "$USING_OS" = "osx" ]; then systemTests/run-all.sh; fi
