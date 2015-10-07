@@ -18,6 +18,8 @@
 # Fail if anything fails.
 set -euv
 
+J2OBJC_VERSION=${J2OBJC_VERSION:=0.9.8.2.1}
+
 if [[ "$PWD" =~ systemTests ]]; then
    echo "Should be run from project root and not systemTests directory"
    exit 1
@@ -42,6 +44,6 @@ systemTests/run-test.sh systemTests/multiProject1
 # does the same for Guava. These libraries are used in both `extended` and `base`.
 # We must rename the include directory while this test runs, otherwise the
 # code builds against the translated Guava headers provided in the j2objc dist.
-mv localJ2objcDist/j2objc-$J2OBJC_VERSION/include/com/google/common localJ2objcDist/j2objc-$J2OBJC_VERSION/include/com/google/common-bak
-systemTests/run-test.sh systemTests/runTest externalLibrary1
-mv localJ2objcDist/j2objc-$J2OBJC_VERSION/include/com/google/common-bak localJ2objcDist/j2objc-$J2OBJC_VERSION/include/com/google/common
+mv systemTests/localJ2objcDist/j2objc-$J2OBJC_VERSION/include/com/google/common systemTests/localJ2objcDist/j2objc-$J2OBJC_VERSION/include/com/google/common-bak
+systemTests/run-test.sh systemTests/externalLibrary1
+mv systemTests/localJ2objcDist/j2objc-$J2OBJC_VERSION/include/com/google/common-bak systemTests/localJ2objcDist/j2objc-$J2OBJC_VERSION/include/com/google/common
