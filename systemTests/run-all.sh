@@ -14,34 +14,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Fail if anything fails.
-set -ev
 
-function runTest {
-    TEST_DIR=$1
-    echo Running test $TEST_DIR
-    set -e
-    pushd $TEST_DIR
-    ./gradlew wrapper
-    ./gradlew clean
-    # If we fail, try again with lots of logging.
-    ./gradlew build
-    # Dump out listings of the files generated for manual debugging/verification.
-    ls -R1c build/j2objcOutputs || echo No such outputs
-    ls -R1c */build/j2objcOutputs || echo No such outputs
-    popd
-}
+# Fail if anything fails.
+set -euv
+
+if [[ "$PWD" =~ systemTests ]]; then
+   echo "Should be run from project root and not systemTests directory"
+   exit 1
+fi
+
 
 # TODO: Might want to infer the directories that have build.gradle files in them.
 
 # Simplest possible set-up.  A single project with no dependencies.
-runTest simple1
+systemTests/run-test.sh systemTests/simple1
+
 
 # Two main gradle projects, `extended` depends on `base`.  They also both test
 # dependency on built-in j2objc libraries, like Guava, and build-closure
 # based translation of an external library, Gson.  They also both depend
 # depend on a third test-only gradle project, `testLib`.
-runTest multiProject1
+systemTests/run-test.sh systemTests/multiProject1
 
 # TODO: Re-enable building Guava when we figure out how to deal with Java 8.
 # https://github.com/j2objc-contrib/j2objc-gradle/issues/484
