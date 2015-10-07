@@ -62,8 +62,10 @@ class Utils {
 
     private static String fakeOSName = ''
 
-    // This allows faking of is(Linux|Windows|MacOSX) methods but misses java.io.File separators
-    // One of the following four methods should be called in @Before method to isolate test state
+    /* This allows faking of is(Linux|Windows|MacOSX) methods but misses java.io.File separators.
+     *
+     * The setFakeOsNone() should be called in the test unit @After method to isolate test state.
+     */
     @VisibleForTesting
     static void setFakeOSLinux() {
         fakeOSName = 'Linux'
@@ -79,7 +81,7 @@ class Utils {
         fakeOSName = 'Windows'
     }
 
-    // Unset fake os, should be needed for @Before method
+    // Unset fake os, should be used in @After method
     @VisibleForTesting
     static void setFakeOSNone() {
         fakeOSName = ''
@@ -144,6 +146,28 @@ class Utils {
         } else {
             return ':'
         }
+    }
+
+    // Same as URI.relativize(...) method but works for non-parent directories
+    // by adding '../../' when necessary to find a common parent
+    static String relativizeNonParent(File src, File dst) {
+        URI dstUri = dst.toURI()
+        URI relativized
+        String upDirPrefix = ''
+
+        while (true) {
+            relativized = src.toURI().relativize(dstUri)
+            if (relativized != dstUri) {
+                // Relative path found
+                break
+            }
+
+            upDirPrefix += '../'
+            src = src.getParentFile()
+            assert (src != null)
+        }
+
+        trimTrailingForwardSlash(upDirPrefix + relativized.toString())
     }
 
     static void throwIfNoJavaPlugin(Project proj) {
@@ -363,6 +387,16 @@ class Utils {
     // http://docs.groovy-lang.org/latest/html/documentation/#_slashy_string
     static String escapeSlashyString(String regex) {
         return '/' + regex.replace('/', '\\/') + '/'
+    }
+
+    static String greatestCommonPrefix(String a, String b) {
+        int minLength = Math.min(a.length(), b.length());
+        for (int i = 0; i < minLength; i++) {
+            if (a.charAt(i) != b.charAt(i)) {
+                return a.substring(0, i);
+            }
+        }
+        return a.substring(0, minLength);
     }
 
     // Matches regex, return first match as string, must have >1 capturing group

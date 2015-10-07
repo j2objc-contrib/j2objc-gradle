@@ -21,6 +21,7 @@ import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 import org.gradle.testfixtures.ProjectBuilder
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -44,6 +45,11 @@ class TestTaskTest {
     void setUp() {
         // Mac OS X is the only OS that can run this task
         Utils.setFakeOSMacOSX()
+    }
+
+    @After
+    void tearDown() {
+        Utils.setFakeOSNone()
     }
 
     @Test

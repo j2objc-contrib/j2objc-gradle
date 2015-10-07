@@ -21,6 +21,7 @@ import com.github.j2objccontrib.j2objcgradle.tasks.AssembleResourcesTask
 import com.github.j2objccontrib.j2objcgradle.tasks.AssembleSourceTask
 import com.github.j2objccontrib.j2objcgradle.tasks.CycleFinderTask
 import com.github.j2objccontrib.j2objcgradle.tasks.PackLibrariesTask
+import com.github.j2objccontrib.j2objcgradle.tasks.PodspecTask
 import com.github.j2objccontrib.j2objcgradle.tasks.TestTask
 import com.github.j2objccontrib.j2objcgradle.tasks.TranslateTask
 import com.github.j2objccontrib.j2objcgradle.tasks.Utils
@@ -46,13 +47,11 @@ class J2objcPlugin implements Plugin<Project> {
         String timestamp = BuildInfo.TIMESTAMP
         project.logger.info("j2objc-gradle plugin: Version $version, Built: $timestamp, Commit: $commit, URL: $url")
         if (!BuildInfo.GIT_IS_CLEAN) {
-            project.logger.error('j2objc-gradle plugin was built with local modification.\n' +
-                                 'If you encounter issues, please use an official release from:\n' +
-                                 '    https://github.com/j2objc-contrib/j2objc-gradle/releases')
+            project.logger.error('WARNING: j2objc-gradle plugin was built with local git modification: ' +
+                                 'https://github.com/j2objc-contrib/j2objc-gradle/releases')
         } else if (version.contains('SNAPSHOT')) {
-            project.logger.warn('j2objc-gradle plugin was built outside of an official release.\n' +
-                                'If you encounter issues, please use an official release from:\n' +
-                                '    https://github.com/j2objc-contrib/j2objc-gradle/releases')
+            project.logger.warn('WARNING: j2objc-gradle plugin was built with SNAPSHOT version: ' +
+                                'https://github.com/j2objc-contrib/j2objc-gradle/releases')
         }
 
         // This avoids a lot of "project." prefixes, such as "project.tasks.create"
@@ -222,8 +221,14 @@ class J2objcPlugin implements Plugin<Project> {
             }
 
             // Assemble
-            tasks.create(name: 'j2objcAssembleResources', type: AssembleResourcesTask,
+            tasks.create(name: 'j2objcPodspec', type: PodspecTask,
+                    // Podspec may reference sources and resources that haven't yet been built
                     dependsOn: ['j2objcPreBuild']) {
+                group 'build'
+                description 'Generate debug and release podspec that may be used for Xcode'
+            }
+            tasks.create(name: 'j2objcAssembleResources', type: AssembleResourcesTask,
+                    dependsOn: ['j2objcPreBuild', 'j2objcPodspec']) {
                 group 'build'
                 description 'Copies mains and test resources to assembly directories'
             }
@@ -235,7 +240,7 @@ class J2objcPlugin implements Plugin<Project> {
                 srcGenTestDir = j2objcSrcGenTestDir
             }
             tasks.create(name: 'j2objcAssembleDebug', type: AssembleLibrariesTask,
-                    dependsOn: ['j2objcPackLibrariesDebug', 'j2objcAssembleSource']) {
+                    dependsOn: ['j2objcPackLibrariesDebug', 'j2objcAssembleSource', 'j2objcAssembleResources']) {
                 group 'build'
                 description 'Copies final generated source and debug libraries to assembly directories'
                 buildType = 'Debug'
@@ -243,7 +248,7 @@ class J2objcPlugin implements Plugin<Project> {
                 srcPackedLibDir = file("${buildDir}/packedBinaries/${project.name}-j2objcStaticLibrary")
             }
             tasks.create(name: 'j2objcAssembleRelease', type: AssembleLibrariesTask,
-                    dependsOn: ['j2objcPackLibrariesRelease', 'j2objcAssembleSource']) {
+                    dependsOn: ['j2objcPackLibrariesRelease', 'j2objcAssembleSource', 'j2objcAssembleResources']) {
                 group 'build'
                 description 'Copies final generated source and release libraries to assembly directories'
                 buildType = 'Release'
@@ -251,7 +256,7 @@ class J2objcPlugin implements Plugin<Project> {
                 srcPackedLibDir = file("${buildDir}/packedBinaries/${project.name}-j2objcStaticLibrary")
             }
             tasks.create(name: 'j2objcAssemble', type: DefaultTask,
-                    dependsOn: ['j2objcAssembleDebug', 'j2objcAssembleRelease', 'j2objcAssembleResources']) {
+                    dependsOn: ['j2objcAssembleDebug', 'j2objcAssembleRelease']) {
                 group 'build'
                 description "Marker task for all assembly tasks that take part in regular j2objc builds"
             }

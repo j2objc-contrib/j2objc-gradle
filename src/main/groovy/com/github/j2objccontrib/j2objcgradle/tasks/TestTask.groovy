@@ -32,7 +32,6 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
 import java.util.regex.Matcher
-import java.util.regex.Pattern
 
 /**
  * Test task to run all unit tests and verify results.
@@ -172,7 +171,7 @@ class TestTask extends DefaultTask {
 
         // Only write output if task is successful
         reportFile.write(Utils.stdOutAndErrToLogString(stdout, stderr))
-        logger.error("Test Output: ${reportFile.path}")
+        logger.debug("Test Output: ${reportFile.path}")
 
         String testCountStr = Utils.matchRegexOutputs(stdout, stderr, testCountRegex)
         if (!testCountStr?.isInteger()) {

@@ -1,0 +1,29 @@
+PODS:
+  - j2objc-base-debug (1.0)
+  - j2objc-base-release (1.0)
+  - j2objc-extended-debug (1.0)
+  - j2objc-extended-release (1.0)
+
+DEPENDENCIES:
+  - j2objc-base-debug (from `../base/build`)
+  - j2objc-base-release (from `../base/build`)
+  - j2objc-extended-debug (from `../extended/build`)
+  - j2objc-extended-release (from `../extended/build`)
+
+EXTERNAL SOURCES:
+  j2objc-base-debug:
+    :path: ../base/build
+  j2objc-base-release:
+    :path: ../base/build
+  j2objc-extended-debug:
+    :path: ../extended/build
+  j2objc-extended-release:
+    :path: ../extended/build
+
+SPEC CHECKSUMS:
+  j2objc-base-debug: d6324af485dfb6c80ea99bf2efb69ae70966b10e
+  j2objc-base-release: d769f0c555c8c5d1be0f775920c51f01c74f23dd
+  j2objc-extended-debug: 6ea07587317140c13f85c24e8aa172349174f640
+  j2objc-extended-release: 24d25ad17f44675a51cd0609dc5b996dbd2981b8
+
+COCOAPODS: 0.38.2

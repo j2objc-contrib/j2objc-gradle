@@ -386,6 +386,16 @@ class J2objcConfig {
 
     protected NativeCompilation nativeCompilation
     /**
+     * Get J2ObjC project dependencies.
+     *
+     * Must not be modified by caller.
+     */
+    // TODO: ideally use immutable wrapper, not enough to justify Guava dependency
+    List<Project> getBeforeProjects() {
+        return nativeCompilation.beforeProjects
+    }
+
+    /**
      * Uses the generated headers and compiled j2objc libraries of the given project when
      * compiling this project.
      * <p/>

@@ -18,6 +18,7 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 import com.github.j2objccontrib.j2objcgradle.J2objcConfig
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -42,6 +43,11 @@ class PackLibrariesTaskTest {
                 applyJavaPlugin: true,
                 createJ2objcConfig: true
         ))
+    }
+
+    @After
+    void tearDown() {
+        Utils.setFakeOSNone()
     }
 
     @Test

@@ -1,0 +1,22 @@
+# Uncomment this line to define a global platform for your project
+# platform :ios, '6.0'
+
+def j2objc_extended
+    pod 'j2objc-extended-debug', :configuration => ['Debug'], :path => '../extended/build'
+    pod 'j2objc-extended-release', :configuration => ['Release'], :path => '../extended/build'
+end
+
+def j2objc_base
+    pod 'j2objc-base-debug', :configuration => ['Debug'], :path => '../base/build'
+    pod 'j2objc-base-release', :configuration => ['Release'], :path => '../base/build'
+end
+
+target 'IOS-APP' do
+    j2objc_base
+    j2objc_extended
+end
+
+target 'IOS-APPTests' do
+    j2objc_base
+    j2objc_extended
+end 
