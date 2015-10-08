@@ -288,9 +288,15 @@ class NativeCompilation {
                     linker.args j2objcConfig.extraLinkerArgs
 
                     if (buildType == buildTypes.debug) {
+                        // Full debugging information.
                         objcCompiler.args '-g'
                         objcCompiler.args '-DDEBUG=1'
                     } else {  // release
+                        // Per https://raw.githubusercontent.com/llvm-mirror/clang/8eb384a97cfdc244a5ab81026677bcbaf8cf2ecf/docs/CommandGuide/clang.rst
+                        // this is a moderate level of optimization with extra optimizations
+                        // to reduce code size.  It's use in release builds was verified in Xcode 7,
+                        // and we aim to match the behavior, per:
+                        // https://developer.apple.com/library/ios/qa/qa1795/_index.html#//apple_ref/doc/uid/DTS40014195-CH1-COMPILER
                         objcCompiler.args '-Os'
                     }
                 }
