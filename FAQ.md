@@ -14,6 +14,7 @@ and execute:
 
 Paste the results below, replacing existing contents.
 -->
+- [Start Here for Debugging (aka it's not working; aka don't panic)](#its-not-working--aka-first-debugging-steps-aka-dont-panic)
 - [How do I develop with Xcode?](#how-do-i-develop-with-xcode)
 - [How can I speed up my build?](#how-can-i-speed-up-my-build)
 - [What libraries are linked by default?](#what-libraries-are-linked-by-default)
@@ -38,6 +39,38 @@ Paste the results below, replacing existing contents.
 - [How do I develop on Windows or Linux?](#how-do-i-develop-on-windows-or-linux)
 - [How do I fix missing required architecture linker warning?](#how-do-i-fix-missing-required-architecture-linker-warning)
 
+
+### It's not working!  (aka first debugging steps; aka don't panic)
+
+Some common misconfigurations can cause numerous Gradle errors.
+
+1. First make sure you have a supported version of j2objc and Xcode
+(see [README.md](README.md) for our current supported versions) installed locally,
+and that your J2OBJC_HOME property is set correctly to the distribution directory
+of j2objc.  This _is not_ the source repository root for j2objc.  The distribution
+directory should have at minimum lib/ and include/ subdirectories.  (If you download
+j2objc release .zip files from https://github.com/google/j2objc, you get only the
+distribution by default.)
+
+2. Verify you are using the latest released version of the plugin.  Forks of the
+plugin exist; if you are looking for help at https://github.com/j2objc-contrib/j2objc-contrib
+(the original), please use the latest version distributed from 
+https://plugins.gradle.org/plugin/com.github.j2objccontrib.j2objcgradle.
+
+3. If you are still getting errors regarding classes, executables, Jars, or libraries that cannot be found,
+and you've verified that your J2OBJC_HOME is set correctly, you may have stale Gradle
+caches, which can be cleared as follows.  Note the following steps will cause you to
+rebuild everything, so the next build may take a long time.
+  ```shell
+  # (from your Gradle project's root directory)
+  # Stops any Gradle daemons if they are running.
+  ./gradlew --stop
+  # Remove cached Gradle database.
+  rm -rf .gradle/
+  # Remove cached Gradle outputs.
+  rm -rf build/
+  ```
+Now try building again.
 
 ### How do I develop with Xcode?
 
@@ -69,6 +102,7 @@ J2OBJC_RELEASE_ENABLED=false ./gradlew build
 
 The `local.properties` value overrides the environment variable, if present.
 
+
 ### What libraries are linked by default?
 
 A number of standard libraries are included with the J2ObjC releases and linked
@@ -76,12 +110,12 @@ by default when using the plugin. To add other libraries, see the FAQs about
 [dependencies](#how-do-i-setup-dependencies-with-j2objc).
 The standard libraries are:
 
-    guava
-    javax_inject
-    jsr305
-    junit
-    mockito
-    protobuf_runtime - TODO: https://github.com/j2objc-contrib/j2objc-gradle/issues/327
+    com.google.guava:guava
+    com.google.j2objc:j2objc-annotations
+    com.google.protobuf:protobuf-java
+    junit:junit (test only)
+    org.mockito:mockito-core (test only)
+    org.hamcrest:hamcrest-core (test only)
 
 
 ### What is the recommended folder structure for my app?
