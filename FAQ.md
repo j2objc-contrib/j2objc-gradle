@@ -14,7 +14,7 @@ and execute:
 
 Paste the results below, replacing existing contents.
 -->
-- [It's not working!  (aka first debugging steps; aka don't panic)](#its-not-working--aka-first-debugging-steps-aka-dont-panic)
+- [Start Here for Debugging (aka it's not working; aka don't panic)](#its-not-working--aka-first-debugging-steps-aka-dont-panic)
 - [How do I develop with Xcode?](#how-do-i-develop-with-xcode)
 - [How can I speed up my build?](#how-can-i-speed-up-my-build)
 - [What libraries are linked by default?](#what-libraries-are-linked-by-default)
