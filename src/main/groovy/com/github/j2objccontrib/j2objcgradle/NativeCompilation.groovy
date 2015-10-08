@@ -290,6 +290,8 @@ class NativeCompilation {
                     if (buildType == buildTypes.debug) {
                         objcCompiler.args '-g'
                         objcCompiler.args '-DDEBUG=1'
+                    } else {  // release
+                        objcCompiler.args '-Os'
                     }
                 }
             }
