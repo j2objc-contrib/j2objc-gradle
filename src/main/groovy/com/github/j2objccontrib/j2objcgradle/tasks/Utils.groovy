@@ -60,14 +60,6 @@ class Utils {
         }
     }
 
-    static void validateVersion(String version, String type) {
-        // Requires at least a major and minor version number
-        Matcher versionMatcher = (version =~ /^[0-9]*(\.[0-9]+)+$/)
-        if (!versionMatcher.find()) {
-            throw new InvalidUserDataException("Invalid version for $type: $version")
-        }
-    }
-
     private static String fakeOSName = ''
 
     /* This allows faking of is(Linux|Windows|MacOSX) methods but misses java.io.File separators.

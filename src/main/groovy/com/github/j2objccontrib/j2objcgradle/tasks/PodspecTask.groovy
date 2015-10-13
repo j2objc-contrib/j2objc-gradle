@@ -96,21 +96,37 @@ class PodspecTask extends DefaultTask {
 
         J2objcConfig j2objcConfig = J2objcConfig.from(project)
 
+        String minIos = j2objcConfig.minIosVersion
+        String minOsx = j2objcConfig.minOsxVersion
+        String minWatchos = j2objcConfig.minWatchosVersion
+        validateNumericVersion(minIos, 'minIosVersion')
+        validateNumericVersion(minOsx, 'minOsxVersion')
+        validateNumericVersion(minWatchos, 'minWatchosVersion')
+
         String podspecContentsDebug =
                 genPodspec(getPodNameDebug(), headerIncludePath, resourceIncludePath,
                         libName, getJ2objcHome(),
                         libDirIosDebug, libDirOsxDebug, libDirIosDebug,
-                        j2objcConfig.minIosVersion, j2objcConfig.minOsxVersion, j2objcConfig.minWatchosVersion)
+                        minIos, minOsx, minWatchos)
         String podspecContentsRelease =
                 genPodspec(getPodNameRelease(), headerIncludePath, resourceIncludePath,
                         libName, getJ2objcHome(),
                         libDirIosRelease, libDirOsxRelease, libDirIosRelease,
-                        j2objcConfig.minIosVersion, j2objcConfig.minOsxVersion, j2objcConfig.minWatchosVersion)
+                        minIos, minOsx, minWatchos)
 
         logger.debug("Writing debug podspec... ${getPodspecDebug()}")
         getPodspecDebug().write(podspecContentsDebug)
         logger.debug("Writing release podspec... ${getPodspecRelease()}")
         getPodspecRelease().write(podspecContentsRelease)
+    }
+
+    @VisibleForTesting
+    void validateNumericVersion(String version, String type) {
+        // Requires at least a major and minor version number
+        Matcher versionMatcher = (version =~ /^[0-9]*(\.[0-9]+)+$/)
+        if (!versionMatcher.find()) {
+            logger.warn("Non-numeric version for $type: $version")
+        }
     }
 
     // Podspec references are relative to project.buildDir
@@ -128,10 +144,6 @@ class PodspecTask extends DefaultTask {
         // Relative paths for content referenced by CocoaPods
         validatePodspecPath(publicHeadersDir, false)
         validatePodspecPath(resourceDir, true)
-
-        Utils.validateVersion(minIos, 'minIosVersion')
-        Utils.validateVersion(minOsx, 'minOsxVersion')
-        Utils.validateVersion(minWatchos, 'minWatchosVersion')
 
         // TODO: CocoaPods strongly recommends switching from 'resources' to 'resource_bundles'
         // http://guides.cocoapods.org/syntax/podspec.html#resource_bundles
