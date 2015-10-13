@@ -8,6 +8,7 @@ import org.gradle.api.Project
 import org.gradle.nativeplatform.NativeBinarySpec
 import org.gradle.nativeplatform.NativeLibraryBinary
 import org.gradle.platform.base.BinarySpec
+import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
@@ -41,6 +42,11 @@ class MultiProjectTest {
                 createReportsDir: true,
                 rootProject: rootProj
         ))
+    }
+
+    @After
+    void tearDown() {
+        Utils.setFakeOSNone()
     }
 
     @Test(expected = InvalidUserDataException)

@@ -318,7 +318,8 @@ class NativeCompilation {
         }
     }
 
-    private List<Project> beforeProjects = []
+    // Public visibility so XcodeTask can apply dependency Podspecs to Podfile
+    public List<Project> beforeProjects = []
     private List<Project> beforeTestProjects = []
     @PackageScope
     void dependsOnJ2objcLib(Project beforeProject, boolean isTest) {

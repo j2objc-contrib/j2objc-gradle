@@ -19,6 +19,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.PackageScope
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.artifacts.SelfResolvingDependency
@@ -176,10 +177,12 @@ class DependencyResolver {
         // Since we assert the presence of the J2objcPlugin above,
         // we are guaranteed that the java plugin, which creates the jar task,
         // is also present.
-        project.tasks.getByName('j2objcPreBuild').dependsOn {
-            return [beforeProject.tasks.getByName('j2objcBuild'),
-                    beforeProject.tasks.getByName('jar')]
-        }
+        Task j2objcPrebuild = project.tasks.getByName('j2objcPreBuild')
+        project.logger.debug("${project.name}:j2objcPreBuild dependsOn ${beforeProject.name}:j2objcBuild")
+        project.logger.debug("${project.name}:j2objcPreBuild dependsOn ${beforeProject.name}:jar")
+        j2objcPrebuild.dependsOn(beforeProject.tasks.getByName('j2objcBuild'))
+        j2objcPrebuild.dependsOn(beforeProject.tasks.getByName('jar'))
+
         AbstractArchiveTask jarTask = beforeProject.tasks.getByName('jar') as AbstractArchiveTask
         project.logger.debug("$project:j2objcTranslate must use ${jarTask.archivePath}")
         // TODO: Handle separate classpaths for main translation and test translation.

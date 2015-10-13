@@ -33,6 +33,8 @@ dependencies {
 }
 
 j2objcConfig {
+    xcodeProjectDir '../ios'
+
     autoConfigureDeps true
 
     finalConfigure()
