@@ -22,7 +22,6 @@ import groovy.transform.CompileStatic
 import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
@@ -89,15 +88,24 @@ class PodspecTask extends DefaultTask {
 
         // podspec creation
         // TODO: allow custom list of libraries
-        String libDirDebug = new File(getDestLibDirFile(), '/iosDebug').absolutePath
-        String libDirRelease = new File(getDestLibDirFile(), '/iosRelease').absolutePath
+        // iOS packed libraries are shared with watchOS
+        String libDirIosDebug = new File(getDestLibDirFile(), '/iosDebug').absolutePath
+        String libDirIosRelease = new File(getDestLibDirFile(), '/iosRelease').absolutePath
+        String libDirOsxDebug = new File(getDestLibDirFile(), '/x86_64Debug').absolutePath
+        String libDirOsxRelease = new File(getDestLibDirFile(), '/x86_64Release').absolutePath
+
+        J2objcConfig j2objcConfig = J2objcConfig.from(project)
 
         String podspecContentsDebug =
-                genPodspec(getPodNameDebug(), libDirDebug, libName, getJ2objcHome(),
-                        headerIncludePath, resourceIncludePath)
+                genPodspec(getPodNameDebug(), headerIncludePath, resourceIncludePath,
+                        libName, getJ2objcHome(),
+                        libDirIosDebug, libDirOsxDebug, libDirIosDebug,
+                        j2objcConfig.minIosVersion, j2objcConfig.minOsxVersion, j2objcConfig.minWatchosVersion)
         String podspecContentsRelease =
-                genPodspec(getPodNameRelease(), libDirRelease, libName, getJ2objcHome(),
-                        headerIncludePath, resourceIncludePath)
+                genPodspec(getPodNameRelease(), headerIncludePath, resourceIncludePath,
+                        libName, getJ2objcHome(),
+                        libDirIosRelease, libDirOsxRelease, libDirIosRelease,
+                        j2objcConfig.minIosVersion, j2objcConfig.minOsxVersion, j2objcConfig.minWatchosVersion)
 
         logger.debug("Writing debug podspec... ${getPodspecDebug()}")
         getPodspecDebug().write(podspecContentsDebug)
@@ -107,22 +115,29 @@ class PodspecTask extends DefaultTask {
 
     // Podspec references are relative to project.buildDir
     @VisibleForTesting
-    static String genPodspec(String podname, String libDir, String libName, String j2objcHome,
-                             String publicHeadersDir, String resourceDir) {
+    static String genPodspec(String podname, String publicHeadersDir, String resourceDir,
+                             String libName, String j2objcHome,
+                             String libDirIos, String libDirOsx, String libDirWatchos,
+                             String minIos, String minOsx, String minWatchos) {
 
         // Absolute paths for Xcode command line
-        validatePodspecPath(libDir, false)
+        validatePodspecPath(libDirIos, false)
+        validatePodspecPath(libDirOsx, false)
         validatePodspecPath(j2objcHome, false)
 
         // Relative paths for content referenced by CocoaPods
         validatePodspecPath(publicHeadersDir, false)
         validatePodspecPath(resourceDir, true)
 
+        Utils.validateVersion(minIos, 'minIosVersion')
+        Utils.validateVersion(minOsx, 'minOsxVersion')
+        Utils.validateVersion(minWatchos, 'minWatchosVersion')
+
         // TODO: CocoaPods strongly recommends switching from 'resources' to 'resource_bundles'
         // http://guides.cocoapods.org/syntax/podspec.html#resource_bundles
 
-        // TODO: Distinguish ios to OS X builds:
-        // https://github.com/j2objc-contrib/j2objc-gradle/issues/488
+        // TODO: replace xcconfig with {pod|user}_target_xcconfig
+        // See 'Split of xcconfig' from: http://blog.cocoapods.org/CocoaPods-0.38/
 
         // File and line separators assumed to be '/' and '\n' as podspec can only be used on OS X
         return "Pod::Spec.new do |spec|\n" +
@@ -134,9 +149,22 @@ class PodspecTask extends DefaultTask {
                "  spec.libraries = " +  // continuation of same line
                "'ObjC', 'guava', 'javax_inject', 'jre_emul', 'jsr305', 'z', 'icucore', '$libName'\n" +
                "  spec.xcconfig = {\n" +
-               "    'HEADER_SEARCH_PATHS' => '$j2objcHome/include $publicHeadersDir',\n" +
-               "    'LIBRARY_SEARCH_PATHS' => '$j2objcHome/lib $libDir'\n" +
+               "    'HEADER_SEARCH_PATHS' => '$j2objcHome/include $publicHeadersDir'\n" +
                "  }\n" +
+               "  spec.ios.xcconfig = {\n" +
+               "    'LIBRARY_SEARCH_PATHS' => '$j2objcHome/lib $libDirIos'\n" +
+               "  }\n" +
+               "  spec.osx.xcconfig = {\n" +
+               "    'LIBRARY_SEARCH_PATHS' => '$j2objcHome/lib/macosx $libDirOsx'\n" +
+               "  }\n" +
+               "  spec.watchos.xcconfig = {\n" +
+               "    'LIBRARY_SEARCH_PATHS' => '$j2objcHome/lib $libDirWatchos'\n" +
+               "  }\n" +
+                // http://guides.cocoapods.org/syntax/podspec.html#deployment_target
+               "  spec.ios.deployment_target = '$minIos'\n" +
+               "  spec.osx.deployment_target = '$minOsx'\n" +
+               "  spec.watchos.deployment_target = '$minWatchos'\n" +
+               "  spec.osx.frameworks = 'ExceptionHandling'\n" +
                "end\n"
     }
 

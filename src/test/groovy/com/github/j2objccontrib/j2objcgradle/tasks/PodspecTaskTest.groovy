@@ -75,9 +75,21 @@ class PodspecTaskTest {
                 "  spec.requires_arc = true",
                 "  spec.libraries = 'ObjC', 'guava', 'javax_inject', 'jre_emul', 'jsr305', 'z', 'icucore', '$libName'",
                 "  spec.xcconfig = {",
-                "    'HEADER_SEARCH_PATHS' => '${j2objcHome}/include ${proj.file('build/j2objcOutputs/src/main/objc')}',",
+                "    'HEADER_SEARCH_PATHS' => '${j2objcHome}/include ${proj.file('build/j2objcOutputs/src/main/objc')}'",
+                "  }",
+                "  spec.ios.xcconfig = {",
                 "    'LIBRARY_SEARCH_PATHS' => '${j2objcHome}/lib ${proj.file('build/j2objcOutputs/lib/iosDebug').absolutePath}'",
                 "  }",
+                "  spec.osx.xcconfig = {",
+                "    'LIBRARY_SEARCH_PATHS' => '${j2objcHome}/lib/macosx ${proj.file('build/j2objcOutputs/lib/x86_64Debug').absolutePath}'",
+                "  }",
+                "  spec.watchos.xcconfig = {",
+                "    'LIBRARY_SEARCH_PATHS' => '${j2objcHome}/lib ${proj.file('build/j2objcOutputs/lib/iosDebug').absolutePath}'",
+                "  }",
+                "  spec.ios.deployment_target = '8.3'",
+                "  spec.osx.deployment_target = '10.8'",
+                "  spec.watchos.deployment_target = '2.0'",
+                "  spec.osx.frameworks = 'ExceptionHandling'",
                 "end"]
         File podspecDebug = proj.file("build/${podNameDebug}.podspec")
         List<String> readPodspecDebug = podspecDebug.readLines()
@@ -93,9 +105,21 @@ class PodspecTaskTest {
                 "  spec.requires_arc = true",
                 "  spec.libraries = 'ObjC', 'guava', 'javax_inject', 'jre_emul', 'jsr305', 'z', 'icucore', '$libName'",
                 "  spec.xcconfig = {",
-                "    'HEADER_SEARCH_PATHS' => '${j2objcHome}/include ${proj.file('build/j2objcOutputs/src/main/objc')}',",
+                "    'HEADER_SEARCH_PATHS' => '${j2objcHome}/include ${proj.file('build/j2objcOutputs/src/main/objc')}'",
+                "  }",
+                "  spec.ios.xcconfig = {",
                 "    'LIBRARY_SEARCH_PATHS' => '${j2objcHome}/lib ${proj.file('build/j2objcOutputs/lib/iosRelease').absolutePath}'",
                 "  }",
+                "  spec.osx.xcconfig = {",
+                "    'LIBRARY_SEARCH_PATHS' => '${j2objcHome}/lib/macosx ${proj.file('build/j2objcOutputs/lib/x86_64Release').absolutePath}'",
+                "  }",
+                "  spec.watchos.xcconfig = {",
+                "    'LIBRARY_SEARCH_PATHS' => '${j2objcHome}/lib ${proj.file('build/j2objcOutputs/lib/iosRelease').absolutePath}'",
+                "  }",
+                "  spec.ios.deployment_target = '8.3'",
+                "  spec.osx.deployment_target = '10.8'",
+                "  spec.watchos.deployment_target = '2.0'",
+                "  spec.osx.frameworks = 'ExceptionHandling'",
                 "end"]
         File podspecRelease = proj.file("build/${podNameRelease}.podspec")
         List<String> readPodspecRelease = podspecRelease.readLines()
@@ -105,8 +129,11 @@ class PodspecTaskTest {
     @Test
     void testGenPodspec() {
         List<String> podspecDebug = PodspecTask.genPodspec(
-                'POD-NAME', '/DEST-LIB-DIR', 'LIB-NAME',
-                '/J2OBJC_HOME', '/HEADER_INCLUDE', 'MAIN-RESOURCES').split('\n')
+                'POD-NAME', '/HEADER_INCLUDE', 'MAIN-RESOURCES',
+                'LIB-NAME', '/J2OBJC_HOME',
+                '/LIB-DIR-IOS', '/LIB-DIR-OSX', '/LIB-DIR-WATCHOS',
+                // Using non-existent OS version numbers to ensure that no defaults are being used
+                '8.3.1', '10.8.1', '2.0.1').split('\n')
 
         List<String> expectedPodspecDebug = [
                 "Pod::Spec.new do |spec|",
@@ -117,9 +144,21 @@ class PodspecTaskTest {
                 "  spec.requires_arc = true",
                 "  spec.libraries = 'ObjC', 'guava', 'javax_inject', 'jre_emul', 'jsr305', 'z', 'icucore', 'LIB-NAME'",
                 "  spec.xcconfig = {",
-                "    'HEADER_SEARCH_PATHS' => '/J2OBJC_HOME/include /HEADER_INCLUDE',",
-                "    'LIBRARY_SEARCH_PATHS' => '/J2OBJC_HOME/lib /DEST-LIB-DIR'",
+                "    'HEADER_SEARCH_PATHS' => '/J2OBJC_HOME/include /HEADER_INCLUDE'",
                 "  }",
+                "  spec.ios.xcconfig = {",
+                "    'LIBRARY_SEARCH_PATHS' => '/J2OBJC_HOME/lib /LIB-DIR-IOS'",
+                "  }",
+                "  spec.osx.xcconfig = {",
+                "    'LIBRARY_SEARCH_PATHS' => '/J2OBJC_HOME/lib/macosx /LIB-DIR-OSX'",
+                "  }",
+                "  spec.watchos.xcconfig = {",
+                "    'LIBRARY_SEARCH_PATHS' => '/J2OBJC_HOME/lib /LIB-DIR-WATCHOS'",
+                "  }",
+                "  spec.ios.deployment_target = '8.3.1'",
+                "  spec.osx.deployment_target = '10.8.1'",
+                "  spec.watchos.deployment_target = '2.0.1'",
+                "  spec.osx.frameworks = 'ExceptionHandling'",
                 "end"]
 
         assert expectedPodspecDebug == podspecDebug

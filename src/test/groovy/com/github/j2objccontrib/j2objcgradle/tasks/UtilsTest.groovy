@@ -71,6 +71,25 @@ class UtilsTest {
     }
 
     @Test
+    void testValidateVersion() {
+        Utils.validateVersion('0.0', 'test')
+        Utils.validateVersion('0.38', 'test')
+        Utils.validateVersion('2.0', 'test')
+        Utils.validateVersion('8.3', 'test')
+        Utils.validateVersion('10.8', 'test')
+    }
+
+    @Test(expected=InvalidUserDataException)
+    void testValidateVersion_doublePeriod() {
+        Utils.validateVersion('10..8', 'test')
+    }
+
+    @Test(expected=InvalidUserDataException)
+    void testValidateVersion_string() {
+        Utils.validateVersion('1.a', 'test')
+    }
+
+    @Test
     void testGetLowerCaseOSName() {
         // Redundant method call but included for clarity
         Utils.setFakeOSNone()

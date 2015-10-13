@@ -307,12 +307,12 @@ class NativeCompilation {
             // https://docs.gradle.org/current/userguide/nativeBinaries.html#N161B3
             task('j2objcBuildObjcDebug').configure {
                 dependsOn binaries.withType(NativeLibraryBinary).matching { NativeLibraryBinary lib ->
-                    lib.buildable && lib.buildType.name == 'debug'
+                    lib.buildable && lib.buildType.name == 'Debug'
                 }
             }
             task('j2objcBuildObjcRelease').configure {
                 dependsOn binaries.withType(NativeLibraryBinary).matching { NativeLibraryBinary lib ->
-                    lib.buildable && lib.buildType.name == 'release'
+                    lib.buildable && lib.buildType.name == 'Release'
                 }
             }
         }

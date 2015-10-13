@@ -141,7 +141,7 @@ class TestTaskTest {
 
         j2objcTest = (TestTask) proj.tasks.create(name: 'j2objcTest', type: TestTask) {
             testBinaryFile = proj.file(proj.file('build/binaries/testJ2objcExecutable/debug/testJ2objc'))
-            buildType = 'debug'
+            buildType = 'Debug'
         }
     }
 
@@ -167,7 +167,7 @@ class TestTaskTest {
         mockProjectExec.demandExecAndReturn(
                 null,
                 [
-                        proj.file('build/j2objcTest/debug/testJ2objc').absolutePath,
+                        proj.file('build/j2objcTest/Debug/testJ2objc').absolutePath,
                         "org.junit.runner.JUnitCore",
                 ],
                 'OK (0 test)',  // NOTE: 'test' is singular for stdout
@@ -194,7 +194,7 @@ class TestTaskTest {
         mockProjectExec.demandExecAndReturn(
                 null,
                 [
-                        proj.file('build/j2objcTest/debug/testJ2objc').absolutePath,
+                        proj.file('build/j2objcTest/Debug/testJ2objc').absolutePath,
                         "org.junit.runner.JUnitCore",
                 ],
                 'OK (0 test)',  // NOTE: 'test' is singular for stdout
@@ -215,7 +215,7 @@ class TestTaskTest {
         mockProjectExec.demandExecAndReturn(
                 null,
                 [
-                        proj.file('build/j2objcTest/debug/testJ2objc').absolutePath,
+                        proj.file('build/j2objcTest/Debug/testJ2objc').absolutePath,
                         "org.junit.runner.JUnitCore",
                 ],
                 'OK (1 test)',  // NOTE: 'test' is singular for stdout
@@ -236,7 +236,7 @@ class TestTaskTest {
         mockProjectExec.demandExecAndReturn(
                 null,
                 [
-                        proj.file('build/j2objcTest/debug/testJ2objc').absolutePath,
+                        proj.file('build/j2objcTest/Debug/testJ2objc').absolutePath,
                         "org.junit.runner.JUnitCore",
                 ],
                 'IGNORE\nOK (2 tests)\nIGNORE',  // stdout
@@ -257,7 +257,7 @@ class TestTaskTest {
         mockProjectExec.demandExecAndReturn(
                 null,
                 [
-                        proj.file('build/j2objcTest/debug/testJ2objc').absolutePath,
+                        proj.file('build/j2objcTest/Debug/testJ2objc').absolutePath,
                         "org.junit.runner.JUnitCore",
                 ],
                 'OK (2 testXXXX)',  // NOTE: invalid stdout fails matchRegexOutputs
@@ -272,16 +272,16 @@ class TestTaskTest {
     private void demandCopyForJ2objcTest(MockProjectExec mockProjectExec) {
         // Delete test directory
         mockProjectExec.demandDeleteAndReturn(
-                proj.file('build/j2objcTest/debug').absolutePath)
+                proj.file('build/j2objcTest/Debug').absolutePath)
         // Copy main resources, test resources and test binary to test directory
         mockProjectExec.demandMkDirAndReturn(
-                proj.file('build/j2objcTest/debug').absolutePath)
+                proj.file('build/j2objcTest/Debug').absolutePath)
         mockProjectExec.demandCopyAndReturn(
-                proj.file('build/j2objcTest/debug').absolutePath,
+                proj.file('build/j2objcTest/Debug').absolutePath,
                 proj.file('src/main/resources').absolutePath,
                 proj.file('src/test/resources').absolutePath)
         mockProjectExec.demandCopyAndReturn(
-                proj.file('build/j2objcTest/debug').absolutePath,
+                proj.file('build/j2objcTest/Debug').absolutePath,
                 proj.file('build/binaries/testJ2objcExecutable/debug/testJ2objc').absolutePath)
     }
 

@@ -43,7 +43,7 @@ class TestTask extends DefaultTask {
     @InputFile
     File testBinaryFile
 
-    // 'debug' or 'release'
+    // 'Debug' or 'Release'
     @Input
     String buildType
 
@@ -88,7 +88,7 @@ class TestTask extends DefaultTask {
     @OutputDirectory
     // Combines main/test resources and test executables
     File getJ2objcTestDirFile() {
-        assert buildType in ['debug', 'release']
+        assert buildType in ['Debug', 'Release']
         return new File(project.buildDir, "j2objcTest/$buildType")
     }
 
