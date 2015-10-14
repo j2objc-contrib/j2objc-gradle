@@ -15,6 +15,40 @@ the [Apache 2.0 License](LICENSE).
 [preparing-your-pull-request-for-submission](#preparing-your-pull-request-for-submission).
 
 
+### Conditions for accepting pull requests
+Please confirm that you can certify the following, 
+then add the certification at the end of every commit message (with two newlines between
+the main content of your commit message and the notice), entering your own information
+and removing the &lt;angled brackets&gt;. If you can't certify the following, please
+do not submit a pull request.
+
+```
+I, <full name> (<email@example.com>, https://github.com/<github username>), certify that
+a) this Contribution is my original work, and
+b) I have the right to submit this Contribution under the Apache License,
+   Version 2.0 (the "License") available at
+   http://www.apache.org/licenses/LICENSE-2.0, and
+c) I am submitting this Contribution under the License.
+```
+
+Note: This is not legal advice.  Contributors, users, etc. must ensure their own level of comfort with
+contributions certified as described here, and should seek their own legal counsel as needed.
+
+Your Contribution (including the certification notice and other commit metadata)
+will be stored publicly within the history of the repository,
+and may be redistributed per the License.
+
+_If this is your first commit_, and you are not already mentioned in the NOTICE file,
+please add your name, GitHub username, and email, to the end of the
+'Thanks:' list, formatted just like the entries already there:
+
+```
+  First Last @gitHubUserName <email@example.com>
+```
+
+This addition to the NOTICE file should be a part of that first commit.
+
+
 ### Local Development
 
 For plugin contributors, you should build the plugin from this repository's root:
@@ -91,7 +125,8 @@ PRs are never optional, even for trivial fixes.
 The PR assignee's LGTM is sufficient and neccessary to merge the PR, however additional
 code review from anyone is welcome.  The PR author should keep the PR in a state fit for submission
 (see [preparing-your-pull-request-for-submission](#preparing-your-pull-request-for-submission))
-through out this process.
+through out this process.  The PR assignee will also need you to follow the instructions in
+[Conditions for accepting pull requests](#conditions-for-accepting-pull-requests).
 5.  After LGTM from the PR assignee, a project committer merges the PR into master.
 If the PR author is a committer, they can merge the PR themselves as long as they
 have an LGTM from the PR assignee (which should be a different committer).
