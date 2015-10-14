@@ -1,0 +1,19 @@
+PODS:
+  - j2objc-simple1-debug (1.0)
+  - j2objc-simple1-release (1.0)
+
+DEPENDENCIES:
+  - j2objc-simple1-debug (from `../../build`)
+  - j2objc-simple1-release (from `../../build`)
+
+EXTERNAL SOURCES:
+  j2objc-simple1-debug:
+    :path: ../../build
+  j2objc-simple1-release:
+    :path: ../../build
+
+SPEC CHECKSUMS:
+  j2objc-simple1-debug: 915b726b31e341b655232cb3a1a624f89ebddafe
+  j2objc-simple1-release: 85f10512b01629bdd23d37ad9bc09327ed8b9a02
+
+COCOAPODS: 0.38.2

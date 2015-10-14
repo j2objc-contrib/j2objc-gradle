@@ -39,7 +39,7 @@ plugins {
 
 // Plugin settings:
 j2objcConfig {
-    // Xcode workspace directory (suggested directory name)
+    // Xcode project directory (suggested directory name)
     xcodeProjectDir '../ios'
 
     finalConfigure()          // Must be last call to configuration

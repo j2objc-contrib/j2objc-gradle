@@ -20,12 +20,15 @@ public class HelloWorld {
 
     private final String nameOfWorld;
 
+    public HelloWorld() {
+        this.nameOfWorld = "Simple";
+    }
     public HelloWorld(String nameOfWorld) {
         this.nameOfWorld = nameOfWorld;
     }
 
     @Override
     public String toString() {
-        return "Hello " + nameOfWorld;
+        return "Hello " + nameOfWorld + " - Java";
     }
 }
