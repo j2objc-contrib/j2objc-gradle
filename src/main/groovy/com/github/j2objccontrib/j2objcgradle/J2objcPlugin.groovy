@@ -186,7 +186,7 @@ class J2objcPlugin implements Plugin<Project> {
                 group 'verification'
                 // This transitively depends on the 'test' task from the java plugin
                 description 'Runs all tests in the generated Objective-C code'
-                buildType = 'debug'
+                buildType = 'Debug'
                 testBinaryFile = file("${buildDir}/binaries/testJ2objcExecutable/debug/testJ2objc")
             }
             tasks.create(name: 'j2objcTestRelease', type: TestTask,
@@ -194,7 +194,7 @@ class J2objcPlugin implements Plugin<Project> {
                 group 'verification'
                 // This transitively depends on the 'test' task from the java plugin
                 description 'Runs all tests in the generated Objective-C code'
-                buildType = 'release'
+                buildType = 'Release'
                 testBinaryFile = file("${buildDir}/binaries/testJ2objcExecutable/release/testJ2objc")
             }
             tasks.create(name: 'j2objcTest', type: DefaultTask,
