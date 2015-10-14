@@ -14,34 +14,9 @@
  * limitations under the License.
  */
 
-apply plugin: 'java'
+#ifndef IOS_SIMPLE1_Bridging_Header_h
+#define IOS_SIMPLE1_Bridging_Header_h
 
-task wrapper(type: Wrapper) {
-    gradleVersion = '2.4'
-    distributionUrl = "https://services.gradle.org/distributions/gradle-$gradleVersion-all.zip"
-}
+#import "com/example/HelloWorld.h"
 
-buildscript {
-    repositories {
-        jcenter()
-    }
-    dependencies {
-        classpath fileTree(dir: '../../build/libs', include: ['*.jar'])
-    }
-}
-
-apply plugin: 'com.github.j2objccontrib.j2objcgradle'
-
-repositories {
-    jcenter()
-}
-
-dependencies {
-    testCompile 'junit:junit:4.12'
-    testCompile "org.mockito:mockito-core:1.9.5"
-}
-
-j2objcConfig {
-    xcodeProjectDir = 'ios/IOS-SIMPLE1'
-    finalConfigure()
-}
+#endif /* IOS_SIMPLE1_Bridging_Header_h */

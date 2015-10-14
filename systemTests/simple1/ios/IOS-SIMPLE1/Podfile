@@ -1,0 +1,17 @@
+# Uncomment this line to define a global platform for your project
+# platform :ios, '6.0'
+
+def j2objc_simple1
+    pod 'j2objc-simple1-debug', :configuration => ['Debug'], :path => '../../build'
+    pod 'j2objc-simple1-release', :configuration => ['Release'], :path => '../../build'
+end
+
+target 'IOS-SIMPLE1' do
+
+    j2objc_simple1
+end
+
+target 'IOS-SIMPLE1Tests' do
+
+    j2objc_simple1
+end

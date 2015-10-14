@@ -23,6 +23,6 @@ public class HelloWorldTest {
 
     @Test
     public void testToString() {
-        Assert.assertEquals("Hello Terra", new HelloWorld("Terra").toString());
+        Assert.assertEquals("Hello World - Java", new HelloWorld("World").toString());
     }
 }
