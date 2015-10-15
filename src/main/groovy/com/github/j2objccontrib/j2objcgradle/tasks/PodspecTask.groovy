@@ -21,6 +21,7 @@ import com.google.common.annotations.VisibleForTesting
 import groovy.transform.CompileStatic
 import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
+import org.gradle.api.Project
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
@@ -59,9 +60,19 @@ class PodspecTask extends DefaultTask {
     File getDestLibDirFile() { return J2objcConfig.from(project).getDestLibDirFile() }
 
     @Input
+    String getLibName() { return "${project.name}-j2objc" }
+
+    @Input
     String getPodNameDebug() { "j2objc-${project.name}-debug" }
     @Input
     String getPodNameRelease() { "j2objc-${project.name}-release" }
+
+    @Input
+    String getMinIosVersion() { return J2objcConfig.from(project).getMinIosVersion() }
+    @Input
+    String getMinOsxVersion() { return J2objcConfig.from(project).getMinOsxVersion() }
+    @Input
+    String getMinWatchosVersion() { return J2objcConfig.from(project).getMinWatchosVersion() }
 
 
     // CocoaPods podspec files that are referenced by the Podfile
@@ -73,46 +84,33 @@ class PodspecTask extends DefaultTask {
 
     @TaskAction
     void podspecWrite() {
-        // podspec paths must be relative to podspec file, which is in buildDir
-        // NOTE: toURI() adds trailing slash in production but not in unit tests
-        URI buildDir = project.buildDir.toURI()
 
         // Absolute path for header include, relative path for resource include
         String headerIncludePath = getDestSrcMainObjDirFile().getAbsolutePath()
-        String resourceIncludePath = Utils.trimTrailingForwardSlash(
-                buildDir.relativize(getDestSrcMainResourcesDirFile().toURI()).toString())
 
-        // TODO: make this an explicit @Input
-        // Same for both debug and release builds
-        String libName = "${project.name}-j2objc"
-
-        // podspec creation
         // TODO: allow custom list of libraries
+        // podspec paths must be relative to podspec file, which is in buildDir
+        String resourceIncludePath = relativizeToBuildDir(getDestSrcMainResourcesDirFile(), project)
         // iOS packed libraries are shared with watchOS
-        String libDirIosDebug = new File(getDestLibDirFile(), '/iosDebug').absolutePath
-        String libDirIosRelease = new File(getDestLibDirFile(), '/iosRelease').absolutePath
-        String libDirOsxDebug = new File(getDestLibDirFile(), '/x86_64Debug').absolutePath
-        String libDirOsxRelease = new File(getDestLibDirFile(), '/x86_64Release').absolutePath
+        String libDirIosDebug = relativizeToBuildDir(new File(getDestLibDirFile(), 'iosDebug'), project)
+        String libDirIosRelease = relativizeToBuildDir(new File(getDestLibDirFile(), 'iosRelease'), project)
+        String libDirOsxDebug = relativizeToBuildDir(new File(getDestLibDirFile(), 'x86_64Debug'), project)
+        String libDirOsxRelease = relativizeToBuildDir(new File(getDestLibDirFile(), 'x86_64Release'), project)
 
-        J2objcConfig j2objcConfig = J2objcConfig.from(project)
-
-        String minIos = j2objcConfig.minIosVersion
-        String minOsx = j2objcConfig.minOsxVersion
-        String minWatchos = j2objcConfig.minWatchosVersion
-        validateNumericVersion(minIos, 'minIosVersion')
-        validateNumericVersion(minOsx, 'minOsxVersion')
-        validateNumericVersion(minWatchos, 'minWatchosVersion')
+        validateNumericVersion(getMinIosVersion(), 'minIosVersion')
+        validateNumericVersion(getMinOsxVersion(), 'minOsxVersion')
+        validateNumericVersion(getMinWatchosVersion(), 'minWatchosVersion')
 
         String podspecContentsDebug =
                 genPodspec(getPodNameDebug(), headerIncludePath, resourceIncludePath,
-                        libName, getJ2objcHome(),
                         libDirIosDebug, libDirOsxDebug, libDirIosDebug,
-                        minIos, minOsx, minWatchos)
+                        getMinIosVersion(), getMinOsxVersion(), getMinWatchosVersion(),
+                        getLibName(), getJ2objcHome())
         String podspecContentsRelease =
                 genPodspec(getPodNameRelease(), headerIncludePath, resourceIncludePath,
-                        libName, getJ2objcHome(),
                         libDirIosRelease, libDirOsxRelease, libDirIosRelease,
-                        minIos, minOsx, minWatchos)
+                        getMinIosVersion(), getMinOsxVersion(), getMinWatchosVersion(),
+                        getLibName(), getJ2objcHome())
 
         logger.debug("Writing debug podspec... ${getPodspecDebug()}")
         getPodspecDebug().write(podspecContentsDebug)
@@ -120,30 +118,28 @@ class PodspecTask extends DefaultTask {
         getPodspecRelease().write(podspecContentsRelease)
     }
 
-    @VisibleForTesting
-    void validateNumericVersion(String version, String type) {
-        // Requires at least a major and minor version number
-        Matcher versionMatcher = (version =~ /^[0-9]*(\.[0-9]+)+$/)
-        if (!versionMatcher.find()) {
-            logger.warn("Non-numeric version for $type: $version")
-        }
+    static private String relativizeToBuildDir(File path, Project proj) {
+        // NOTE: toURI() adds trailing slash in production but not in unit tests
+        return Utils.trimTrailingForwardSlash(
+                proj.getBuildDir().toURI().relativize(path.toURI()).toString())
     }
 
     // Podspec references are relative to project.buildDir
     @VisibleForTesting
     static String genPodspec(String podname, String publicHeadersDir, String resourceDir,
-                             String libName, String j2objcHome,
                              String libDirIos, String libDirOsx, String libDirWatchos,
-                             String minIos, String minOsx, String minWatchos) {
-
-        // Absolute paths for Xcode command line
-        validatePodspecPath(libDirIos, false)
-        validatePodspecPath(libDirOsx, false)
-        validatePodspecPath(j2objcHome, false)
+                             String minIosVersion, String minOsxVersion, String minWatchosVersion,
+                             String libName, String j2objcHome) {
 
         // Relative paths for content referenced by CocoaPods
-        validatePodspecPath(publicHeadersDir, false)
+        validatePodspecPath(libDirIos, true)
+        validatePodspecPath(libDirOsx, true)
+        validatePodspecPath(libDirWatchos, true)
         validatePodspecPath(resourceDir, true)
+
+        // Absolute paths for Xcode command line
+        validatePodspecPath(j2objcHome, false)
+        validatePodspecPath(publicHeadersDir, false)
 
         // TODO: CocoaPods strongly recommends switching from 'resources' to 'resource_bundles'
         // http://guides.cocoapods.org/syntax/podspec.html#resource_bundles
@@ -159,25 +155,37 @@ class PodspecTask extends DefaultTask {
                "  spec.resources = '$resourceDir/**/*'\n" +
                "  spec.requires_arc = true\n" +
                "  spec.libraries = " +  // continuation of same line
-               "'ObjC', 'guava', 'javax_inject', 'jre_emul', 'jsr305', 'z', 'icucore', '$libName'\n" +
+               "'ObjC', 'guava', 'javax_inject', 'jre_emul', 'jsr305', 'z', 'icucore'\n" +
+               "  spec.ios.vendored_libraries = '$libDirIos/lib${libName}.a'\n" +
+               "  spec.osx.vendored_libraries = '$libDirOsx/lib${libName}.a'\n" +
+               "  spec.watchos.vendored_libraries = '$libDirWatchos/lib${libName}.a'\n" +
                "  spec.xcconfig = {\n" +
                "    'HEADER_SEARCH_PATHS' => '$j2objcHome/include $publicHeadersDir'\n" +
                "  }\n" +
                "  spec.ios.xcconfig = {\n" +
-               "    'LIBRARY_SEARCH_PATHS' => '$j2objcHome/lib $libDirIos'\n" +
+               "    'LIBRARY_SEARCH_PATHS' => '$j2objcHome/lib'\n" +
                "  }\n" +
                "  spec.osx.xcconfig = {\n" +
-               "    'LIBRARY_SEARCH_PATHS' => '$j2objcHome/lib/macosx $libDirOsx'\n" +
+               "    'LIBRARY_SEARCH_PATHS' => '$j2objcHome/lib/macosx'\n" +
                "  }\n" +
                "  spec.watchos.xcconfig = {\n" +
-               "    'LIBRARY_SEARCH_PATHS' => '$j2objcHome/lib $libDirWatchos'\n" +
+               "    'LIBRARY_SEARCH_PATHS' => '$j2objcHome/lib'\n" +
                "  }\n" +
                 // http://guides.cocoapods.org/syntax/podspec.html#deployment_target
-               "  spec.ios.deployment_target = '$minIos'\n" +
-               "  spec.osx.deployment_target = '$minOsx'\n" +
-               "  spec.watchos.deployment_target = '$minWatchos'\n" +
+               "  spec.ios.deployment_target = '$minIosVersion'\n" +
+               "  spec.osx.deployment_target = '$minOsxVersion'\n" +
+               "  spec.watchos.deployment_target = '$minWatchosVersion'\n" +
                "  spec.osx.frameworks = 'ExceptionHandling'\n" +
                "end\n"
+    }
+
+    @VisibleForTesting
+    void validateNumericVersion(String version, String type) {
+        // Requires at least a major and minor version number
+        Matcher versionMatcher = (version =~ /^[0-9]*(\.[0-9]+)+$/)
+        if (!versionMatcher.find()) {
+            logger.warn("Non-numeric version for $type: $version")
+        }
     }
 
     @VisibleForTesting
