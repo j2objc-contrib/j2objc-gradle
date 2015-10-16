@@ -62,11 +62,6 @@ class J2objcPlugin implements Plugin<Project> {
             extensions.create('j2objcConfig', J2objcConfig, project)
 
             afterEvaluate { Project evaluatedProject ->
-
-                // Validate minimally required parameters.
-                // j2objcHome() will throw the appropriate exception internally.
-                assert Utils.j2objcHome(evaluatedProject)
-
                 Utils.throwIfNoJavaPlugin(evaluatedProject)
 
                 if (!evaluatedProject.j2objcConfig.isFinalConfigured()) {

@@ -24,6 +24,7 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileTree
 import org.gradle.api.internal.file.UnionFileCollection
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
@@ -34,6 +35,18 @@ import org.gradle.api.tasks.TaskAction
  */
 @CompileStatic
 class CycleFinderTask extends DefaultTask {
+
+    // If the j2objc distribution changes, we want to rerun the task completely.
+    // As an InputFile, if the content changes, the task will re-run in non-incremental mode.
+    @InputFile
+    File getCycleFinderJar() {
+        return Utils.cycleFinderJar(project)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    @Input String getJ2objcVersion() {
+        return J2objcConfig.from(project).j2objcVersion
+    }
 
     @InputFiles
     FileCollection getSrcInputFiles() {
@@ -101,7 +114,7 @@ class CycleFinderTask extends DefaultTask {
         if (Utils.isWindows()) {
             cycleFinderExec = 'java'
             windowsOnlyArgs.add('-jar')
-            windowsOnlyArgs.add("${getJ2objcHome()}/lib/cycle_finder.jar".toString())
+            windowsOnlyArgs.add(getCycleFinderJar().absolutePath)
         }
 
         FileCollection fullSrcFiles = getSrcInputFiles()
