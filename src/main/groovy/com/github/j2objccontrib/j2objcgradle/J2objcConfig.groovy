@@ -693,9 +693,20 @@ class J2objcConfig {
         finalConfigured = true
     }
 
+    public static final String MIN_SUPPORTED_J2OBJC_VERSION = '0.9.8.2.1'
+
     protected void verifyJ2objcRequirements() {
         if (skipJ2objcVerification) {
             return
+        }
+
+        if (!Utils.isAtLeastVersion(j2objcVersion, MIN_SUPPORTED_J2OBJC_VERSION)) {
+            String requestedVersion = j2objcVersion
+            // j2objcVersion is used for instructing the user how to install j2objc
+            // so we should use the version we need, not the bad one the user requested.
+            j2objcVersion = MIN_SUPPORTED_J2OBJC_VERSION
+            Utils.throwJ2objcConfigFailure(project,
+                    "Must use at least J2ObjC version $MIN_SUPPORTED_J2OBJC_VERSION; you requested $requestedVersion.")
         }
 
         // Make sure we have *some* J2ObjC distribution identified.

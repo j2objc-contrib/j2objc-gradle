@@ -61,6 +61,34 @@ class Utils {
         }
     }
 
+    static List<Integer> parseVersionComponents(String ver) {
+        return ver.tokenize('.').collect({String versionComponent ->
+            try {
+                return Integer.parseInt(versionComponent)
+            } catch (NumberFormatException nfe) {
+                // Keep it simple.  If the version provided doesn't meet a simple N.N.N format,
+                // assume the user knows what they are doing and keep going.  The maximum integer
+                // provides this behavior.
+                return Integer.MAX_VALUE
+            }
+        })
+    }
+
+    static boolean isAtLeastVersion(String version, String minVersion) {
+        List<Integer> minVersionComponents = parseVersionComponents(minVersion)
+        List<Integer> versionComponents = parseVersionComponents(version)
+        for (int i = 0; i < Math.min(minVersionComponents.size(), versionComponents.size()); i++) {
+            if (versionComponents[i] > minVersionComponents[i]) {
+                return true
+            } else if (versionComponents[i] < minVersionComponents[i]) {
+                return false
+            }
+        }
+        // Each existing component was equal.  If the requested version is at least as long, we're good.
+        return versionComponents.size() >= minVersionComponents.size()
+    }
+
+
     private static String fakeOSName = ''
 
     /* This allows faking of is(Linux|Windows|MacOSX) methods but misses java.io.File separators.
@@ -290,7 +318,7 @@ class Utils {
                          "\n" +
                          "Then rerun your Gradle build.\n" +
                          "\n" +
-                         "For advanced configuration of j2objc, please see http://j2objc.org/\n" +
+                         "For advanced configuration of J2ObjC, please see http://j2objc.org/\n" +
                          "If J2ObjC v${ver} is already installed, set J2ObjC Home either:\n" +
                          "1) in a 'local.properties' file in the project root directory as:\n" +
                          "   j2objc.home=/LOCAL_J2OBJC_PATH\n" +
@@ -300,7 +328,7 @@ class Utils {
         throw new InvalidUserDataException(message)
     }
 
-    static String j2objcHasOsxDistribution(Project proj) {
+    static boolean j2objcHasOsxDistribution(Project proj) {
         return proj.file("${j2objcHome(proj)}/lib/macosx").exists()
     }
 

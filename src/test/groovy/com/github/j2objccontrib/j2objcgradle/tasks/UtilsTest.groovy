@@ -16,6 +16,7 @@
 
 package com.github.j2objccontrib.j2objcgradle.tasks
 
+import com.github.j2objccontrib.j2objcgradle.J2objcConfig
 import groovy.transform.CompileStatic
 import org.apache.commons.io.output.TeeOutputStream
 import org.gradle.api.InvalidUserDataException
@@ -32,6 +33,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
+import org.testng.Assert
 
 /**
  * Utils tests.
@@ -817,5 +819,28 @@ class UtilsTest {
         })
 
         mockProjectExec.verify()
+    }
+
+    @Test
+    void testParseVersionComponents() {
+        Assert.assertEquals(Utils.parseVersionComponents("0.9.8.2.1"),
+                [0, 9, 8, 2, 1])
+        Assert.assertEquals(Utils.parseVersionComponents("10.9.8.1"),
+                [10, 9, 8, 1])
+        Assert.assertEquals(Utils.parseVersionComponents("10.1-SNAPSHOT"),
+                [10, Integer.MAX_VALUE])
+    }
+
+    @Test
+    void testIsAtLeastVersion() {
+        assert Utils.isAtLeastVersion("0.9.8.2.1", "0.9.8.2.1")
+        assert !Utils.isAtLeastVersion("0.9.8.2", "0.9.8.2.1")
+        assert Utils.isAtLeastVersion("0.9.8.2.1", "0.9.8.2")
+        assert Utils.isAtLeastVersion("0.9.8.3", "0.9.8.2.1")
+        assert Utils.isAtLeastVersion("1", "0.9.8.2.1")
+        assert Utils.isAtLeastVersion("1-SNAPSHOT", "0.9.8.2.1")
+        assert Utils.isAtLeastVersion("0.9.8.2.1-SNAPSHOT", "0.9.8.2.1")
+        assert !Utils.isAtLeastVersion("0.9.8.1.2", "0.9.8.2.1")
+        assert !Utils.isAtLeastVersion("0.7.9", "0.9.8.2.1")
     }
 }
