@@ -24,6 +24,7 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileTree
 import org.gradle.api.internal.file.UnionFileCollection
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
@@ -42,6 +43,18 @@ class TranslateTask extends DefaultTask {
     // Note that neither additionalMainSrcFiles nor translatePattern need
     // to be @Inputs because they are solely inputs to the 2 methods below, which
     // are already @InputFiles.
+
+    // If the j2objc distribution changes, we want to rerun the task completely.
+    // As an InputFile, if the content changes, the task will re-run in non-incremental mode.
+    @InputFile
+    File getJ2objcJar() {
+        return Utils.j2objcJar(project)
+    }
+
+    @SuppressWarnings("GroovyUnusedDeclaration")
+    @Input String getJ2objcVersion() {
+        return J2objcConfig.from(project).j2objcVersion
+    }
 
     // Source files part of the Java main sourceSet.
     @InputFiles
@@ -301,7 +314,7 @@ class TranslateTask extends DefaultTask {
         if (Utils.isWindows()) {
             j2objcExecutable = 'java'
             windowsOnlyArgs.add('-jar')
-            windowsOnlyArgs.add("${getJ2objcHome()}/lib/j2objc.jar".toString())
+            windowsOnlyArgs.add(getJ2objcJar().absolutePath)
         }
 
         String sourcepathArg = Utils.joinedPathArg(sourcepathDirs)

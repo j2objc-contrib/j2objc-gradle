@@ -72,6 +72,17 @@ class J2objcConfig {
     }
 
     /**
+     * Exact required version of j2objc.
+     */
+    String j2objcVersion = '0.9.8.2.1'
+
+    /**
+     * Don't verify J2ObjC binaries.  Useful for testing and power-users
+     * who know what they are doing and may wish to use a custom-build J2ObjC distribution.
+     */
+    boolean skipJ2objcVerification = false;
+
+    /**
      * Where to assemble generated main libraries.
      * <p/>
      * Defaults to $buildDir/j2objcOutputs/lib
@@ -682,7 +693,67 @@ class J2objcConfig {
         finalConfigured = true
     }
 
+    protected void verifyJ2objcRequirements() {
+        if (skipJ2objcVerification) {
+            return
+        }
+
+        // Make sure we have *some* J2ObjC distribution identified.
+        // This will throw a proper out-of-box error if misconfigured.
+        String j2objcHome = Utils.j2objcHome(project)
+
+        // Verify that underlying J2ObjC binary exists at all.
+        File j2objcJar = Utils.j2objcJar(project)
+        if (!j2objcJar.exists()) {
+            Utils.throwJ2objcConfigFailure(project, "J2ObjC binary does not exist at ${j2objcJar.absolutePath}.")
+        }
+
+        // Now check the version of the binary against the version required.
+        String j2objcExecutable = "$j2objcHome/j2objc"
+        List<String> windowsOnlyArgs = new ArrayList<String>()
+        if (Utils.isWindows()) {
+            j2objcExecutable = 'java'
+            windowsOnlyArgs.add('-jar')
+            windowsOnlyArgs.add(j2objcJar.absolutePath)
+        }
+
+        ByteArrayOutputStream stdout = new ByteArrayOutputStream()
+        ByteArrayOutputStream stderr = new ByteArrayOutputStream()
+
+        project.logger.debug('VerifyJ2objcRequirements - projectExec:')
+        try {
+            Utils.projectExec(project, stdout, stderr, null, {
+                executable j2objcExecutable
+                windowsOnlyArgs.each { String windowsOnlyArg ->
+                    args windowsOnlyArg
+                }
+
+                // Arguments
+                args "-version"
+
+                setStandardOutput stdout
+                setErrorOutput stderr
+            })
+
+        } catch (Exception exception) {
+            // Likely too old to understand -version,
+            // but include the error since it could be something else.
+            Utils.throwJ2objcConfigFailure(project, exception.toString() + "\n\n" +
+                                                    "J2ObjC binary at $j2objcHome too old, v$j2objcVersion required.")
+        }
+        // Yes, J2ObjC uses stderr to output the version.
+        String actualVersionString = stderr.toString().trim()
+        if (actualVersionString != "j2objc $j2objcVersion".toString()) {
+            // Note that actualVersionString will usually already have the word 'j2objc' in it.
+            Utils.throwJ2objcConfigFailure(project,
+                    "Found $actualVersionString at $j2objcHome, J2ObjC v$j2objcVersion required.")
+        }
+    }
+
     protected void validateConfiguration() {
+        // Validate minimally required parameters.
+        verifyJ2objcRequirements()
+
         assert destLibDir != null
         assert destSrcMainDir != null
         assert destSrcTestDir != null

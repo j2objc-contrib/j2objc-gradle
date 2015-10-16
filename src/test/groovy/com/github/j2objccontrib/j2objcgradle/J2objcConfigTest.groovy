@@ -24,6 +24,7 @@ import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.util.ConfigureUtil
+import org.hamcrest.core.StringContains
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -92,6 +93,21 @@ class J2objcConfigTest {
     void testFinalConfigure_MacOSX() {
         Utils.setFakeOSMacOSX()
         J2objcConfig ext = new J2objcConfig(proj)
+        ext.skipJ2objcVerification = true
+
+        assert !ext.finalConfigured
+        ext.testingOnlyPrepConfigurations()
+        ext.finalConfigure()
+        assert ext.finalConfigured
+    }
+
+    @Test
+    void testFinalConfigure_MacOSX_MissingJ2ObjCHome() {
+        Utils.setFakeOSMacOSX()
+        J2objcConfig ext = new J2objcConfig(proj)
+
+        expectedException.expect(InvalidUserDataException.class)
+        expectedException.expectMessage(StringContains.containsString('J2ObjC Home not set'));
 
         assert !ext.finalConfigured
         ext.testingOnlyPrepConfigurations()
@@ -105,6 +121,7 @@ class J2objcConfigTest {
         J2objcConfig ext = new J2objcConfig(proj)
         assert !ext.finalConfigured
         ext.translateOnlyMode = true
+        ext.skipJ2objcVerification = true
 
         ext.testingOnlyPrepConfigurations()
         ext.finalConfigure()
@@ -117,6 +134,7 @@ class J2objcConfigTest {
         J2objcConfig ext = new J2objcConfig(proj)
         assert !ext.finalConfigured
         ext.translateOnlyMode = true
+        ext.skipJ2objcVerification = true
 
         ext.testingOnlyPrepConfigurations()
         ext.finalConfigure()
@@ -128,6 +146,7 @@ class J2objcConfigTest {
     void testFinalConfigure_LinuxIsUnsupported() {
         Utils.setFakeOSLinux()
         J2objcConfig ext = new J2objcConfig(proj)
+        ext.skipJ2objcVerification = true
 
         expectedException.expect(InvalidUserDataException.class)
         expectedException.expectMessage('Mac OS X is required for Native Compilation of translated code')
@@ -143,6 +162,7 @@ class J2objcConfigTest {
     void testFinalConfigure_WindowsIsUnsupported() {
         Utils.setFakeOSWindows()
         J2objcConfig ext = new J2objcConfig(proj)
+        ext.skipJ2objcVerification = true
 
         expectedException.expect(InvalidUserDataException.class)
         expectedException.expectMessage('Mac OS X is required for Native Compilation of translated code')

@@ -16,6 +16,7 @@
 
 package com.github.j2objccontrib.j2objcgradle.tasks
 
+import com.github.j2objccontrib.j2objcgradle.J2objcConfig
 import com.google.common.annotations.VisibleForTesting
 import groovy.transform.CompileStatic
 import groovy.transform.TypeCheckingMode
@@ -245,25 +246,58 @@ class Utils {
     static String j2objcHome(Project proj) {
         String j2objcHome = getLocalProperty(proj, 'home')
         if (j2objcHome == null) {
-            String message =
-                    "J2ObjC Home not set, this should be configured either:\n" +
-                    "1) in a 'local.properties' file in the project root directory as:\n" +
-                    "   j2objc.home=/LOCAL_J2OBJC_PATH\n" +
-                    "2) as the J2OBJC_HOME system environment variable\n" +
-                    "\n" +
-                    "If both are configured the value in the properties file will be used.\n" +
-                    "\n" +
-                    "It must be the path of the unzipped J2ObjC distribution. Download releases here:\n" +
-                    "https://github.com/google/j2objc/releases"
-            throw new InvalidUserDataException(message)
+            throwJ2objcConfigFailure(proj, "J2ObjC Home not set.")
         }
         File j2objcHomeFile = new File(j2objcHome)
         if (!j2objcHomeFile.exists()) {
-            String message = "J2OjcC Home directory not found, expected location: ${j2objcHome}"
-            throw new InvalidUserDataException(message)
+            throwJ2objcConfigFailure(proj, "J2ObjC Home directory not found, expected at $j2objcHome.")
         }
         // File removes trailing slashes cause problems with string concatenation logic
         return j2objcHomeFile.absolutePath
+    }
+
+    static File j2objcJar(Project proj) {
+        return proj.file("${j2objcHome(proj)}/lib/j2objc.jar")
+    }
+
+    static File cycleFinderJar(Project proj) {
+        return proj.file("${j2objcHome(proj)}/lib/cycle_finder.jar")
+    }
+
+    static void throwJ2objcConfigFailure(Project proj, String preamble) {
+        String propFile = "${proj.rootDir.absolutePath}/local.properties"
+        // This can be null in tests!
+        J2objcConfig config = J2objcConfig.from(proj)
+        String ver = config == null ? '(unknown version)' : config.j2objcVersion
+        String message = ">>>>>>>>>>>>>>>> J2ObjC Tool Configuration Failure <<<<<<<<<<<<<<<<\n" +
+                         "$preamble\n" +
+                         "\n" +
+                         "If you do not have a J2ObjC v${ver} distribution,\n" +
+                         "you can initiate a default installation of J2ObjC\n" +
+                         "by running the following from a Terminal:\n" +
+                         "\n" +
+                         "  J2OBJC_ROOT=~/j2objcDist\n" +
+                         // Create a distribution parent directory for all versions.
+                         "  mkdir -p \$J2OBJC_ROOT; pushd \$J2OBJC_ROOT\n" +
+                         // Download an official release.
+                         "  curl -L https://github.com/google/j2objc/releases/download/${ver}/j2objc-${ver}.zip > j2objc-${ver}.zip\n" +
+                         // Unzip the distribution (only).
+                         "  unzip j2objc-${ver}.zip; popd\n" +
+                         // Eliminate any existing value in local.properties.
+                         "  sed -i '' '/j2objc.home/d' $propFile\n" +
+                         // Add a new value for j2objc.home to local.properties.
+                         "  echo j2objc.home=\$J2OBJC_ROOT/j2objc-${ver} >> $propFile\n" +
+                         "\n" +
+                         "Then rerun your Gradle build.\n" +
+                         "\n" +
+                         "For advanced configuration of j2objc, please see http://j2objc.org/\n" +
+                         "If J2ObjC v${ver} is already installed, set J2ObjC Home either:\n" +
+                         "1) in a 'local.properties' file in the project root directory as:\n" +
+                         "   j2objc.home=/LOCAL_J2OBJC_PATH\n" +
+                         "2) as the J2OBJC_HOME system environment variable\n" +
+                         "\n" +
+                         "If both are configured the value in the properties file will be used."
+        throw new InvalidUserDataException(message)
     }
 
     static String j2objcHasOsxDistribution(Project proj) {
