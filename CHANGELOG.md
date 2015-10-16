@@ -10,14 +10,19 @@ https://github.com/j2objc-contrib/j2objc-gradle/pull/NNN
 New functionality:
 * Support for Xcode 7 and j2objc 0.9.8.2.1 #483
 * `J2objcConfig.minIosVersion` controls minimum iOS version #483
-* Translate and run standalone test source Jar files #489
+* Translate and run standalone test source Jar files (such as external library dependencies) #489
 * Test-only dependencies on other libraries and projects #489
+* Cocoa Pods supports multi-project applications #504
+* iOS, watchOS, and OS X applications can be setup using Cocoa Pods #506
+* Validate version of j2objc and provide install instructions #515
 
 Breaking changes/functionality:
 * No longer supports Xcode 6 and lower or j2objc 0.9.8.2 and lower #483
 
 Code quality:
 * Multi-project integration tests disabled temporarily (system tests are used instead) #483
+* System tests include Xcode project examples #508
+* Podspecs distinguish project libraries versus J2ObjC libraries #512
 
 ## v0.4.3-alpha
 New functionality:
