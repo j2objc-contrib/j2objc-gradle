@@ -15,6 +15,15 @@
 # limitations under the License.
 
 
+set -ev
+
+# Two test sets; if no test set is specified (as the first arg),
+# all tests will run.
+# Add new tests to whichever set takes the least time to run on Travis.
+# If any test set is nearing ~45 minutes to build, you must make a new
+# test set and also update .travis.yml.
+TEST_SET=$1
+
 # Fail if anything fails.
 set -euv
 
@@ -25,25 +34,30 @@ if [[ "$PWD" =~ systemTests ]]; then
    exit 1
 fi
 
+if [ -z "$TEST_SET" ] || [ "$TEST_SET" == "1" ] ; then
+   echo Running test set 1
 
-# TODO: Might want to infer the directories that have build.gradle files in them.
-
-# Simplest possible set-up.  A single project with no dependencies.
-systemTests/run-test.sh systemTests/simple1
+   # Simplest possible set-up.  A single project with no dependencies.
+   systemTests/run-test.sh systemTests/simple1
 
 
-# Two main gradle projects, `extended` depends on `base`.  They also both test
-# dependency on built-in j2objc libraries, like Guava, and build-closure
-# based translation of an external library, Gson.  They also both depend
-# depend on a third test-only gradle project, `testLib`.
-systemTests/run-test.sh systemTests/multiProject1
+   # Two main gradle projects, `extended` depends on `base`.  They also both test
+   # dependency on built-in j2objc libraries, like Guava, and build-closure
+   # based translation of an external library, Gson.  They also both depend
+   # depend on a third test-only gradle project, `testLib`.
+   systemTests/run-test.sh systemTests/multiProject1
+fi
 
-# Two gradle projects, `extended` depends on `base`. Both of them depend
-# on project `third_party_gson`, which fully translates and compiles an
-# external library (Google's Gson); and also `third_party_guava` which
-# does the same for Guava. These libraries are used in both `extended` and `base`.
-# We must rename the include directory while this test runs, otherwise the
-# code builds against the translated Guava headers provided in the j2objc dist.
-mv systemTests/localJ2objcDist/j2objc-$J2OBJC_VERSION/include/com/google/common systemTests/localJ2objcDist/j2objc-$J2OBJC_VERSION/include/com/google/common-bak
-systemTests/run-test.sh systemTests/externalLibrary1
-mv systemTests/localJ2objcDist/j2objc-$J2OBJC_VERSION/include/com/google/common-bak systemTests/localJ2objcDist/j2objc-$J2OBJC_VERSION/include/com/google/common
+if [ -z "$TEST_SET" ] || [ "$TEST_SET" == "2" ] ; then
+   echo Running test set 2
+
+   # Two gradle projects, `extended` depends on `base`. Both of them depend
+   # on project `third_party_gson`, which fully translates and compiles an
+   # external library (Google's Gson); and also `third_party_guava` which
+   # does the same for Guava. These libraries are used in both `extended` and `base`.
+   # We must rename the include directory while this test runs, otherwise the
+   # code builds against the translated Guava headers provided in the j2objc dist.
+   mv systemTests/localJ2objcDist/j2objc-$J2OBJC_VERSION/include/com/google/common systemTests/localJ2objcDist/j2objc-$J2OBJC_VERSION/include/com/google/common-bak
+   systemTests/run-test.sh systemTests/externalLibrary1
+   mv systemTests/localJ2objcDist/j2objc-$J2OBJC_VERSION/include/com/google/common-bak systemTests/localJ2objcDist/j2objc-$J2OBJC_VERSION/include/com/google/common
+fi

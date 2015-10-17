@@ -22,6 +22,16 @@ matrix:
       osx_image: xcode7
       language: objective-c
       env:
+       - TEST_SET=1
+       - USING_OS=osx
+       - USING_XCODE=7
+    # Split up the system tests into 2 sets to avoid hitting the
+    # max build time.
+    - os: osx
+      osx_image: xcode7
+      language: objective-c
+      env:
+       - TEST_SET=2
        - USING_OS=osx
        - USING_XCODE=7
 
@@ -61,4 +71,4 @@ script:
   - ./gradlew assemble
   - ./gradlew build
   # Run our system tests
-  - if [ "$USING_OS" = "osx" ]; then systemTests/run-all.sh; fi
+  - if [ "$USING_OS" = "osx" ]; then systemTests/run-all.sh $TEST_SET; fi
