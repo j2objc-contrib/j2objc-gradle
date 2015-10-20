@@ -622,7 +622,7 @@ class J2objcConfig {
      * <p/>
      * See https://developer.apple.com/library/ios/documentation/DeveloperTools/Conceptual/cross_development/Configuring/configuring.html#//apple_ref/doc/uid/10000163i-CH1-SW2
      */
-    String minIosVersion = '8.3'
+    String minIosVersion = '6.0'
 
     /**
      * The minimum OS X version to build against.  You cannot use APIs that are not supported
@@ -630,7 +630,7 @@ class J2objcConfig {
      * <p/>
      * See https://developer.apple.com/library/ios/documentation/DeveloperTools/Conceptual/cross_development/Configuring/configuring.html#//apple_ref/doc/uid/10000163i-CH1-SW2
      */
-    String minOsxVersion = '10.8'
+    String minOsxVersion = '10.4'
 
     /**
      * The minimum Watch OS version to build against.  You cannot use APIs that are not supported
@@ -638,7 +638,7 @@ class J2objcConfig {
      * <p/>
      * See https://developer.apple.com/library/ios/documentation/DeveloperTools/Conceptual/cross_development/Configuring/configuring.html#//apple_ref/doc/uid/10000163i-CH1-SW2
      */
-    String minWatchosVersion = '2.0'
+    String minWatchosVersion = '1.0'
 
     // XCODE
     /**
