@@ -1,0 +1,36 @@
+# Uncomment this line to define a global platform for your project
+# platform :ios, '8.0'
+# Uncomment this line if you're using Swift
+# use_frameworks!
+
+# J2ObjC Gradle Plugin - DO NOT MODIFY from here to the first target
+def j2objc_shared
+    pod 'j2objc-shared-debug', :configuration => ['Debug'], :path => '../shared/build'
+    pod 'j2objc-shared-release', :configuration => ['Release'], :path => '../shared/build'
+end
+
+target 'IOS-APP' do
+    platform :ios, '6.0'
+    j2objc_shared
+end
+
+target 'IOS-APPTests' do
+    platform :ios, '6.0'
+    j2objc_shared
+end
+
+target 'WATCH-APP' do
+end
+
+target 'WATCH-APP Extension' do
+end
+
+target 'OSX-APP' do
+    platform :osx, '10.6'
+    j2objc_shared
+end
+
+target 'OSX-APPTests' do
+    platform :osx, '10.6'
+    j2objc_shared
+end
