@@ -17,6 +17,7 @@
 package com.github.j2objccontrib.j2objcgradle.tasks
 
 import com.github.j2objccontrib.j2objcgradle.J2objcConfig
+import com.google.common.annotations.VisibleForTesting
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
@@ -35,6 +36,17 @@ class XcodeTaskTest {
 
     // TODO: use this within future tests
     private Project proj
+
+    XcodeTask.XcodeTargetDetails xcodeTargetDetailsIosAppOnly =
+            new XcodeTask.XcodeTargetDetails(
+                    ['IOS-APP'], [], [],
+                    // Append '.0' to version number to check that it's not using defaults
+                    '6.0.0', '10.4.0', '1.0.0')
+    List<XcodeTask.PodspecDetails> podspecDetailsProj =
+            [new XcodeTask.PodspecDetails(
+                'PROJ',
+                new File('/SRC/PROJ/BUILD/j2objc-PROJ-debug.podspec'),
+                new File('/SRC/PROJ/BUILD/j2objc-PROJ-release.podspec'))]
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -56,7 +68,7 @@ class XcodeTaskTest {
         J2objcConfig j2objcConfig =
                 proj.extensions.create('j2objcConfig', J2objcConfig, proj)
         j2objcConfig.xcodeProjectDir = '../ios'
-        j2objcConfig.xcodeTargets = ['IOS-APP']
+        j2objcConfig.xcodeTargetsIos = ['IOS-APP']
 
         XcodeTask j2objcXcode = (XcodeTask) proj.tasks.create(name: 'j2objcXcode', type: XcodeTask)
         j2objcXcode.verifyXcodeArgs()
@@ -72,7 +84,7 @@ class XcodeTaskTest {
         J2objcConfig j2objcConfig =
                 proj.extensions.create('j2objcConfig', J2objcConfig, proj)
         assert null == j2objcConfig.xcodeProjectDir
-        assert 0 == j2objcConfig.xcodeTargets.size()
+        assert 0 == j2objcConfig.xcodeTargetsIos.size()
 
         XcodeTask j2objcXcode = (XcodeTask) proj.tasks.create(name: 'j2objcXcode', type: XcodeTask)
 
@@ -110,6 +122,8 @@ class XcodeTaskTest {
                         createJ2objcConfig: true))
 
         j2objcConfig.xcodeProjectDir = '../ios'
+        j2objcConfig.xcodeTargetsIos = ['IOS-APP', 'IOS-APPTests']
+        j2objcConfig.minVersionIos = '6.0.0'
 
         // Podfile Write
         // This is outside of the project's temp directory but appears to work fine
@@ -117,6 +131,8 @@ class XcodeTaskTest {
         File podfile = proj.file('../ios/Podfile')
         podfile.deleteOnExit()
         podfile.write(
+                "use_frameworks!\n" +
+                "\n" +
                 "target 'IOS-APP' do\n" +
                 "end\n" +
                 "\n" +
@@ -128,8 +144,8 @@ class XcodeTaskTest {
         mockProjectExec.demandExecAndReturn(
                 proj.file('../ios').absolutePath,  // working directory
                 [
-                        "pod",
-                        "install",
+                        'pod',
+                        'install',
                 ],
                 null,
                 null,
@@ -151,16 +167,21 @@ class XcodeTaskTest {
         String podNameRelease = "j2objc-${proj.name}-release"
         String path = "../${proj.getProjectDir().getName()}/build"
         List<String> expectedPodfile = [
+                "use_frameworks!",
+                "",
+                "# J2ObjC Gradle Plugin - DO NOT MODIFY from here to the first target",
                 "def $podNameMethod",
                 "    pod '$podNameDebug', :configuration => ['Debug'], :path => '$path'",
                 "    pod '$podNameRelease', :configuration => ['Release'], :path => '$path'",
                 "end",
                 "",
                 "target 'IOS-APP' do",
+                "    platform :ios, '6.0.0'",
                 "    $podNameMethod",
                 "end",
                 "",
                 "target 'IOS-APPTests' do",
+                "    platform :ios, '6.0.0'",
                 "    $podNameMethod",
                 "end"]
         List<String> readPodfileLines = podfile.readLines()
@@ -177,7 +198,7 @@ class XcodeTaskTest {
                         createJ2objcConfig: true))
 
         j2objcConfig.xcodeProjectDir = 'ios'
-        j2objcConfig.xcodeTargets = ['IOS-APP']
+        j2objcConfig.xcodeTargetsIos = ['IOS-APP']
 
         // Needed for podspec
         proj.file(proj.buildDir).mkdir()
@@ -193,9 +214,9 @@ class XcodeTaskTest {
             assert false, 'Expected Exception'
         } catch (InvalidUserDataException exception) {
             assert exception.toString().contains("Set xcodeProjectDir to the directory containing 'IOS-APP.xcodeproj':")
-            assert exception.toString().contains("Within that directory, create the Podfile with:")
+            assert exception.toString().contains('Within that directory, create the Podfile with:')
             assert exception.toString().contains("(cd ${proj.file('ios').absolutePath} && pod init)")
-            assert exception.toString().contains("sudo gem install cocoapods")
+            assert exception.toString().contains('sudo gem install cocoapods')
         }
 
         // Verify no calls to project.copy, project.delete or project.exec
@@ -211,7 +232,7 @@ class XcodeTaskTest {
                         applyJavaPlugin: true,
                         createJ2objcConfig: true))
         assert null == j2objcConfig.xcodeProjectDir
-        assert 0 == j2objcConfig.xcodeTargets.size()
+        assert 0 == j2objcConfig.xcodeTargetsIos.size()
 
         XcodeTask j2objcXcode = (XcodeTask) proj.tasks.create(name: 'j2objcXcode', type: XcodeTask)
 
@@ -257,12 +278,149 @@ class XcodeTaskTest {
     }
 
     @Test
-    void testWriteUpdatedPodfileIfNeeded_Needed() {
+    void testRegexStripLines_noStartMatch() {
+        List<String> oldLines = [
+                'st-art',
+                'strip',
+                'en-d']
+
+        List<String> newLines = XcodeTask.regexStripLines(
+                oldLines, false, /start/, /end/, /^strip$/)
+
+        assert oldLines == newLines
+    }
+
+    @Test
+    void testRegexStripLines_remove() {
+        List<String> oldLines = [
+                'strip outside',
+                'start',
+                'str-ip',
+                'strip inside',
+                'end']
+
+        List<String> newLines = XcodeTask.regexStripLines(
+                oldLines, false, /start/, /end/, /strip/)
+
+        List<String> expectedNewLines = [
+                'strip outside',
+                'start',
+                'str-ip',
+                'end']
+        assert expectedNewLines == newLines
+    }
+
+    @Test
+    void testRegexStripLines_removeInclusivePreserveEndLine() {
+        List<String> oldLines = [
+                'BEFORE',
+                'start',
+                'end',
+                'AFTER']
+
+        List<String> newLines = XcodeTask.regexStripLines(
+                oldLines, true, /start/, /end/, /.*/)
+
+        List<String> expectedNewLines = [
+                'BEFORE',
+                'end',
+                'AFTER']
+        assert expectedNewLines == newLines
+    }
+
+    @Test
+    void testRegexInsertLines_afterStart() {
+        List<String> oldLines = [
+                'start',
+                'in-between',
+                'end']
+
+        List<String> insertLines = new ArrayList<>()
+        insertLines.add('line1')
+        insertLines.add('line2')
+        List<String> newLines = XcodeTask.regexInsertLines(
+                oldLines, true, /start/, /end/, insertLines)
+
+        List<String> expectedNewLines = [
+                'start',
+                'line1',
+                'line2',
+                'in-between',
+                'end']
+        assert expectedNewLines == newLines
+    }
+
+    @Test
+    void testRegexInsertLines_notAfterStart() {
+        List<String> oldLines = [
+                'start',
+                'in-between',
+                'end']
+
+        List<String> newLines = XcodeTask.regexInsertLines(
+                oldLines, false, /start/, /end/, ['line1', 'line2'])
+
+        List<String> expectedNewLines = [
+                'start',
+                'in-between',
+                'line1',
+                'line2',
+                'end']
+        assert expectedNewLines == newLines
+    }
+
+    @Test
+    void testRegexInsertLines_ignoreMultipleMatches() {
+        List<String> oldLines = [
+                'start',
+                'end',
+                'start',
+                'end']
+
+        List<String> newLines = XcodeTask.regexInsertLines(
+                oldLines, false, /start/, /end/, ['inserted'])
+
+        List<String> expectedNewLines = [
+                'start',
+                'inserted',
+                'end',
+                'start',
+                'end']
+        assert expectedNewLines == newLines
+    }
+
+    @Test
+    void testRegexInsertLines_noMatchStart() {
+        List<String> oldLines = [
+                'start',
+                'end']
+
+        expectedException.expect(InvalidUserDataException.class)
+        expectedException.expectMessage('Failed to find startRegex: /no-match-start/')
+
+        XcodeTask.regexInsertLines(oldLines, false, /no-match-start/, /end/, new ArrayList<>())
+    }
+
+    @Test
+    void testRegexInsertLines_noMatchEnd() {
+        List<String> oldLines = [
+                'start',
+                'end']
+
+        expectedException.expect(InvalidUserDataException.class)
+        expectedException.expectMessage('Failed to find endRegex: /no-match-end/')
+
+        XcodeTask.regexInsertLines(oldLines, false, /start/, /no-match-end/, new ArrayList<>())
+    }
+
+    @Test
+    void testWriteUpdatedPodfileIfNeeded_Needed_ThenNotNeeded() {
 
         // Write temp Podfile that's deleted on exit
-        File podfile = File.createTempFile("podfile","")
+        File podfile = File.createTempFile('Podfile', '')
         podfile.deleteOnExit()
         podfile.write(
+                "#user comment\n" +
                 "target 'IOS-APP' do\n" +
                 "end")
 
@@ -271,260 +429,417 @@ class XcodeTaskTest {
         List<XcodeTask.PodspecDetails> podspecDetailsList = new ArrayList<>()
         podspecDetailsList.add(new XcodeTask.PodspecDetails(
                 'PROJ',
-                // It doesn't matter that these files don't exist, only their relative path to Podfile
+                // Only their relative path to Podfile matters, they don't need to exist
                 new File(podspecBuildDir + '/j2objc-PROJ-debug.podspec'),
                 new File(podspecBuildDir + '/j2objc-PROJ-release.podspec')))
         XcodeTask.writeUpdatedPodfileIfNeeded(
-                podspecDetailsList, ['IOS-APP'], podfile, null)
+                podspecDetailsList, xcodeTargetDetailsIosAppOnly, podfile, null)
 
         // Verify modified Podfile
         List<String> expectedLines = [
+                "#user comment",
+                "# J2ObjC Gradle Plugin - DO NOT MODIFY from here to the first target",
                 "def j2objc_PROJ",
                 "    pod 'j2objc-PROJ-debug', :configuration => ['Debug'], :path => '../PROJ/BUILD'",
                 "    pod 'j2objc-PROJ-release', :configuration => ['Release'], :path => '../PROJ/BUILD'",
                 "end",
                 "",
                 "target 'IOS-APP' do",
+                "    platform :ios, '6.0.0'",
                 "    j2objc_PROJ",
                 "end"]
         List<String> readPodfileLines = podfile.readLines()
         assert expectedLines == readPodfileLines
-    }
 
-    @Test
-    void testWriteUpdatedPodfileIfNeeded_NotNeeded() {
-
-        // Write temp Podfile that's deleted on exit
-        List<String> writtenLines = [
-            "def j2objc_PROJ",
-            "    pod 'j2objc-PROJ-debug', :configuration => ['Debug'], :path => '../PROJ/BUILD'",
-            "    pod 'j2objc-PROJ-release', :configuration => ['Release'], :path => '../PROJ/BUILD'",
-            "end",
-            "",
-            "target 'IOS-APP' do",
-            "    j2objc_PROJ",
-            "end"]
-        File podfile = File.createTempFile("podfile","")
-        podfile.deleteOnExit()
-        podfile.write(writtenLines.join('\n'))
-
-        // Update the Podfile
-        String podspecBuildDir = podfile.getParentFile().getParentFile().toString() + '/PROJ/BUILD'
-        List<XcodeTask.PodspecDetails> podspecDetailsList = new ArrayList<>()
-        podspecDetailsList.add(new XcodeTask.PodspecDetails(
-                'PROJ',
-                new File(podspecBuildDir + '/j2objc-PROJ-debug.podspec'),
-                new File(podspecBuildDir + '/j2objc-PROJ-release.podspec')))
+        // Verify unmodified on second call
+        // TODO: verify that file wasn't written a second time
         XcodeTask.writeUpdatedPodfileIfNeeded(
-                podspecDetailsList, ['IOS-APP'], podfile, null)
-
-        // Missing verification that the file wasn't written but verifies it's the same as before
-        List<String> readPodfileLines = podfile.readLines()
-        assert writtenLines == readPodfileLines
+                podspecDetailsList, xcodeTargetDetailsIosAppOnly, podfile, null)
+        readPodfileLines = podfile.readLines()
+        assert expectedLines == readPodfileLines
     }
 
     @Test
-    void testUpdatePodfile_Complex() {
-        // 1) Clean up pod method
-        // 2) Add pod method to IOS-APP target
-        // 3) Remove pod method from IOS-APPTest target
+    void testUpdatePodfile_basic() {
         List<String> podfileLines = [
-                "def j2objc_PROJ",
-                "    RANDOM-CRUFT-TO-BE-DELETED",
-                "    pod 'j2objc-PROJ-IGNORE', :configuration => ['Release'], :path => '/WRONG-DIR'",
-                "end",
-                "",
                 "target 'IOS-APP' do",
-                "",
-                "    pod 'IGNORE1', :path => 'IGNORE'",
-                "end",
-                "",
-                "target 'IOS-APP WatchKit App' do",
-                "    j2objc_PROJ",
-                "    pod 'IGNORE2', :path => 'IGNORE'",
                 "end"]
 
         List<String> newPodfileLines = XcodeTask.updatePodfile(
                 podfileLines,
-                new XcodeTask.PodspecDetails(
-                        'PROJ',
-                        new File('/SRC/PROJ/BUILD/j2objc-PROJ-debug.podspec'),
-                        new File('/SRC/PROJ/BUILD/j2objc-PROJ-release.podspec')),
-                ['IOS-APP'],
+                podspecDetailsProj,
+                xcodeTargetDetailsIosAppOnly,
                 new File('/SRC/ios/Podfile'),
                 null)
-
-        List<String> expectedLines = [
-                "def j2objc_PROJ",
-                "    pod 'j2objc-PROJ-debug', :configuration => ['Debug'], :path => '../PROJ/BUILD'",
-                "    pod 'j2objc-PROJ-release', :configuration => ['Release'], :path => '../PROJ/BUILD'",
-                "end",
-                "",
-                "target 'IOS-APP' do",
-                "",
-                "    pod 'IGNORE1', :path => 'IGNORE'",
-                "    j2objc_PROJ",
-                "end",
-                "",
-                "target 'IOS-APP WatchKit App' do",
-                "    pod 'IGNORE2', :path => 'IGNORE'",
-                "end"]
-
-        assert expectedLines == newPodfileLines
-    }
-
-    @Test
-    // If xcodeTargets == [], then include all targets
-    void testUpdatePodfile_DefaultsToAllTargets() {
-        List<String> podfileLines = [
-                "target 'IOS-APP' do",
-                "    pod 'IGNORE1', :path => 'IGNORE'",
-                "end",
-                "",
-                "target 'IOS-APPTests' do",
-                "    pod 'IGNORE2', :path => 'IGNORE'",
-                "end",
-                "",
-                "target 'IOS-APP WatchKit App' do",
-                "    j2objc_PROJ",
-                "    pod 'IGNORE3', :path => 'IGNORE'",
-                "end"]
-
-        List<String> newPodfileLines = XcodeTask.updatePodfile(
-                podfileLines,
-                new XcodeTask.PodspecDetails(
-                        'PROJ',
-                        new File('/SRC/PROJ/BUILD/j2objc-PROJ-debug.podspec'),
-                        new File('/SRC/PROJ/BUILD/j2objc-PROJ-release.podspec')),
-                [],  // xcodeTargets is empty to test default of all targets
-                new File('/SRC/ios/Podfile'),
-                null)
-
-        List<String> expectedLines = [
-                "def j2objc_PROJ",
-                "    pod 'j2objc-PROJ-debug', :configuration => ['Debug'], :path => '../PROJ/BUILD'",
-                "    pod 'j2objc-PROJ-release', :configuration => ['Release'], :path => '../PROJ/BUILD'",
-                "end",
-                "",
-                "target 'IOS-APP' do",
-                "    pod 'IGNORE1', :path => 'IGNORE'",
-                "    j2objc_PROJ",
-                "end",
-                "",
-                "target 'IOS-APPTests' do",
-                "    pod 'IGNORE2', :path => 'IGNORE'",
-                "    j2objc_PROJ",
-                "end",
-                "",
-                "target 'IOS-APP WatchKit App' do",
-                "    j2objc_PROJ",
-                "    pod 'IGNORE3', :path => 'IGNORE'",
-                "end"]
-
-        assert expectedLines == newPodfileLines
-    }
-
-    @Test(expected = InvalidUserDataException.class)
-    void testUpdatePodfileTarget_TargetNotFound() {
-        List<String> podfileLines = [
-                "target 'IOS-APP' do",
-                "pod 'j2objc-PROJ-debug', :path => '/Users/USERNAME/dev/workspace/shared/build'",
-                "end"]
-
-        XcodeTask.updatePodfileTarget(
-                podfileLines, 'XCODE_TARGET_DOES_NOT_EXIST',
-                'j2objc_PROJ', true)
-    }
-
-    @Test
-    void testUpdatePodfileTarget_AddAndRemove() {
-        List<String> podfileTargetEmpty = [
-                "target 'IOS-APP' do",
-                "end"]
-
-        List<String> podfileTargetWithMethod = [
-                "target 'IOS-APP' do",
-                "    j2objc_PROJ",
-                "end"]
-
-        // Remove no-op
-        List<String> newPodfileLines = XcodeTask.updatePodfileTarget(
-                podfileTargetEmpty, 'IOS-APP', 'j2objc_PROJ', false)
-        assert newPodfileLines == newPodfileLines
-
-        // Add
-        newPodfileLines = XcodeTask.updatePodfileTarget(
-                podfileTargetEmpty, 'IOS-APP', 'j2objc_PROJ', true)
-        assert podfileTargetWithMethod == newPodfileLines
-
-        // Add no-op
-        newPodfileLines = XcodeTask.updatePodfileTarget(
-                podfileTargetEmpty, 'IOS-APP', 'j2objc_PROJ', true)
-        assert podfileTargetWithMethod == newPodfileLines
-
-        // Remove
-        newPodfileLines = XcodeTask.updatePodfileTarget(
-                podfileTargetEmpty, 'IOS-APP', 'j2objc_PROJ', false)
-        assert newPodfileLines == newPodfileLines
-    }
-
-    @Test
-    void testUpdatePodfileTarget_PreserveOrdering() {
-        List<String> podfileLines = [
-                "target 'TARGET_A' do",
-                "    pod 'IGNORE1', :path => 'IGNORE'",
-                "    j2objc_PROJ",
-                "end",
-                "",
-                "target 'TARGET_B' do",
-                "    j2objc_PROJ",
-                "    pod 'IGNORE2', :path => 'IGNORE'",
-                "end"]
-
-        List<String> newPodfileLines = XcodeTask.updatePodfileTarget(
-                podfileLines, 'TARGET_A', 'j2objc_PROJ', true)
-        newPodfileLines = XcodeTask.updatePodfileTarget(
-                newPodfileLines, 'TARGET_B', 'j2objc_PROJ', true)
-
-        // Preserves the ordering of the lines
-        assert podfileLines == newPodfileLines
-    }
-
-    @Test
-    // For upgrade from v0.4.3 to v0.5.0
-    void testUpdatePodfileTarget_PodMethodUpgrade() {
-        List<String> podfileLines = [
-                // pod method should not be affected by removal of the old code
-                "def j2objc_PROJ",
-                "    pod 'j2objc-PROJ-debug', :configuration => ['Debug'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
-                "    pod 'j2objc-PROJ-release', :configuration => ['Release'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
-                "end",
-                "",
-                "target 'TARGET' do",
-                "    pod 'j2objc-PROJ-debug', :configuration => ['Debug'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
-                "    pod 'j2objc-PROJ-release', :configuration => ['Release'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
-                "    pod 'IGNORE2', :path => 'IGNORE'",
-                "end"]
 
         List<String> expectedPodfileLines = [
+                "# J2ObjC Gradle Plugin - DO NOT MODIFY from here to the first target",
                 "def j2objc_PROJ",
-                "    pod 'j2objc-PROJ-debug', :configuration => ['Debug'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
-                "    pod 'j2objc-PROJ-release', :configuration => ['Release'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
+                "    pod 'j2objc-PROJ-debug', :configuration => ['Debug'], :path => '../PROJ/BUILD'",
+                "    pod 'j2objc-PROJ-release', :configuration => ['Release'], :path => '../PROJ/BUILD'",
                 "end",
                 "",
-                "target 'TARGET' do",
-                "    pod 'IGNORE2', :path => 'IGNORE'",
+                "target 'IOS-APP' do",
+                "    platform :ios, '6.0.0'",
                 "    j2objc_PROJ",
                 "end"]
-
-        // First update cleans up the Podfile, replacing within targets definitions with pod method
-        List<String> newPodfileLines = XcodeTask.updatePodfileTarget(
-                podfileLines, 'TARGET', 'j2objc_PROJ', true)
         assert expectedPodfileLines == newPodfileLines
 
-        // Second update has no effect
-        newPodfileLines = XcodeTask.updatePodfileTarget(
-                newPodfileLines, 'TARGET', 'j2objc_PROJ', true)
+        // Second time around is a no-op
+        newPodfileLines = XcodeTask.updatePodfile(
+                newPodfileLines,
+                podspecDetailsProj,
+                xcodeTargetDetailsIosAppOnly,
+                new File('/SRC/ios/Podfile'),
+                null)
         assert expectedPodfileLines == newPodfileLines
+    }
+
+    @Test
+    void testUpdatePodfile_complex() {
+        List<String> podfileLines = [
+                "# user comment",
+                "",
+                "target 'IOS-APP' do",
+                "end",
+                "target 'OSX-APP' do",
+                "    j2objc_JUNK_TO_BE_DELETED",
+                "end",
+                "target 'WATCH-APP' do",
+                "end"]
+        XcodeTask.XcodeTargetDetails xcodeTargetDetails = new XcodeTask.XcodeTargetDetails(
+                ['IOS-APP'], ['OSX-APP'], ['WATCH-APP'],
+                '6.0.0', '10.4.0', '1.0.0')
+
+        List<String> newPodfileLines = XcodeTask.updatePodfile(
+                podfileLines,
+                podspecDetailsProj,
+                xcodeTargetDetails,
+                new File('/SRC/ios/Podfile'),
+                null)
+
+        List<String> expectedPodfileLines = [
+                "# user comment",
+                "",
+                "# J2ObjC Gradle Plugin - DO NOT MODIFY from here to the first target",
+                "def j2objc_PROJ",
+                "    pod 'j2objc-PROJ-debug', :configuration => ['Debug'], :path => '../PROJ/BUILD'",
+                "    pod 'j2objc-PROJ-release', :configuration => ['Release'], :path => '../PROJ/BUILD'",
+                "end",
+                "",
+                "target 'IOS-APP' do",
+                "    platform :ios, '6.0.0'",
+                "    j2objc_PROJ",
+                "end",
+                "target 'OSX-APP' do",
+                "    platform :osx, '10.4.0'",
+                "    j2objc_PROJ",
+                "end",
+                "target 'WATCH-APP' do",
+                "    platform :watchos, '1.0.0'",
+                "    j2objc_PROJ",
+                "end"]
+        assert expectedPodfileLines == newPodfileLines
+
+        // Second time around is a no-op
+        newPodfileLines = XcodeTask.updatePodfile(
+                newPodfileLines,
+                podspecDetailsProj,
+                xcodeTargetDetails,
+                new File('/SRC/ios/Podfile'),
+                null)
+        assert expectedPodfileLines == newPodfileLines
+    }
+
+    @Test
+    void testUpdatePodfile_needJ2objcConfig() {
+        List<String> podfileLines = [
+                "target 'IOS-APP' do",
+                "end",
+                "target 'WATCH-APP' do",
+                "end"]
+
+        expectedException.expect(InvalidUserDataException.class)
+        expectedException.expectMessage("You must configure the xcode targets for the J2ObjC Gradle Plugin")
+        expectedException.expectMessage("It must be a subset of the valid targets: 'IOS-APP', 'WATCH-APP'")
+        expectedException.expectMessage("xcodeTargetsIos 'IOS-APP', 'IOS-APPTests'  // example")
+
+        XcodeTask.updatePodfile(
+                podfileLines,
+                [],
+                new XcodeTask.XcodeTargetDetails(
+                        [], [], [],
+                        '6.0.0', '10.4.0', '1.0.0'),
+                null,
+                null)
+    }
+
+    @Test
+    void testUpdatePodfile_invalidTarget() {
+        List<String> podfileLines = [
+                "target 'IOS-APP' do",
+                "end",
+                "target 'WATCH-APP' do",
+                "end"]
+
+        expectedException.expect(InvalidUserDataException.class)
+        expectedException.expectMessage("Invalid j2objcConfig { xcodeTargetsIos 'TARGET-DOES-NOT-EXIST' }")
+        expectedException.expectMessage("Must be one of the valid targets: 'IOS-APP', 'WATCH-APP'")
+
+        XcodeTask.updatePodfile(
+                podfileLines,
+                [],
+                new XcodeTask.XcodeTargetDetails(
+                        ['TARGET-DOES-NOT-EXIST'], [], [],
+                        '6.0.0', '10.4.0', '1.0.0'),
+                null,
+                null)
+    }
+
+    @Test
+    void testUpdatePodMethods_basic() {
+        List<String> podfileLines = [
+                "# user comment",
+                "",
+                // "# J2ObjC Gradle Plugin..." line is missing to make sure regex handles both cases
+                "def j2objc_TO_BE_DELETED",
+                "    pod 'j2objc-TO_BE_DELETED-debug', :configuration => ['Debug'], :path => '../shared/build'",
+                "    pod 'j2objc-TO_BE_DELETED-release', :configuration => ['Release'], :path => '../shared/build'",
+                "end",
+                "",
+                "target 'IOS-APP' do",
+                "end"]
+
+        List<String> newPodfileLines = XcodeTask.updatePodMethods(
+                podfileLines,
+                podspecDetailsProj,
+                new File('/SRC/ios/Podfile'))
+
+        List<String> expectedLines = [
+                "# user comment",
+                "",
+                "# J2ObjC Gradle Plugin - DO NOT MODIFY from here to the first target",
+                "def j2objc_PROJ",
+                "    pod 'j2objc-PROJ-debug', :configuration => ['Debug'], :path => '../PROJ/BUILD'",
+                "    pod 'j2objc-PROJ-release', :configuration => ['Release'], :path => '../PROJ/BUILD'",
+                "end",
+                "",
+                "target 'IOS-APP' do",
+                "end"]
+
+        assert expectedLines == newPodfileLines
+    }
+
+    @Test
+    void testUpdatePodMethods() {
+        List<String> podfileLines = [
+                "# user comment",
+                "",
+                "# J2ObjC Gradle Plugin - DO NOT MODIFY from this line to the first target",
+                "def j2objc_TO_BE_DELETED",
+                "    pod 'j2objc-TO_BE_DELETED-debug', :configuration => ['Debug'], :path => '../shared/build'",
+                "    pod 'j2objc-TO_BE_DELETED-release', :configuration => ['Release'], :path => '../shared/build'",
+                "end",
+                "",
+                "",
+                "target 'IOS-APP' do",
+                "    j2objc_DELETED_BY_ANOTHER_METHOD",
+                "end"]
+
+        List<String> newPodfileLines = XcodeTask.updatePodMethods(
+                podfileLines,
+                [new XcodeTask.PodspecDetails(
+                        'PROJA',
+                        new File('/SRC/PROJA/BUILD/j2objc-PROJA-debug.podspec'),
+                        new File('/SRC/PROJA/BUILD/j2objc-PROJB-release.podspec')),
+                 new XcodeTask.PodspecDetails(
+                         'PROJB',
+                         new File('/SRC/PROJB/BUILD/j2objc-PROJB-debug.podspec'),
+                         new File('/SRC/PROJB/BUILD/j2objc-PROJB-release.podspec'))],
+                new File('/SRC/ios/Podfile'))
+
+        List<String> expectedLines = [
+                "# user comment",
+                "",
+                "# J2ObjC Gradle Plugin - DO NOT MODIFY from here to the first target",
+                "def j2objc_PROJA",
+                "    pod 'j2objc-PROJA-debug', :configuration => ['Debug'], :path => '../PROJA/BUILD'",
+                "    pod 'j2objc-PROJB-release', :configuration => ['Release'], :path => '../PROJA/BUILD'",
+                "end",
+                "",
+                "def j2objc_PROJB",
+                "    pod 'j2objc-PROJB-debug', :configuration => ['Debug'], :path => '../PROJB/BUILD'",
+                "    pod 'j2objc-PROJB-release', :configuration => ['Release'], :path => '../PROJB/BUILD'",
+                "end",
+                "",
+                "target 'IOS-APP' do",
+                "    j2objc_DELETED_BY_ANOTHER_METHOD",
+                "end"]
+
+        assert expectedLines == newPodfileLines
+    }
+
+    @Test
+    void testPodMethodLines() {
+        List<String> podMethodLines = XcodeTask.podMethodLines(
+                podspecDetailsProj.get(0),
+                new File('/SRC/ios/Podfile'))
+
+        List<String> expectedLines = [
+                "def j2objc_PROJ",
+                "    pod 'j2objc-PROJ-debug', :configuration => ['Debug'], :path => '../PROJ/BUILD'",
+                "    pod 'j2objc-PROJ-release', :configuration => ['Release'], :path => '../PROJ/BUILD'",
+                "end"]
+
+        assert expectedLines == podMethodLines
+    }
+
+    @Test
+    void testUpdatePodfileTargets_basic() {
+        List<String> podfileLines = [
+                "target 'IOS-APP' do",
+                "end",
+                "target 'IOS-APP-B' do",
+                "end"]
+
+        // Add 1st target
+        List<String> newPodfileLines = XcodeTask.updatePodfileTargets(
+                podfileLines,
+                podspecDetailsProj,
+                xcodeTargetDetailsIosAppOnly)
+        List<String> expectedPodfileLines = [
+                "target 'IOS-APP' do",
+                "    platform :ios, '6.0.0'",
+                "    j2objc_PROJ",
+                "end",
+                "target 'IOS-APP-B' do",
+                "end"]
+        assert expectedPodfileLines == newPodfileLines
+
+        // Repeated call is noop
+        newPodfileLines = XcodeTask.updatePodfileTargets(
+                newPodfileLines,
+                podspecDetailsProj,
+                xcodeTargetDetailsIosAppOnly)
+        assert expectedPodfileLines == newPodfileLines
+
+        // Swap to 2nd target
+        newPodfileLines = XcodeTask.updatePodfileTargets(
+                newPodfileLines,
+                podspecDetailsProj,
+                new XcodeTask.XcodeTargetDetails(
+                        ['IOS-APP-B'], [], [],
+                        '6.0.0', '10.4.0', '1.0.0'))
+        List<String> expectedPodfileLinesAfterSwap = [
+                "target 'IOS-APP' do",
+                "end",
+                "target 'IOS-APP-B' do",
+                "    platform :ios, '6.0.0'",
+                "    j2objc_PROJ",
+                "end"]
+        assert expectedPodfileLinesAfterSwap == newPodfileLines
+    }
+
+    @Test
+    void testUpdatePodfileTargets_allPlatformsMultipleProjectsAndTests() {
+        List<String> podfileLines = [
+                // pod method should not be affected by removal of the old code
+                "target 'IOS-APP' do",
+                "end",
+                "target 'IOS-APPTests' do",
+                "end",
+                "target 'OSX-APP' do",
+                "end",
+                "target 'OSX-APPTests' do",
+                "end",
+                "target 'WATCH-APP' do",
+                "end",
+                "target 'WATCH-APPTests' do",
+                "end"]
+
+        // Update podfile targets
+        List<String> newPodfileLines = XcodeTask.updatePodfileTargets(
+                podfileLines,
+                [new XcodeTask.PodspecDetails('PROJ_A', null, null),
+                 new XcodeTask.PodspecDetails('PROJ_B', null, null)],
+                new XcodeTask.XcodeTargetDetails(
+                        ['IOS-APP', 'IOS-APPTests'], ['OSX-APP', 'OSX-APPTests'], ['WATCH-APP', 'WATCH-APPTests'],
+                        '6.0.0', '10.4.0', '1.0.0'))
+
+        List<String> expectedPodfileLines = [
+                "target 'IOS-APP' do",
+                "    platform :ios, '6.0.0'",
+                "    j2objc_PROJ_A",
+                "    j2objc_PROJ_B",
+                "end",
+                "target 'IOS-APPTests' do",
+                "    platform :ios, '6.0.0'",
+                "    j2objc_PROJ_A",
+                "    j2objc_PROJ_B",
+                "end",
+                "target 'OSX-APP' do",
+                "    platform :osx, '10.4.0'",
+                "    j2objc_PROJ_A",
+                "    j2objc_PROJ_B",
+                "end",
+                "target 'OSX-APPTests' do",
+                "    platform :osx, '10.4.0'",
+                "    j2objc_PROJ_A",
+                "    j2objc_PROJ_B",
+                "end",
+                "target 'WATCH-APP' do",
+                "    platform :watchos, '1.0.0'",
+                "    j2objc_PROJ_A",
+                "    j2objc_PROJ_B",
+                "end",
+                "target 'WATCH-APPTests' do",
+                "    platform :watchos, '1.0.0'",
+                "    j2objc_PROJ_A",
+                "    j2objc_PROJ_B",
+                "end"]
+        assert expectedPodfileLines == newPodfileLines
+    }
+
+    @Test
+    void testUpdatePodfileTargets_ignoreExistingLines() {
+        List<String> podfileLines = [
+                "target 'IOS-APP' do",
+                // Existing lines should be ignored
+                "    pod 'IGNORE1', :path => 'IGNORE1'",
+                "    pod 'IGNORE2', :path => 'IGNORE2'",
+                // v0.4.3 upgrade to discard old inlining of pod method
+                "    pod 'j2objc-PROJ-debug', :configuration => ['Debug'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
+                "    pod 'j2objc-PROJ-release', :configuration => ['Release'], :path => '/Users/USERNAME/dev/workspace/shared/build'",
+                "end"]
+
+        // Update podfile targets
+        List<String> newPodfileLines = XcodeTask.updatePodfileTargets(
+                podfileLines,
+                podspecDetailsProj,
+                xcodeTargetDetailsIosAppOnly)
+
+        List<String> expectedPodfileLines = [
+                "target 'IOS-APP' do",
+                "    platform :ios, '6.0.0'",
+                "    j2objc_PROJ",
+                "    pod 'IGNORE1', :path => 'IGNORE1'",
+                "    pod 'IGNORE2', :path => 'IGNORE2'",
+                "end"]
+        assert expectedPodfileLines == newPodfileLines
+    }
+
+    // Better error is given in parent call
+    @Test(expected = InvalidUserDataException.class)
+    void testUpdatePodfileTargets_TargetNotFound() {
+        List<String> podfileLines = [
+                "target 'IOS-APP' do",
+                "end"]
+
+        XcodeTask.updatePodfileTargets(
+                podfileLines,
+                podspecDetailsProj,
+                new XcodeTask.XcodeTargetDetails(
+                        ['TARGET-DOES-NOT-EXIST'], [], [],
+                        '6.0.0', '10.4.0', '1.0.0'))
     }
 }

@@ -44,10 +44,28 @@ import java.util.regex.Matcher
 @CompileStatic
 class XcodeTask extends DefaultTask {
 
+
+    public static final String targetStartRegex = /^\s*target\s+'([^']*)'\s+do\s*$/
+    public static final String targetNamedRegex = /^\s*target\s+'TARGET'\s+do\s*$/
+    public static final String podMethodStartRegex = /^\s*((def\s*j2objc_)|(# J2ObjC Gradle Plugin)).*/
+    public static final String endRegex = /^\s*end\s*/
+
     @Input @Optional
     String getXcodeProjectDir() { return J2objcConfig.from(project).xcodeProjectDir }
-    @Input @Optional
-    List<String> getXcodeTargets() { return J2objcConfig.from(project).xcodeTargets }
+
+    @Input
+    List<String> getXcodeTargetsIos() { return J2objcConfig.from(project).xcodeTargetsIos }
+    @Input
+    List<String> getXcodeTargetsOsx() { return J2objcConfig.from(project).xcodeTargetsOsx }
+    @Input
+    List<String> getXcodeTargetsWatchos() { return J2objcConfig.from(project).xcodeTargetsWatchos }
+
+    @Input
+    String getMinVersionIos() { return J2objcConfig.from(project).minVersionIos }
+    @Input
+    String getMinVersionOsx() { return J2objcConfig.from(project).minVersionOsx }
+    @Input
+    String getMinVersionWatchos() { return J2objcConfig.from(project).minVersionWatchos }
 
     @OutputFile
     File getPodfileFile() {
@@ -56,18 +74,38 @@ class XcodeTask extends DefaultTask {
     }
 
     static class PodspecDetails {
+        String projectName
+        File podspecDebug
+        File podspecRelease
+
         PodspecDetails(String projectNameIn, File podspecDebugIn, File podspecReleaseIn) {
             projectName = projectNameIn
             podspecDebug = podspecDebugIn
             podspecRelease = podspecReleaseIn
         }
 
-        String projectName
-        File podspecDebug
-        File podspecRelease
-
         String getPodMethodName() {
             return "j2objc_$projectName"
+        }
+    }
+
+    static class XcodeTargetDetails {
+        List<String> xcodeTargetsIos
+        List<String> xcodeTargetsOsx
+        List<String> xcodeTargetsWatchos
+        String minVersionIos
+        String minVersionOsx
+        String minVersionWatchos
+
+        XcodeTargetDetails(
+                List<String> xcodeTargetsIosIn, List<String> xcodeTargetsOsxIn, List<String> xcodeTargetsWatchosIn,
+                String minVersionIosIn, String minVersionOsxIn, String minVersionWatchosIn) {
+            xcodeTargetsIos = xcodeTargetsIosIn
+            xcodeTargetsOsx = xcodeTargetsOsxIn
+            xcodeTargetsWatchos = xcodeTargetsWatchosIn
+            minVersionIos = minVersionIosIn
+            minVersionOsx = minVersionOsxIn
+            minVersionWatchos = minVersionWatchosIn
         }
     }
 
@@ -106,7 +144,12 @@ class XcodeTask extends DefaultTask {
         // Write Podfile based on all the podspecs from dependent projects
         List<PodspecDetails> podspecDetailsList =
                 getPodspecsFromProject(getProject(), new HashSet<Project>())
-        writeUpdatedPodfileIfNeeded(podspecDetailsList, getXcodeTargets(), podfile, logger)
+
+        XcodeTargetDetails xcodeTargetDetails = new XcodeTargetDetails(
+                getXcodeTargetsIos(), getXcodeTargetsOsx(), getXcodeTargetsWatchos(),
+                getMinVersionIos(), getMinVersionOsx(), getMinVersionWatchos())
+
+        writeUpdatedPodfileIfNeeded(podspecDetailsList, xcodeTargetDetails, podfile, logger)
 
         // install the pod
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
@@ -193,19 +236,13 @@ class XcodeTask extends DefaultTask {
     }
 
     /**
-     * Extracts all target names within the Podfile.
-     *
-     * For an app target named 'IOS-APP', likely target names are:
-     *   IOS-APP
-     *   IOS-APPTests
-     *   IOS-APP WatchKit App
-     *   IOS-APP WatchKit Extension
+     * Extracts xcode targets in Podfile.
      */
     @VisibleForTesting
     static List<String> extractXcodeTargets(List<String> podfileLines) {
         List<String> xcodeTargets = new ArrayList<>()
         for (line in podfileLines) {
-            Matcher matcher = (line =~ /^target '([^']*)' do$/)
+            Matcher matcher = (line =~ targetStartRegex)
             if (matcher.find()) {
                 xcodeTargets.add(matcher.group(1))
             }
@@ -214,21 +251,111 @@ class XcodeTask extends DefaultTask {
     }
 
     /**
+     * Strips certain lines from podfile.
+     *
+     * Stripping is applied from startRegex, stopping immediately before endRegex,
+     * the line is removed if and only if it matches stripRegex.
+     * Throws if startRegex is found but not endRegex.
+     */
+    @VisibleForTesting
+    static List<String> regexStripLines(List<String> podfileLines, boolean multipleMatches,
+                                        String startRegex, String endRegex, String stripRegex) {
+        List<String> result = new ArrayList<>()
+        boolean active = false
+        boolean completedFirstMatch = false
+
+        for (line in podfileLines) {
+            if (completedFirstMatch && !multipleMatches) {
+                // Ignoring 2nd and later matches
+                result.add(line)
+            } else {
+                if ((line =~ startRegex).find()) {
+                    active = true
+                }
+                if ((line =~ endRegex).find()) {
+                    active = false
+                    completedFirstMatch = true
+                }
+                // strip line only within 'active' range
+                if (!active || !(line =~ stripRegex).find()) {
+                    result.add(line)
+                }
+            }
+        }
+        if (active) {
+            throw new InvalidUserDataException(
+                    "Failed to find endRegex: ${Utils.escapeSlashyString(endRegex)}\n" +
+                    podfileLines.join('\n'))
+        }
+        return result
+    }
+
+    /**
+     * Insert new lines in to podfile between startRegex to endRegex.
+     *
+     * Throws error for no match or multiple matches.
+     */
+    @VisibleForTesting
+    static List<String> regexInsertLines(List<String> podfileLines, boolean insertAfterStart,
+                                         String startRegex, String endRegex, List<String> insertLines) {
+        List<String> result = new ArrayList<>()
+        boolean active = false
+        boolean done = false
+
+        for (line in podfileLines) {
+            if (done) {
+                result.add(line)
+            } else {
+                boolean startFoundThisLoop = false
+                (line =~ startRegex).find() {
+                    active = true
+                    startFoundThisLoop = true
+                    assert !done
+                }
+                (line =~ endRegex).find() {
+                    if (active) {
+                        if (!insertAfterStart) {
+                            result.addAll(insertLines)
+                        }
+                        active = false
+                        done = true
+                    }
+                }
+                result.add(line)
+
+                if (startFoundThisLoop && insertAfterStart) {
+                    result.addAll(insertLines)
+                }
+            }
+        }
+
+        if (active) {
+            throw new InvalidUserDataException(
+                    "Failed to find endRegex: ${Utils.escapeSlashyString(endRegex)}\n" +
+                    podfileLines.join('\n'))
+        }
+        if (!done) {
+            throw new InvalidUserDataException(
+                    "Failed to find startRegex: ${Utils.escapeSlashyString(startRegex)}\n" +
+                    podfileLines.join('\n'))
+        }
+        return result
+    }
+
+    /**
      * Modify in place the existing podfile.
      */
     @VisibleForTesting
     static void writeUpdatedPodfileIfNeeded(
             List<PodspecDetails> podspecDetailsList,
-            List<String> xcodeTargets, File podfile, Logger logger) {
+            XcodeTargetDetails xcodeTargetDetails,
+            File podfile, Logger logger) {
 
         List<String> oldPodfileLines = podfile.readLines()
         List<String> newPodfileLines = new ArrayList<String>(oldPodfileLines)
 
-        podspecDetailsList.each { PodspecDetails podspecDetails ->
-            newPodfileLines = updatePodfile(
-                    newPodfileLines, podspecDetails,
-                    xcodeTargets, podfile, logger)
-        }
+        newPodfileLines = updatePodfile(
+                newPodfileLines, podspecDetailsList, xcodeTargetDetails, podfile, logger)
 
         // Write file only if it's changed
         if (!oldPodfileLines.equals(newPodfileLines)) {
@@ -238,57 +365,78 @@ class XcodeTask extends DefaultTask {
 
     @VisibleForTesting
     static List<String> updatePodfile(
-            List<String> oldPodfileLines, PodspecDetails podspecDetails,
-            List<String> xcodeTargets, File podfile, Logger logger) {
+            List<String> podfileLines,
+            List<PodspecDetails> podspecDetailsList,
+            XcodeTargetDetails xcodeTargetDetails,
+            File podfile, Logger logger) {
 
-        List<String> podfileTargets = extractXcodeTargets(oldPodfileLines)
-        List<String> newPodfileLines = new ArrayList<String>(oldPodfileLines)
+        List<String> podfileTargets = extractXcodeTargets(podfileLines)
+        verifyTargets(xcodeTargetDetails.xcodeTargetsIos, podfileTargets, 'xcodeTargetsIos')
+        verifyTargets(xcodeTargetDetails.xcodeTargetsOsx, podfileTargets, 'xcodeTargetsOsx')
+        verifyTargets(xcodeTargetDetails.xcodeTargetsWatchos, podfileTargets, 'xcodeTargetsWatchos')
 
-        // No targets set, then default to all
-        if (xcodeTargets.size() == 0) {
-            xcodeTargets = podfileTargets
-            if (logger) {
-                logger.debug("xcodeTargets default is all targets: '${podfileTargets.join(', ')}'")
-            }
-        } else {
-            for (xcodeTarget in xcodeTargets) {
-                if (! (xcodeTarget in podfileTargets)) {
-                    // Error checking for zero or non-existent xcodeTargets
-                    throw new InvalidUserDataException(
-                            "Current xcodeTargets: xcodeTargets\n" +
-                            "Valid xcodeTargets must be subset (likely all) of: $podfileTargets\n" +
-                            "\n" +
-                            "j2objcConfig {\n" +
-                            "    xcodeTargets '${podfileTargets.join(', ')}'\n" +
-                            "}\n")
-                }
-            }
+        if (xcodeTargetDetails.xcodeTargetsIos.isEmpty() &&
+            xcodeTargetDetails.xcodeTargetsOsx.isEmpty() &&
+            xcodeTargetDetails.xcodeTargetsWatchos.isEmpty()) {
+            // Need to warn about configuring
+            throw new InvalidUserDataException(
+                    "You must configure the xcode targets for the J2ObjC Gradle Plugin.\n" +
+                    "It must be a subset of the valid targets: '${podfileTargets.join("', '")}'\n" +
+                    "\n" +
+                    "j2objcConfig {\n" +
+                    "    xcodeTargetsIos 'IOS-APP', 'IOS-APPTests'  // example\n" +
+                    "}\n" +
+                    "\n" +
+                    "Can be optionally configured for xcodeTargetsOsx and xcodeTargetsWatchos\n")
         }
 
-        // Install shared shared pod for multiple targets
-        // http://natashatherobot.com/cocoapods-installing-same-pod-multiple-targets/
-        newPodfileLines = updatePodfileMethod(
-                newPodfileLines, podspecDetails, podfile)
+        // update pod methods
+        List<String> newPodfileLines = updatePodMethods(podfileLines, podspecDetailsList, podfile)
 
         // Iterate over all podfileTargets as some may need to be cleared
-        for (podfileTarget in podfileTargets) {
-            boolean addPodMethod = podfileTarget in xcodeTargets
-            newPodfileLines = updatePodfileTarget(
-                    newPodfileLines, podfileTarget,
-                    podspecDetails.getPodMethodName(), addPodMethod)
-        }
+        newPodfileLines = updatePodfileTargets(
+                newPodfileLines, podspecDetailsList, xcodeTargetDetails)
+
         return newPodfileLines
     }
 
-    private static List<String> updatePodfileMethod(
-            List<String> oldPodfileLines, PodspecDetails podspecDetails, File podfile) {
+    private static verifyTargets(List<String> xcodeTargets, List<String> podfileTargets, xcodeTargetsName) {
+        xcodeTargets.each { String xcodeTarget ->
+            if (! podfileTargets.contains(xcodeTarget)) {
+                throw new InvalidUserDataException(
+                        "Invalid j2objcConfig { $xcodeTargetsName '$xcodeTarget' }\n" +
+                        "Must be one of the valid targets: '${podfileTargets.join("', '")}'")
+            }
+        }
+    }
 
-            List<String> newPodfileLines = new ArrayList<>()
-        boolean podMethodFound = false
-        boolean podMethodProcessed = false
+    @VisibleForTesting
+    static List<String> updatePodMethods(
+            List<String> podfileLines, List<PodspecDetails> podspecDetailsList, File podfile) {
 
-        // Extract podspec details. Example given for debug podspec
-        //
+        // strip all old methods
+        // Note: use of preserveEndLine=true so that the targetStartRegex isn't removed
+        List<String> newPodfileLines =
+                regexStripLines(podfileLines, false, podMethodStartRegex, targetStartRegex, /.*/)
+
+        // create new methods
+        List<String> insertLines = new ArrayList<>()
+        insertLines.add('# J2ObjC Gradle Plugin - DO NOT MODIFY from here to the first target')
+        podspecDetailsList.each { PodspecDetails podspecDetails ->
+            insertLines.addAll(podMethodLines(podspecDetails, podfile))
+            insertLines.add('')
+        }
+
+        // insert new methods immediately before first target
+        newPodfileLines = regexInsertLines(newPodfileLines, false, /.*/, targetStartRegex, insertLines)
+
+        return newPodfileLines
+    }
+
+    @VisibleForTesting
+    static List<String> podMethodLines(
+            PodspecDetails podspecDetails, File podfile) {
+
         // Inputs:
         //   podNameMethod:     j2objc_PROJECT
         //   podfile:           /SRC/ios/Podfile
@@ -308,51 +456,12 @@ class XcodeTask extends DefaultTask {
 
         // Search for pod within the xcodeTarget, until "end" is found for that target
         // Either update pod line in place or add line if pod doesn't exist
-        List<String> newPodMethodLines = new ArrayList<>()
-        newPodMethodLines.add("def ${podspecDetails.getPodMethodName()}".toString())
-        newPodMethodLines.add("    pod '$podspecDebugName', :configuration => ['Debug'], :path => '$pathDebug'".toString())
-        newPodMethodLines.add("    pod '$podspecReleaseName', :configuration => ['Release'], :path => '$pathRelease'".toString())
-        newPodMethodLines.add("end")
-
-        oldPodfileLines.each { String line ->
-            // Copies each line to newPodfileLines, unless skipped
-            boolean skipWritingLine = false
-
-            if (!podMethodProcessed) {
-                // Look for pod method start: def j2objc_shared
-                if (!podMethodFound) {
-                    if (line.contains(newPodMethodLines.get(0))) {
-                        podMethodFound = true
-                    }
-                }
-
-                if (podMethodFound) {
-                    // Generate new pod method contents each time
-                    skipWritingLine = true
-
-                    if (line.trim() == 'end') {
-                        // End of old pod method
-                        newPodfileLines.addAll(newPodMethodLines)
-                        // Generate new pod method each time
-                        podMethodProcessed = true
-                    }
-                }
-
-                if (line.trim().startsWith("target '")) {
-                    // pod method wasn't found, so needs to be written anyway
-                    newPodfileLines.addAll(newPodMethodLines)
-                    // Blank line
-                    newPodfileLines.add('')
-                    podMethodProcessed = true
-                }
-            }
-
-            if (!skipWritingLine) {
-                newPodfileLines.add(line)
-            }
-        }
-
-        return newPodfileLines
+        List<String> podMethodLines = new ArrayList<>()
+        podMethodLines.add("def ${podspecDetails.getPodMethodName()}".toString())
+        podMethodLines.add("    pod '$podspecDebugName', :configuration => ['Debug'], :path => '$pathDebug'".toString())
+        podMethodLines.add("    pod '$podspecReleaseName', :configuration => ['Release'], :path => '$pathRelease'".toString())
+        podMethodLines.add("end")
+        return podMethodLines
     }
 
     /**
@@ -362,71 +471,41 @@ class XcodeTask extends DefaultTask {
      * @return updated copy of Podfile (may be identical to input)
      */
     @VisibleForTesting
-    static List<String> updatePodfileTarget(
-            List<String> oldPodfileLines, String xcodeTarget,
-            String podNameMethod, boolean addPodMethod) {
+    static List<String> updatePodfileTargets(
+            List<String> podfileLines,
+            List<PodspecDetails> podspecDetailsList,
+            XcodeTargetDetails xcodeTargetDetails) {
 
-        // Indent for aesthetic reasons in Podfile
-        String podMethodLine = "    $podNameMethod"
-        List<String> newPodfileLines = new ArrayList<>()
-        boolean podMethodProcessed = false
-        boolean withinXcodeTarget = false
+        // Strip the following:
+        // 1) pod method calls
+        // 2) v0.4.3 and earlier inlined pod methods
+        // 3) 'platform :' lines for ios, osx & watchos
+        String stripRegex = /^\s*((j2objc_)|(pod 'j2objc)|(platform\s)).*/
 
-        oldPodfileLines.each { String line ->
+        List<String> newPodfileLines =
+                regexStripLines(podfileLines, true, targetStartRegex, endRegex, stripRegex)
 
-            // Copies each line to newPodfileLines, unless skipped
-            boolean skipWritingLine = false
-
-            // Find xcodeTarget within single quote marks
-            if (line.contains("'$xcodeTarget'")) {
-                withinXcodeTarget = true
-
-            } else if (withinXcodeTarget) {
-
-                // For upgrade from v0.4.3 to v0.5.0, basically for Xcode 7
-                // TODO: remove code for plugin beta release as it's not necessary after upgrading
-                if (line.contains("pod 'j2objc")) {
-                    // Old pod lines that should be removed. Example:
-                    // pod 'j2objc-shared-debug', :configuration => ['Debug'], :path => '/Users/USERNAME/dev/taptap/base/build'
-                    skipWritingLine = true
-                }
-
-                if (line.contains(podNameMethod)) {
-                    // skip copying this line
-                    skipWritingLine = true
-                    if (podMethodProcessed) {
-                        // repeated podName lines, drop them as they should not be here
-                    } else {
-                        if (addPodMethod) {
-                            // update existing pod method line
-                            // finding existing line makes for stable in place ordering
-                            newPodfileLines.add(podMethodLine)
-                        }
-                        // If addPodMethod = false, then this line is dropped
-                        podMethodProcessed = true
-                    }
-                } else if (line.contains('end')) {
-                    withinXcodeTarget = false
-                    if (!podMethodProcessed) {
-                        if (addPodMethod) {
-                            // no existing pod method line, so add it
-                            newPodfileLines.add(podMethodLine)
-                        }
-                        podMethodProcessed = true
-                    }
-                }
-            }
-
-            if (!skipWritingLine) {
-                newPodfileLines.add(line)
-            }
+        List<String> insertLines = new ArrayList<>()
+        insertLines.add('    platform :INVALID')
+        podspecDetailsList.each { PodspecDetails podspecDetails ->
+            insertLines.add("    ${podspecDetails.getPodMethodName()}".toString())
         }
 
-        if (!podMethodProcessed) {
-            throw new InvalidUserDataException(
-                    "Unable to find Podfile target: $xcodeTarget")
+        xcodeTargetDetails.xcodeTargetsIos.each { String iosTarget ->
+            insertLines.set(0, "    platform :ios, '${xcodeTargetDetails.minVersionIos}'".toString())
+            String startTargetNamed = targetNamedRegex.replace('TARGET', iosTarget)
+            newPodfileLines = regexInsertLines(newPodfileLines, true, startTargetNamed, endRegex, insertLines)
         }
-
+        xcodeTargetDetails.xcodeTargetsOsx.each { String osxTarget ->
+            insertLines.set(0, "    platform :osx, '${xcodeTargetDetails.minVersionOsx}'".toString())
+            String startTargetNamed = targetNamedRegex.replace('TARGET', osxTarget)
+            newPodfileLines = regexInsertLines(newPodfileLines, true, startTargetNamed, endRegex, insertLines)
+        }
+        xcodeTargetDetails.xcodeTargetsWatchos.each { String watchosTarget ->
+            insertLines.set(0, "    platform :watchos, '${xcodeTargetDetails.minVersionWatchos}'".toString())
+            String startTargetNamed = targetNamedRegex.replace('TARGET', watchosTarget)
+            newPodfileLines = regexInsertLines(newPodfileLines, true, startTargetNamed, endRegex, insertLines)
+        }
         return newPodfileLines
     }
 }

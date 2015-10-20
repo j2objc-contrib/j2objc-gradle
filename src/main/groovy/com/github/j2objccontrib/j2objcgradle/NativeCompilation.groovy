@@ -87,12 +87,12 @@ class NativeCompilation {
                 switch (targetSpec) {
                     case TargetSpec.TARGET_IOS_DEVICE:
                         clangArgs += iphoneClangArgs
-                        clangArgs += ["-miphoneos-version-min=${config.minIosVersion}"]
+                        clangArgs += ["-miphoneos-version-min=${config.minVersionIos}"]
                         linkerArgs += ["-L$j2objcPath/lib"]
                         break
                     case TargetSpec.TARGET_IOS_SIMULATOR:
                         clangArgs += simulatorClangArgs
-                        clangArgs += ["-mios-simulator-version-min=${config.minIosVersion}"]
+                        clangArgs += ["-mios-simulator-version-min=${config.minVersionIos}"]
                         linkerArgs += ["-L$j2objcPath/lib"]
                         break
                     case TargetSpec.TARGET_OSX:
