@@ -622,7 +622,8 @@ class J2objcConfig {
      * <p/>
      * See https://developer.apple.com/library/ios/documentation/DeveloperTools/Conceptual/cross_development/Configuring/configuring.html#//apple_ref/doc/uid/10000163i-CH1-SW2
      */
-    String minIosVersion = '6.0'
+    // Matches the oldest version supported in Xcode 7
+    String minVersionIos = '6.0'
 
     /**
      * The minimum OS X version to build against.  You cannot use APIs that are not supported
@@ -630,7 +631,8 @@ class J2objcConfig {
      * <p/>
      * See https://developer.apple.com/library/ios/documentation/DeveloperTools/Conceptual/cross_development/Configuring/configuring.html#//apple_ref/doc/uid/10000163i-CH1-SW2
      */
-    String minOsxVersion = '10.4'
+    // Matches the oldest version supported in Xcode 7
+    String minVersionOsx = '10.4'
 
     /**
      * The minimum Watch OS version to build against.  You cannot use APIs that are not supported
@@ -638,7 +640,8 @@ class J2objcConfig {
      * <p/>
      * See https://developer.apple.com/library/ios/documentation/DeveloperTools/Conceptual/cross_development/Configuring/configuring.html#//apple_ref/doc/uid/10000163i-CH1-SW2
      */
-    String minWatchosVersion = '1.0'
+    // Matches the oldest version supported in Xcode 7
+    String minVersionWatchos = '1.0'
 
     // XCODE
     /**
@@ -649,28 +652,54 @@ class J2objcConfig {
      *
      */
     String xcodeProjectDir = null
+
     /**
-     * Xcode app targets that should be linked to the generated library.
+     * iOS app and test Xcode targets to link to the generated libraries.
      *
      * This will automatically add linkage for any target in the specified list
-     * to the generated shared library. This should include any Test and Watch
-     * targets if needed.
-     *
-     * If empty (default), it will link all targets defined within the Xcode project.
+     * to the generated shared libraries. This should include test targets also.
      */
-    List<String> xcodeTargets = new ArrayList<>()
+    List<String> xcodeTargetsIos = new ArrayList<>()
     /**
-     * Add targets within Xcode to link to the generated shared library.
+     * iOS app and test Xcode targets to link to the generated libraries.
      *
-     * If this is never called, it will default to linking all targets
-     * to the generated shared library.
-     *
-     * @param xcodeTargets links targets to generated library.
+     * @param xcodeTargetsIos targets to link to the generated libraries.
      */
-    void xcodeTargets(String... xcodeTargets) {
-        appendArgs(this.xcodeTargets, 'xcodeTargets', xcodeTargets)
+    void xcodeTargetsIos(String... xcodeTargetsIos) {
+        appendArgs(this.xcodeTargetsIos, 'xcodeTargetsIos', xcodeTargetsIos)
     }
 
+    /**
+     * OS X app and test Xcode targets that should be linked to the generated libraries.
+     *
+     * This will automatically add linkage for any target in the specified list
+     * to the generated shared libraries. This should include test targets also.
+     */
+    List<String> xcodeTargetsOsx = new ArrayList<>()
+    /**
+     * OS X app and test Xcode targets to link to the generated libraries.
+     *
+     * @param xcodeTargetsOsx targets to link to the generated libraries.
+     */
+    void xcodeTargetsOsx(String... xcodeTargetsOsx) {
+        appendArgs(this.xcodeTargetsOsx, 'xcodeTargetsOsx', xcodeTargetsOsx)
+    }
+
+    /**
+     * watchOS app and test Xcode targets that should be linked to the generated libraries.
+     *
+     * This will automatically add linkage for any target in the specified list
+     * to the generated shared libraries. This should include test targets also.
+     */
+    List<String> xcodeTargetsWatchos = new ArrayList<>()
+    /**
+     * watchOS app and test Xcode targets to link to the generated libraries.
+     *
+     * @param xcodeTargetsWatchos targets to link to the generated libraries.
+     */
+    void xcodeTargetsWatchos(String... xcodeTargetsWatchos) {
+        appendArgs(this.xcodeTargetsWatchos, 'xcodeTargetsWatchos', xcodeTargetsWatchos)
+    }
 
 
     protected boolean finalConfigured = false

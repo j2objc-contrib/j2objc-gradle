@@ -68,11 +68,11 @@ class PodspecTask extends DefaultTask {
     String getPodNameRelease() { "j2objc-${project.name}-release" }
 
     @Input
-    String getMinIosVersion() { return J2objcConfig.from(project).getMinIosVersion() }
+    String getMinVersionIos() { return J2objcConfig.from(project).getMinVersionIos() }
     @Input
-    String getMinOsxVersion() { return J2objcConfig.from(project).getMinOsxVersion() }
+    String getMinVersionOsx() { return J2objcConfig.from(project).getMinVersionOsx() }
     @Input
-    String getMinWatchosVersion() { return J2objcConfig.from(project).getMinWatchosVersion() }
+    String getMinVersionWatchos() { return J2objcConfig.from(project).getMinVersionWatchos() }
 
 
     // CocoaPods podspec files that are referenced by the Podfile
@@ -97,19 +97,19 @@ class PodspecTask extends DefaultTask {
         String libDirOsxDebug = relativizeToBuildDir(new File(getDestLibDirFile(), 'x86_64Debug'), project)
         String libDirOsxRelease = relativizeToBuildDir(new File(getDestLibDirFile(), 'x86_64Release'), project)
 
-        validateNumericVersion(getMinIosVersion(), 'minIosVersion')
-        validateNumericVersion(getMinOsxVersion(), 'minOsxVersion')
-        validateNumericVersion(getMinWatchosVersion(), 'minWatchosVersion')
+        validateNumericVersion(getMinVersionIos(), 'minVersionIos')
+        validateNumericVersion(getMinVersionOsx(), 'minVersionOsx')
+        validateNumericVersion(getMinVersionWatchos(), 'minVersionWatchos')
 
         String podspecContentsDebug =
                 genPodspec(getPodNameDebug(), headerIncludePath, resourceIncludePath,
                         libDirIosDebug, libDirOsxDebug, libDirIosDebug,
-                        getMinIosVersion(), getMinOsxVersion(), getMinWatchosVersion(),
+                        getMinVersionIos(), getMinVersionOsx(), getMinVersionWatchos(),
                         getLibName(), getJ2objcHome())
         String podspecContentsRelease =
                 genPodspec(getPodNameRelease(), headerIncludePath, resourceIncludePath,
                         libDirIosRelease, libDirOsxRelease, libDirIosRelease,
-                        getMinIosVersion(), getMinOsxVersion(), getMinWatchosVersion(),
+                        getMinVersionIos(), getMinVersionOsx(), getMinVersionWatchos(),
                         getLibName(), getJ2objcHome())
 
         logger.debug("Writing debug podspec... ${getPodspecDebug()}")
