@@ -64,32 +64,39 @@ class XcodeTaskTest {
     }
 
     @Test
-    void getPodfileFile_Valid() {
+    void testPodspecDetailsSerialization() {
+        // From: http://stackoverflow.com/a/9775330/1509221
+        XcodeTask.PodspecDetails podspecDetailsIn = new XcodeTask.PodspecDetails(
+                'pname', new File('fileDebug'), new File('fileRelease'))
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream()
+        ObjectOutputStream sOut = new ObjectOutputStream(bOut)
+        sOut.writeObject(podspecDetailsIn)
+        sOut.close()
+
+        byte[] payload = bOut.toByteArray()
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(payload);
+        ObjectInputStream sIn = new ObjectInputStream(bIn)
+        XcodeTask.PodspecDetails podspecDetailsOut = (XcodeTask.PodspecDetails) sIn.readObject()
+
+        assert 'pname' == podspecDetailsOut.projectName
+        assert 'fileDebug' == podspecDetailsOut.podspecDebug.path
+        assert 'fileRelease' == podspecDetailsOut.podspecRelease.path
+    }
+
+    @Test
+    void testGetPodfileFile_Valid() {
         J2objcConfig j2objcConfig =
                 proj.extensions.create('j2objcConfig', J2objcConfig, proj)
         j2objcConfig.xcodeProjectDir = '../ios'
         j2objcConfig.xcodeTargetsIos = ['IOS-APP']
 
         XcodeTask j2objcXcode = (XcodeTask) proj.tasks.create(name: 'j2objcXcode', type: XcodeTask)
-        j2objcXcode.verifyXcodeArgs()
         File podfile = j2objcXcode.getPodfileFile()
 
         String expectedPath = proj.file('../ios/Podfile').absolutePath
         assert expectedPath == podfile.absolutePath
-    }
-
-    // Test that null xcode arguments cause the expected exception
-    @Test(expected = InvalidUserDataException.class)
-    void getPodfileFile_Invalid() {
-        J2objcConfig j2objcConfig =
-                proj.extensions.create('j2objcConfig', J2objcConfig, proj)
-        assert null == j2objcConfig.xcodeProjectDir
-        assert 0 == j2objcConfig.xcodeTargetsIos.size()
-
-        XcodeTask j2objcXcode = (XcodeTask) proj.tasks.create(name: 'j2objcXcode', type: XcodeTask)
-
-        // Test for fixing issue #226
-        j2objcXcode.getPodfileFile()
     }
 
     @Test
@@ -221,26 +228,6 @@ class XcodeTaskTest {
 
         // Verify no calls to project.copy, project.delete or project.exec
         mockProjectExec.verify()
-    }
-
-    @Test
-    void testVerifyXcodeArgs() {
-        Object unused
-        J2objcConfig j2objcConfig
-        (proj, unused, j2objcConfig) =
-                TestingUtils.setupProject(new TestingUtils.ProjectConfig(
-                        applyJavaPlugin: true,
-                        createJ2objcConfig: true))
-        assert null == j2objcConfig.xcodeProjectDir
-        assert 0 == j2objcConfig.xcodeTargetsIos.size()
-
-        XcodeTask j2objcXcode = (XcodeTask) proj.tasks.create(name: 'j2objcXcode', type: XcodeTask)
-
-        // Expect exception suggesting to configure j2objcConfig:
-        expectedException.expect(InvalidUserDataException.class)
-        expectedException.expectMessage("xcodeProjectDir '../ios'")
-
-        j2objcXcode.verifyXcodeArgs()
     }
 
     @Test
@@ -469,8 +456,7 @@ class XcodeTaskTest {
                 podfileLines,
                 podspecDetailsProj,
                 xcodeTargetDetailsIosAppOnly,
-                new File('/SRC/ios/Podfile'),
-                null)
+                new File('/SRC/ios/Podfile'))
 
         List<String> expectedPodfileLines = [
                 "# J2ObjC Gradle Plugin - DO NOT MODIFY from here to the first target",
@@ -490,8 +476,7 @@ class XcodeTaskTest {
                 newPodfileLines,
                 podspecDetailsProj,
                 xcodeTargetDetailsIosAppOnly,
-                new File('/SRC/ios/Podfile'),
-                null)
+                new File('/SRC/ios/Podfile'))
         assert expectedPodfileLines == newPodfileLines
     }
 
@@ -515,8 +500,7 @@ class XcodeTaskTest {
                 podfileLines,
                 podspecDetailsProj,
                 xcodeTargetDetails,
-                new File('/SRC/ios/Podfile'),
-                null)
+                new File('/SRC/ios/Podfile'))
 
         List<String> expectedPodfileLines = [
                 "# user comment",
@@ -546,8 +530,7 @@ class XcodeTaskTest {
                 newPodfileLines,
                 podspecDetailsProj,
                 xcodeTargetDetails,
-                new File('/SRC/ios/Podfile'),
-                null)
+                new File('/SRC/ios/Podfile'))
         assert expectedPodfileLines == newPodfileLines
     }
 
@@ -570,7 +553,6 @@ class XcodeTaskTest {
                 new XcodeTask.XcodeTargetDetails(
                         [], [], [],
                         '6.0.0', '10.4.0', '1.0.0'),
-                null,
                 null)
     }
 
@@ -592,7 +574,6 @@ class XcodeTaskTest {
                 new XcodeTask.XcodeTargetDetails(
                         ['TARGET-DOES-NOT-EXIST'], [], [],
                         '6.0.0', '10.4.0', '1.0.0'),
-                null,
                 null)
     }
 

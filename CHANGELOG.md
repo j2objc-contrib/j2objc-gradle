@@ -13,7 +13,7 @@ New functionality:
 * Translate and run standalone test source Jar files (such as external library dependencies) #489
 * Test-only dependencies on other libraries and projects #489
 * Cocoa Pods supports multi-project applications #504
-* iOS, watchOS, and OS X applications can be setup using Cocoa Pods #506
+* iOS and OS X applications can be setup using Cocoa Pods #506
 * Validate version of j2objc and provide install instructions #515
 
 Breaking changes/functionality:

@@ -38,7 +38,7 @@ import org.gradle.util.GradleVersion
  * Main plugin class for creation of extension object and all the tasks.
  */
 class J2objcPlugin implements Plugin<Project> {
-  
+
     @Override
     void apply(Project project) {
         String version = BuildInfo.VERSION
@@ -195,7 +195,7 @@ class J2objcPlugin implements Plugin<Project> {
             // If both release and debug tests would run, run the debug tests first - ideally
             // the failure messages will be easier to understand (ex. Java line numbers).
             lateShouldRunAfter(project, 'j2objcTestRelease', 'j2objcTestDebug')
-            
+
             tasks.create(name: 'j2objcTest', type: DefaultTask,
                     dependsOn: ['j2objcCycleFinder', 'j2objcTestDebug', 'j2objcTestRelease']) {
                 group 'build'
@@ -219,15 +219,9 @@ class J2objcPlugin implements Plugin<Project> {
                 buildType = 'Release'
             }
 
-            // Assemble
-            tasks.create(name: 'j2objcPodspec', type: PodspecTask,
-                    // Podspec may reference sources and resources that haven't yet been built
-                    dependsOn: ['j2objcPreBuild']) {
-                group 'build'
-                description 'Generate debug and release podspec that may be used for Xcode'
-            }
+            // Assemble files
             tasks.create(name: 'j2objcAssembleResources', type: AssembleResourcesTask,
-                    dependsOn: ['j2objcPreBuild', 'j2objcPodspec']) {
+                    dependsOn: ['j2objcPreBuild']) {
                 group 'build'
                 description 'Copies mains and test resources to assembly directories'
             }
@@ -238,6 +232,7 @@ class J2objcPlugin implements Plugin<Project> {
                 srcGenMainDir = j2objcSrcGenMainDir
                 srcGenTestDir = j2objcSrcGenTestDir
             }
+            // Assemble libaries
             tasks.create(name: 'j2objcAssembleDebug', type: AssembleLibrariesTask,
                     dependsOn: ['j2objcPackLibrariesDebug', 'j2objcAssembleSource', 'j2objcAssembleResources']) {
                 group 'build'
@@ -254,8 +249,21 @@ class J2objcPlugin implements Plugin<Project> {
                 srcLibDir = file("${buildDir}/binaries/${project.name}-j2objcStaticLibrary")
                 srcPackedLibDir = file("${buildDir}/packedBinaries/${project.name}-j2objcStaticLibrary")
             }
+            // Assemble podspec and update Xcode
+            tasks.create(name: 'j2objcPodspec', type: PodspecTask,
+                    // Podspec may reference sources and resources that haven't yet been built
+                    dependsOn: ['j2objcPreBuild']) {
+                group 'build'
+                description 'Generate debug and release podspec that may be used for Xcode'
+            }
+            tasks.create(name: 'j2objcXcode', type: XcodeTask,
+                    dependsOn: 'j2objcPodspec') {
+                group 'build'
+                description 'Depends on j2objc translation, create a Pod file link it to Xcode project'
+            }
+            // Assemble final task
             tasks.create(name: 'j2objcAssemble', type: DefaultTask,
-                    dependsOn: ['j2objcAssembleDebug', 'j2objcAssembleRelease']) {
+                    dependsOn: ['j2objcAssembleDebug', 'j2objcAssembleRelease', 'j2objcXcode']) {
                 group 'build'
                 description "Marker task for all assembly tasks that take part in regular j2objc builds"
             }
@@ -280,13 +288,6 @@ class J2objcPlugin implements Plugin<Project> {
                 description "Marker task for all tasks that take part in regular j2objc builds"
             }
             lateDependsOn(project, 'build', 'j2objcBuild')
-
-            // TODO: Where shall we fit this task in the plugin lifecycle?
-            tasks.create(name: 'j2objcXcode', type: XcodeTask,
-                    dependsOn: 'j2objcAssemble') {
-                // This is not in the build group because you do not need to do it on every build.
-                description 'Depends on j2objc translation, create a Pod file link it to Xcode project'
-            }
         }
     }
 
@@ -311,7 +312,7 @@ class J2objcPlugin implements Plugin<Project> {
             }
         }
     }
-    
+
     // Causes afterTask to run after beforeTaskName iff:
     //     1) Both afterTask and beforeTask would be run anyway (does not cause beforeTask to
     //        run, unlike 'dependsOn').
