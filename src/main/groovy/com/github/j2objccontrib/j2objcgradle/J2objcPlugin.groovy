@@ -192,6 +192,10 @@ class J2objcPlugin implements Plugin<Project> {
                 buildType = 'Release'
                 testBinaryFile = file("${buildDir}/binaries/testJ2objcExecutable/release/testJ2objc")
             }
+            // If both release and debug tests would run, run the debug tests first - ideally
+            // the failure messages will be easier to understand (ex. Java line numbers).
+            lateShouldRunAfter(project, 'j2objcTestRelease', 'j2objcTestDebug')
+            
             tasks.create(name: 'j2objcTest', type: DefaultTask,
                     dependsOn: ['j2objcCycleFinder', 'j2objcTestDebug', 'j2objcTestRelease']) {
                 group 'build'
@@ -304,6 +308,21 @@ class J2objcPlugin implements Plugin<Project> {
         proj.tasks.all { Task task ->
             if (task.name == afterTaskName) {
                 task.dependsOn beforeTaskName
+            }
+        }
+    }
+    
+    // Causes afterTask to run after beforeTaskName iff:
+    //     1) Both afterTask and beforeTask would be run anyway (does not cause beforeTask to
+    //        run, unlike 'dependsOn').
+    // and 2) Such an ordering would not cause a circular dependency.
+    // https://docs.gradle.org/current/userguide/more_about_tasks.html#sec:ordering_tasks
+    private static void lateShouldRunAfter(Project proj, String afterTaskName, String beforeTaskName) {
+        assert null != proj.tasks.findByName(beforeTaskName)
+        // See comments in lateDependsOn for details on this construct.
+        proj.tasks.all { Task task ->
+            if (task.name == afterTaskName) {
+                task.shouldRunAfter beforeTaskName
             }
         }
     }
