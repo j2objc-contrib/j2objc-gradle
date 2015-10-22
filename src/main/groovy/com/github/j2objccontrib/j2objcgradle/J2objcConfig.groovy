@@ -127,18 +127,15 @@ class J2objcConfig {
 
     /**
      * Generated source files directories, e.g. from dagger annotations.
-     * <p/>
-     * The plugin will ignore changes in this directory so they must
-     * be limited to files generated solely from files within your
-     * main and/or test sourceSets.
      */
-    List<String> generatedSourceDirs = new ArrayList<>()
+    // Default location for generated source files using annotation processor compilation,
+    // per sourceSets.main.output.classesDir.
+    // However, we cannot actually access sourceSets.main.output.classesDir here, because
+    // the Java plugin convention may not be applied at this time.
+    // TODO: Add a test counterpart for this.
+    List<String> generatedSourceDirs = ['build/classes/main']
     /**
      * Add generated source files directories, e.g. from dagger annotations.
-     * <p/>
-     * The plugin will ignore changes in this directory so they must
-     * be limited to files generated solely from files within your
-     * main and/or test sourceSets.
      *
      * @param generatedSourceDirs adds generated source directories for j2objc translate
      */
