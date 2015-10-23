@@ -10,6 +10,7 @@ https://github.com/j2objc-contrib/j2objc-gradle/pull/NNN
 New functionality:
 * Support for Xcode 7 and j2objc 0.9.8.2.1 #483
 * Validate version of j2objc and provide install instructions #515
+* Wilcard package prefix matching #481
 * Dependencies
   * `J2objcConfig.minVersion{Ios,Osx,Watchos}` controls minimum versions of associated target #483 #512
   * Test-only dependencies on other libraries and projects #489
