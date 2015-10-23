@@ -44,6 +44,18 @@ branches:
 # We can be run in a container for improved performance.
 sudo: false
 
+# Gradle Cache
+# Avoid uploading the cache after every build
+# http://docs.travis-ci.com/user/languages/android/#Default-Test-Command-for-Gradle
+before_cache:
+  - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
+cache:
+  directories:
+    # TODO: match systemTest directories as well?
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/
+
+
 before_install:
   # Don't spew graphic art.
   - export TERM=dumb
