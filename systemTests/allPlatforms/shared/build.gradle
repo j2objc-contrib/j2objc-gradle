@@ -30,14 +30,9 @@ j2objcConfig {
 
     xcodeTargetsIos 'IOS-APP', 'IOS-APPTests'
     xcodeTargetsOsx 'OSX-APP', 'OSX-APPTests'
+
+    // TODO: minVersionWatchos '2.0'  // min version for native app
     // TODO: xcodeTargetsWatchos 'WATCH-APP', 'WATCH-APPTests'
-
-    // TODO: should we fix to work on 10.5 and earlier?
-    // clang: error: -fobjc-arc is not supported on versions of OS X prior to 10.6
-    minVersionOsx '10.6'
-
-    // TODO: 'WATCH-APP', 'WATCH-APP Extension'
-    // TODO: minVersionWatchos '2.0'
 
     finalConfigure()
 }
