@@ -28,6 +28,7 @@ Breaking changes/functionality:
 * NOTE: watchOS is not yet supported due to lack of full bitcode support by J2ObjC 0.9.8.2.1.
 * Default auto-generated source dir `build/source/apt` replaced by `build/classes/main` #527
 * Extracted Jar source dir `build/translationExtraction` replaced by `build/mainTranslationExtraction` #489
+* j2objcXcode now a dependency of j2objcAssemble{Debug|Release} and not a separate task #532
 
 Code quality:
 * Multi-project integration tests disabled temporarily (system tests are used instead) #483
