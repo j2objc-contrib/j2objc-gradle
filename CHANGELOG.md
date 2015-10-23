@@ -13,7 +13,7 @@ New functionality:
 * Dependencies
   * `J2objcConfig.minVersion{Ios,Osx,Watchos}` controls minimum versions of associated target #483 #512
   * Test-only dependencies on other libraries and projects #489
-  * Translate and run standalone test source Jar files (such as external library dependencies) #489
+  * Translate and run standalone test source Jar files (such as unit tests associated with third-party libraries) #489
   * Source files generated during compilation (ex. by Dagger2) included in translation #527
 * CocoaPods
   * iOS and OS X applications can be setup using CocoaPods #506
