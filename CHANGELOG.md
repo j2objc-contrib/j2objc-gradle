@@ -26,7 +26,7 @@ Breaking changes/functionality:
 * Minimum versions of platforms have been configured as iOS 6.0, OS X 10.6, and WatchOS 1.0 #512
 * NOTE: watchOS is not yet supported due to lack of full bitcode support by J2ObjC 0.9.8.2.1.
 * Default auto-generated source dir `build/source/apt` replaced by `build/classes/main` #527
-* Extracted Jar source dir `build/translationExtration` replaced by `build/mainTranslationExtraction` #489
+* Extracted Jar source dir `build/translationExtraction` replaced by `build/mainTranslationExtraction` #489
 
 Code quality:
 * Multi-project integration tests disabled temporarily (system tests are used instead) #483
