@@ -30,6 +30,7 @@ j2objcConfig {
 
     xcodeTargetsIos 'IOS-APP', 'IOS-APPTests'
     xcodeTargetsOsx 'OSX-APP', 'OSX-APPTests'
+    // TODO: xcodeTargetsWatchos 'WATCH-APP', 'WATCH-APPTests'
 
     // TODO: should we fix to work on 10.5 and earlier?
     // clang: error: -fobjc-arc is not supported on versions of OS X prior to 10.6

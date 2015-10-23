@@ -13,7 +13,7 @@ EXTERNAL SOURCES:
     :path: ../../build
 
 SPEC CHECKSUMS:
-  j2objc-simple1-debug: 915b726b31e341b655232cb3a1a624f89ebddafe
-  j2objc-simple1-release: 85f10512b01629bdd23d37ad9bc09327ed8b9a02
+  j2objc-simple1-debug: 6dc48a1eca05203db6c088f2aa69b0460feb6f4d
+  j2objc-simple1-release: aba723f10e1f2350395df7d3d52ed6345a716100
 
-COCOAPODS: 0.38.2
+COCOAPODS: 0.39.0

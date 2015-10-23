@@ -39,8 +39,8 @@ plugins {
 
 // Plugin settings:
 j2objcConfig {
-    // Xcode project directory (suggested directory name)
-    xcodeProjectDir '../ios'
+    xcodeProjectDir '../ios'  //  suggested directory name
+    xcodeTargetsIos 'IOS-APP', 'IOS-APPTests'  // replace with your iOS targets
 
     finalConfigure()          // Must be last call to configuration
 }
@@ -48,8 +48,8 @@ j2objcConfig {
 
 Info on additional `j2objcConfig` settings are in
 [J2objcConfig.groovy](https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcConfig.groovy#L30).
-The default will link the transpiled code in to all of your Xcode build targets. To specify
-a subset, add a line for `xcodeTargets 'IOS-APP', 'IOS-APP-TESTS', 'WATCHKIT-APP', ...`.
+The Xcode targets may also be set for xcodeTargetsOsx and xcodeTargetsWatchos
+([issue #525 to get watchOS working](https://github.com/j2objc-contrib/j2objc-gradle/issues/525)).
 If your `shared` project depends on any other projects or third-party libraries, you may
 need to [add them manually](FAQ.md#how-do-i-setup-dependencies-with-j2objc) if they aren't
 [linked by default](FAQ.md#what-libraries-are-linked-by-default).
@@ -98,13 +98,6 @@ be run as follows:
 
     ./gradlew shared:build
 
-During development, to build the libraries and update Xcode (skipping the tests):
-
-    ./gradlew shared:j2objcXcode
-
-For a complete build, run both:
-
-    ./gradlew shared:build shared:j2objcXcode
 
 ### Problems
 

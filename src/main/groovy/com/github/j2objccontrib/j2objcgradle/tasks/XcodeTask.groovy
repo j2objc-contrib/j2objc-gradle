@@ -19,6 +19,7 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 import com.github.j2objccontrib.j2objcgradle.J2objcConfig
 import com.google.common.annotations.VisibleForTesting
 import groovy.transform.CompileStatic
+import groovy.transform.EqualsAndHashCode
 import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
@@ -53,6 +54,18 @@ class XcodeTask extends DefaultTask {
     @Input @Optional
     String getXcodeProjectDir() { return J2objcConfig.from(project).xcodeProjectDir }
 
+    boolean isTaskActive() { return getXcodeProjectDir() != null }
+
+    @Input
+    // List of all dependencies
+    List<PodspecDetails> getPodspecDependencies() {
+        if (!isTaskActive()) {
+            // Optimization for only calculating dependencies where needed
+            return []
+        }
+        return getPodspecDependencies(getProject(), new HashSet<Project>())
+    }
+
     @Input
     List<String> getXcodeTargetsIos() { return J2objcConfig.from(project).xcodeTargetsIos }
     @Input
@@ -69,11 +82,15 @@ class XcodeTask extends DefaultTask {
 
     @OutputFile
     File getPodfileFile() {
-        verifyXcodeArgs()
         return project.file(new File(getXcodeProjectDir(), '/Podfile'))
     }
 
-    static class PodspecDetails {
+    @EqualsAndHashCode
+    // Must be serializable to be used as an @Input
+    static class PodspecDetails implements Serializable {
+        // Increment this when the serialization output changes
+        private static final long serialVersionUID = 1L;
+
         String projectName
         File podspecDebug
         File podspecRelease
@@ -86,6 +103,16 @@ class XcodeTask extends DefaultTask {
 
         String getPodMethodName() {
             return "j2objc_$projectName"
+        }
+
+        @SuppressWarnings('unused')
+        private static void writeObject(ObjectOutputStream s) throws IOException {
+            s.defaultWriteObject();
+        }
+
+        @SuppressWarnings('unused')
+        private static void readObject(ObjectInputStream s) throws IOException {
+            s.defaultReadObject();
         }
     }
 
@@ -114,7 +141,25 @@ class XcodeTask extends DefaultTask {
     void xcodeConfig() {
         Utils.requireMacOSX('j2objcXcode task')
 
-        verifyXcodeArgs()
+        if (!isTaskActive()) {
+            logger.debug("j2objcXcode task disabled for ${project.name}")
+            return
+        }
+
+//        // TODO: figure out how to display error when not configured on root project
+//        String message =
+//                "xcodeProjectDir need to be configured in ${project.name}'s build.gradle.\n" +
+//                "The directory should point to the location containing your Xcode project,\n" +
+//                "including the IOS-APP.xccodeproj file.\n" +
+//                "\n" +
+//                "j2objcConfig {\n" +
+//                "    xcodeProjectDir '../ios'\n" +
+//                "}\n" +
+//                "\n" +
+//                "Alternatively disable the j2objcXcode task if you wish to do your own Xcode build.\n"
+//        "Also see the guidelines for the folder structure:\n" +
+//        "https://github.com/j2objc-contrib/j2objc-gradle/blob/master/FAQ.md#what-is-the-recommended-folder-structure-for-my-app\n"
+//        throw new InvalidUserDataException(message)
 
         // link the podspec in pod file
         File podfile = getPodfileFile()
@@ -129,8 +174,8 @@ class XcodeTask extends DefaultTask {
                     "To fix this:\n" +
                     "\n" +
                     "1) Set xcodeProjectDir to the directory containing 'IOS-APP.xcodeproj':\n" +
-                    "    current value from j2objcConfig: ${getXcodeProjectDir()}\n" +
-                    "    current value for absolute path: $xcodeAbsPath\n" +
+                    "    curent value: ${getXcodeProjectDir()}\n" +
+                    "    resolves to: $xcodeAbsPath\n" +
                     "\n" +
                     "2) Within that directory, create the Podfile with:\n" +
                     "    (cd $xcodeAbsPath && pod init)\n" +
@@ -142,8 +187,7 @@ class XcodeTask extends DefaultTask {
         logger.debug("Pod exists at path: ${getXcodeProjectDir()}")
 
         // Write Podfile based on all the podspecs from dependent projects
-        List<PodspecDetails> podspecDetailsList =
-                getPodspecsFromProject(getProject(), new HashSet<Project>())
+        List<PodspecDetails> podspecDetailsList = getPodspecDependencies()
 
         XcodeTargetDetails xcodeTargetDetails = new XcodeTargetDetails(
                 getXcodeTargetsIos(), getXcodeTargetsOsx(), getXcodeTargetsWatchos(),
@@ -196,7 +240,8 @@ class XcodeTask extends DefaultTask {
      * @return List of Files corresponding to debug / release pair of podspecs
      *         Even entries in the list are debug podspecs, odd for release podspecs
      */
-    private List<PodspecDetails> getPodspecsFromProject(Project proj, Set<Project> visitedProjects) {
+    @VisibleForTesting
+    List<PodspecDetails> getPodspecDependencies(Project proj, Set<Project> visitedProjects) {
 
         // Find podspecs generated by this project
         List<PodspecDetails> podspecs = new ArrayList<>()
@@ -211,28 +256,10 @@ class XcodeTask extends DefaultTask {
 
         J2objcConfig j2objcConfig = proj.getExtensions().getByType(J2objcConfig)
         j2objcConfig.getBeforeProjects().each { Project beforeProject ->
-            podspecs.addAll(getPodspecsFromProject(beforeProject, visitedProjects))
+            podspecs.addAll(getPodspecDependencies(beforeProject, visitedProjects))
         }
 
         return podspecs
-    }
-
-    @VisibleForTesting
-    void verifyXcodeArgs() {
-        if (getXcodeProjectDir() == null) {
-            String message =
-                    "xcodeProjectDir need to be configured in ${project.name}'s build.gradle.\n" +
-                    "The directory should point to the location containing your Xcode project,\n" +
-                    "including the IOS-APP.xccodeproj file.\n" +
-                    "\n" +
-                    "j2objcConfig {\n" +
-                    "    xcodeProjectDir '../ios'\n" +
-                    "}\n" +
-                    "\n" +
-                    "Also see the guidelines for the folder structure:\n" +
-                    "https://github.com/j2objc-contrib/j2objc-gradle/blob/master/FAQ.md#what-is-the-recommended-folder-structure-for-my-app"
-            throw new InvalidUserDataException(message)
-        }
     }
 
     /**
@@ -355,7 +382,7 @@ class XcodeTask extends DefaultTask {
         List<String> newPodfileLines = new ArrayList<String>(oldPodfileLines)
 
         newPodfileLines = updatePodfile(
-                newPodfileLines, podspecDetailsList, xcodeTargetDetails, podfile, logger)
+                newPodfileLines, podspecDetailsList, xcodeTargetDetails, podfile)
 
         // Write file only if it's changed
         if (!oldPodfileLines.equals(newPodfileLines)) {
@@ -368,7 +395,7 @@ class XcodeTask extends DefaultTask {
             List<String> podfileLines,
             List<PodspecDetails> podspecDetailsList,
             XcodeTargetDetails xcodeTargetDetails,
-            File podfile, Logger logger) {
+            File podfile) {
 
         List<String> podfileTargets = extractXcodeTargets(podfileLines)
         verifyTargets(xcodeTargetDetails.xcodeTargetsIos, podfileTargets, 'xcodeTargetsIos')
@@ -378,7 +405,7 @@ class XcodeTask extends DefaultTask {
         if (xcodeTargetDetails.xcodeTargetsIos.isEmpty() &&
             xcodeTargetDetails.xcodeTargetsOsx.isEmpty() &&
             xcodeTargetDetails.xcodeTargetsWatchos.isEmpty()) {
-            // Need to warn about configuring
+            // Give example for configuring iOS as that's the common case
             throw new InvalidUserDataException(
                     "You must configure the xcode targets for the J2ObjC Gradle Plugin.\n" +
                     "It must be a subset of the valid targets: '${podfileTargets.join("', '")}'\n" +
@@ -393,9 +420,8 @@ class XcodeTask extends DefaultTask {
         // update pod methods
         List<String> newPodfileLines = updatePodMethods(podfileLines, podspecDetailsList, podfile)
 
-        // Iterate over all podfileTargets as some may need to be cleared
-        newPodfileLines = updatePodfileTargets(
-                newPodfileLines, podspecDetailsList, xcodeTargetDetails)
+        // update pod targets
+        newPodfileLines = updatePodfileTargets(newPodfileLines, podspecDetailsList, xcodeTargetDetails)
 
         return newPodfileLines
     }

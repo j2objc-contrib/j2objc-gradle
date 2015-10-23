@@ -48,6 +48,9 @@ before_install:
   # Don't spew graphic art.
   - export TERM=dumb
   - env
+  # Cocoapods must be manually due to issues with Travis:
+  # http://docs.travis-ci.com/user/common-build-problems/#Mac%3A-Errors-running-CocoaPods
+  - if [ "$USING_OS" = "osx" ]; then gem install cocoapods -v '0.39.0'; fi
   # Travis doesn't let us select the JDK version on OS X.  Force it ourselves.
   - if [ "$USING_OS" = "osx" ]; then ./install-osx-jdk7.sh; fi
 
