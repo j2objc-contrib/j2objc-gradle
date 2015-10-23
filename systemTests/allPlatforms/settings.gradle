@@ -1,1 +1,6 @@
-include ':shared', ':app'
+include ':shared'
+
+// Travis CI doesn't support Android on OS X
+if (!System.getenv('ANDROID_BUILD_DISABLED').equals('true')) {
+    include ':app'
+}

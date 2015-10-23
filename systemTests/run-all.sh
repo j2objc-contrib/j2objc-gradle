@@ -14,18 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Fail if anything fails.
+set -uev
 
-set -ev
-
-# Two test sets; if no test set is specified (as the first arg),
-# all tests will run.
 # Add new tests to whichever set takes the least time to run on Travis.
 # If any test set is nearing ~45 minutes to build, you must make a new
 # test set and also update .travis.yml.
-TEST_SET=$1
 
-# Fail if anything fails.
-set -euv
+# Defaults to "12", which runs both tests
+# Run specific test by script parameter, e.g. 'systemTests/run-all.sh 1'
+TEST_SET=${1:-12}
 
 J2OBJC_VERSION=${J2OBJC_VERSION:=0.9.8.2.1}
 
@@ -34,21 +32,23 @@ if [[ "$PWD" =~ systemTests ]]; then
    exit 1
 fi
 
-if [ -z "$TEST_SET" ] || [ "$TEST_SET" == "1" ] ; then
+if [[ $TEST_SET == *"1"* ]] ; then
    echo Running test set 1
 
    # Simplest possible set-up.  A single project with no dependencies.
    systemTests/run-test.sh systemTests/simple1
-
 
    # Two main gradle projects, `extended` depends on `base`.  They also both test
    # dependency on built-in j2objc libraries, like Guava, and build-closure
    # based translation of an external library, Gson.  They also both depend
    # depend on a third test-only gradle project, `testLib`.
    systemTests/run-test.sh systemTests/multiProject1
+
+   # Platform specific app build: Android, iOS, OS X and some day watchOS
+   systemTests/run-test.sh systemTests/allPlatforms
 fi
 
-if [ -z "$TEST_SET" ] || [ "$TEST_SET" == "2" ] ; then
+if [[ $TEST_SET == *"2"* ]] ; then
    echo Running test set 2
 
    # Two gradle projects, `extended` depends on `base`. Both of them depend

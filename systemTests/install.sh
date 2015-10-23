@@ -36,6 +36,11 @@ pushd localJ2objcDist
 # Default is version number listed on following line:
 J2OBJC_VERSION=${J2OBJC_VERSION:=0.9.8.2.1}
 
+# Specific version can be configured from command line:
+# export ANDROID_HOME=DIR
+# Default is for Travis default location, listed on following line:
+ANDROID_HOME=${ANDROID_HOME:=/usr/local/android-sdk}
+
 echo "J2OBJC Version: $J2OBJC_VERSION"
 
 DIST_DIR=j2objc-$J2OBJC_VERSION
@@ -43,10 +48,19 @@ DIST_FILE=$DIST_DIR.zip
 
 # For developer local testing, don't keep redownloading the zip file.
 if [ ! -e $DIST_FILE ]; then
-  curl -L https://github.com/google/j2objc/releases/download/$J2OBJC_VERSION/j2objc-$J2OBJC_VERSION.zip > $DIST_FILE
-  unzip $DIST_FILE
-  echo j2objc.home=$PWD/$DIST_DIR > ../common/local.properties
-  echo "local.properties configured: j2objc.home=$PWD/$DIST_DIR"
+   curl -L https://github.com/google/j2objc/releases/download/$J2OBJC_VERSION/j2objc-$J2OBJC_VERSION.zip > $DIST_FILE
+   unzip -q $DIST_FILE
+
+   # systemTests/common/local.properties
+   echo j2objc.home=$PWD/$DIST_DIR > ../common/local.properties
+   if [ "${ANDROID_BUILD_DISABLED:=false}" != "true" ]; then
+      echo sdk.dir=$ANDROID_HOME >> ../common/local.properties
+   fi
+   if [ "${J2OBJC_TRANSLATE_ONLY:=false}" == "true" ]; then
+      echo j2objc.translateOnlyMode=true >> ../common/local.properties
+   fi
+   echo "systemTests/common/local.properties configured:"
+   cat ../common/local.properties
 fi
 
 # pop localJ2objcDist
