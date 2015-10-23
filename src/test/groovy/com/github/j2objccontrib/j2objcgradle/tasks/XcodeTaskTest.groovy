@@ -41,7 +41,7 @@ class XcodeTaskTest {
             new XcodeTask.XcodeTargetDetails(
                     ['IOS-APP'], [], [],
                     // Append '.0' to version number to check that it's not using defaults
-                    '6.0.0', '10.4.0', '1.0.0')
+                    '6.0.0', '10.6.0', '1.0.0')
     List<XcodeTask.PodspecDetails> podspecDetailsProj =
             [new XcodeTask.PodspecDetails(
                 'PROJ',
@@ -130,7 +130,7 @@ class XcodeTaskTest {
 
         j2objcConfig.xcodeProjectDir = '../ios'
         j2objcConfig.xcodeTargetsIos = ['IOS-APP', 'IOS-APPTests']
-        j2objcConfig.minVersionIos = '6.0.0'
+        j2objcConfig.minVersionIos = '6.1.0'
 
         // Podfile Write
         // This is outside of the project's temp directory but appears to work fine
@@ -183,12 +183,12 @@ class XcodeTaskTest {
                 "end",
                 "",
                 "target 'IOS-APP' do",
-                "    platform :ios, '6.0.0'",
+                "    platform :ios, '6.1.0'",
                 "    $podNameMethod",
                 "end",
                 "",
                 "target 'IOS-APPTests' do",
-                "    platform :ios, '6.0.0'",
+                "    platform :ios, '6.1.0'",
                 "    $podNameMethod",
                 "end"]
         List<String> readPodfileLines = podfile.readLines()
@@ -494,7 +494,7 @@ class XcodeTaskTest {
                 "end"]
         XcodeTask.XcodeTargetDetails xcodeTargetDetails = new XcodeTask.XcodeTargetDetails(
                 ['IOS-APP'], ['OSX-APP'], ['WATCH-APP'],
-                '6.0.0', '10.4.0', '1.0.0')
+                '6.0.0', '10.6.0', '1.0.0')
 
         List<String> newPodfileLines = XcodeTask.updatePodfile(
                 podfileLines,
@@ -516,7 +516,7 @@ class XcodeTaskTest {
                 "    j2objc_PROJ",
                 "end",
                 "target 'OSX-APP' do",
-                "    platform :osx, '10.4.0'",
+                "    platform :osx, '10.6.0'",
                 "    j2objc_PROJ",
                 "end",
                 "target 'WATCH-APP' do",
@@ -552,7 +552,7 @@ class XcodeTaskTest {
                 [],
                 new XcodeTask.XcodeTargetDetails(
                         [], [], [],
-                        '6.0.0', '10.4.0', '1.0.0'),
+                        '6.0.0', '10.6.0', '1.0.0'),
                 null)
     }
 
@@ -573,7 +573,7 @@ class XcodeTaskTest {
                 [],
                 new XcodeTask.XcodeTargetDetails(
                         ['TARGET-DOES-NOT-EXIST'], [], [],
-                        '6.0.0', '10.4.0', '1.0.0'),
+                        '6.0.0', '10.6.0', '1.0.0'),
                 null)
     }
 
@@ -710,7 +710,7 @@ class XcodeTaskTest {
                 podspecDetailsProj,
                 new XcodeTask.XcodeTargetDetails(
                         ['IOS-APP-B'], [], [],
-                        '6.0.0', '10.4.0', '1.0.0'))
+                        '6.0.0', '10.6.0', '1.0.0'))
         List<String> expectedPodfileLinesAfterSwap = [
                 "target 'IOS-APP' do",
                 "end",
@@ -745,7 +745,7 @@ class XcodeTaskTest {
                  new XcodeTask.PodspecDetails('PROJ_B', null, null)],
                 new XcodeTask.XcodeTargetDetails(
                         ['IOS-APP', 'IOS-APPTests'], ['OSX-APP', 'OSX-APPTests'], ['WATCH-APP', 'WATCH-APPTests'],
-                        '6.0.0', '10.4.0', '1.0.0'))
+                        '6.0.0', '10.6.0', '1.0.0'))
 
         List<String> expectedPodfileLines = [
                 "target 'IOS-APP' do",
@@ -759,12 +759,12 @@ class XcodeTaskTest {
                 "    j2objc_PROJ_B",
                 "end",
                 "target 'OSX-APP' do",
-                "    platform :osx, '10.4.0'",
+                "    platform :osx, '10.6.0'",
                 "    j2objc_PROJ_A",
                 "    j2objc_PROJ_B",
                 "end",
                 "target 'OSX-APPTests' do",
-                "    platform :osx, '10.4.0'",
+                "    platform :osx, '10.6.0'",
                 "    j2objc_PROJ_A",
                 "    j2objc_PROJ_B",
                 "end",
@@ -821,6 +821,6 @@ class XcodeTaskTest {
                 podspecDetailsProj,
                 new XcodeTask.XcodeTargetDetails(
                         ['TARGET-DOES-NOT-EXIST'], [], [],
-                        '6.0.0', '10.4.0', '1.0.0'))
+                        '6.0.0', '10.6.0', '1.0.0'))
     }
 }

@@ -628,8 +628,9 @@ class J2objcConfig {
      * <p/>
      * See https://developer.apple.com/library/ios/documentation/DeveloperTools/Conceptual/cross_development/Configuring/configuring.html#//apple_ref/doc/uid/10000163i-CH1-SW2
      */
-    // Matches the oldest version supported in Xcode 7
-    String minVersionOsx = '10.4'
+    // Oldest OS X version that supports automatic reference counting (2009 onwards)
+    // Prevents Xcode error: "-fobjc-arc is not supported on versions of OS X prior to 10.6"
+    String minVersionOsx = '10.6'
 
     /**
      * The minimum Watch OS version to build against.  You cannot use APIs that are not supported
@@ -794,6 +795,13 @@ class J2objcConfig {
         assert destLibDir != null
         assert destSrcMainDir != null
         assert destSrcTestDir != null
+
+        // TODO: watchOS build support
+        if (xcodeTargetsWatchos.size() > 0) {
+            throw new InvalidUserDataException(
+                    "WatchOS isn't yet supported, please unset xcodeTargetsWatchos for now." +
+                    "Follow this issue for updates: https://github.com/j2objc-contrib/j2objc-gradle/issues/525")
+        }
     }
 
     protected void configureNativeCompilation() {

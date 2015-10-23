@@ -88,7 +88,7 @@ class PodspecTaskTest {
                 "    'LIBRARY_SEARCH_PATHS' => '${j2objcHome}/lib'",
                 "  }",
                 "  spec.ios.deployment_target = '6.0'",
-                "  spec.osx.deployment_target = '10.4'",
+                "  spec.osx.deployment_target = '10.6'",
                 "  spec.watchos.deployment_target = '1.0'",
                 "  spec.osx.frameworks = 'ExceptionHandling'",
                 "end"]
@@ -121,7 +121,7 @@ class PodspecTaskTest {
                 "    'LIBRARY_SEARCH_PATHS' => '${j2objcHome}/lib'",
                 "  }",
                 "  spec.ios.deployment_target = '6.0'",
-                "  spec.osx.deployment_target = '10.4'",
+                "  spec.osx.deployment_target = '10.6'",
                 "  spec.watchos.deployment_target = '1.0'",
                 "  spec.osx.frameworks = 'ExceptionHandling'",
                 "end"]

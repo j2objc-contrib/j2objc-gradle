@@ -23,9 +23,9 @@ New functionality:
 
 Breaking changes/functionality:
 * No longer supports Xcode 6 and lower or j2objc 0.9.8.2 and lower #483
-* Minimum versions of platforms have been reduced to iOS 6.0, OS X 10.4, and WatchOS 1.0 #512
+* Minimum versions of platforms have been configured as iOS 6.0, OS X 10.6, and WatchOS 1.0 #512
 * NOTE: watchOS is not yet supported due to lack of full bitcode support by J2ObjC 0.9.8.2.1.
-* `build/source/apt` no longer included in translation by default #527
+* Default translation dir `build/source/apt` replaced by `build/classes/main` #527
 
 Code quality:
 * Multi-project integration tests disabled temporarily (system tests are used instead) #483
