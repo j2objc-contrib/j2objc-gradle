@@ -60,7 +60,7 @@ class CycleFinderTaskTest {
                 null,
                 [
                         '/J2OBJC_HOME/cycle_finder',
-                        '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java',
+                        '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java:/PROJECT_DIR/build/classes/main',
                         '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/J2OBJC_HOME/lib/hamcrest-core-1.3.jar:/J2OBJC_HOME/lib/protobuf_runtime.jar:/PROJECT_DIR/build/classes',
                 ],
                 // expectedWindowsExecutableAndArgs
@@ -94,7 +94,7 @@ class CycleFinderTaskTest {
                 null,
                 [
                         'INVALID-NEEDS-WINDOWS-SUBSTITUTION',
-                        '-sourcepath', '/PROJECT_DIR/src/main/java;/PROJECT_DIR/src/test/java',
+                        '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java:/PROJECT_DIR/build/classes/main',
                         '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/J2OBJC_HOME/lib/hamcrest-core-1.3.jar:/J2OBJC_HOME/lib/protobuf_runtime.jar:/PROJECT_DIR/build/classes',
                 ],
                 // expectedWindowsExecutableAndArgs
@@ -125,7 +125,7 @@ class CycleFinderTaskTest {
                 null,
                 [
                         '/J2OBJC_HOME/cycle_finder',
-                        '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java',
+                        '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java:/PROJECT_DIR/build/classes/main',
                         '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/J2OBJC_HOME/lib/hamcrest-core-1.3.jar:/J2OBJC_HOME/lib/protobuf_runtime.jar:/PROJECT_DIR/build/classes',
                 ],
                 // expectedWindowsExecutableAndArgs
@@ -164,7 +164,7 @@ class CycleFinderTaskTest {
                 null,
                 [
                         '/J2OBJC_HOME/cycle_finder',
-                        '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java',
+                        '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java:/PROJECT_DIR/build/classes/main',
                         '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/J2OBJC_HOME/lib/hamcrest-core-1.3.jar:/J2OBJC_HOME/lib/protobuf_runtime.jar:/PROJECT_DIR/build/classes',
                         '--whitelist', '/J2OBJC_REPO/jre_emul/cycle_whitelist.txt',
                         '--sourcefilelist', '/J2OBJC_REPO/jre_emul/build_result/java_sources.mf'
@@ -200,7 +200,7 @@ class CycleFinderTaskTest {
                 null,
                 [
                         '/J2OBJC_HOME/cycle_finder',
-                        '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java',
+                        '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java:/PROJECT_DIR/build/classes/main',
                         '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/J2OBJC_HOME/lib/hamcrest-core-1.3.jar:/J2OBJC_HOME/lib/protobuf_runtime.jar:/PROJECT_DIR/build/classes',
                         '--whitelist', '/J2OBJC_REPO/jre_emul/cycle_whitelist.txt',
                         '--sourcefilelist', '/J2OBJC_REPO/jre_emul/build_result/java_sources.mf'

@@ -28,7 +28,9 @@ import org.gradle.api.Nullable
 import org.gradle.api.Project
 import org.gradle.api.file.CopySpec
 import org.gradle.api.file.FileCollection
+import org.gradle.api.file.FileTree
 import org.gradle.api.file.SourceDirectorySet
+import org.gradle.api.internal.file.UnionFileTree
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.WorkResult
@@ -408,14 +410,10 @@ class Utils {
     }
 
     // Add list of java path to a FileCollection as a FileTree
-    static FileCollection javaTrees(Project proj, List<String> treePaths) {
-        FileCollection files = proj.files()
-        treePaths.each { String treePath ->
-            log.debug "javaTree: $treePath"
-            files = files.plus(
-                    proj.files(proj.fileTree(dir: treePath, includes: ["**/*.java"])))
-        }
-        return files
+    static FileTree javaTrees(Project proj, List<String> treePaths) {
+        List<? extends FileTree> trees =
+            treePaths.collect({ String treePath -> proj.fileTree(dir: treePath, includes: ["**/*.java"]) })
+        return new UnionFileTree("javaTrees_j2objc", trees)
     }
 
     static List<String> j2objcLibs(String j2objcHome,

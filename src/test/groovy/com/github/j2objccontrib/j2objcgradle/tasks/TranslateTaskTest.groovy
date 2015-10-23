@@ -59,7 +59,7 @@ class TranslateTaskTest {
         mockProjectExec.demandExecAndReturn([
                 '/J2OBJC_HOME/j2objc',
                 '-d', '/PROJECT_DIR/build/j2objcSrcGenMain',
-                '-sourcepath', '/PROJECT_DIR/src/main/java',
+                '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/build/classes/main',
                 '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/J2OBJC_HOME/lib/hamcrest-core-1.3.jar:/J2OBJC_HOME/lib/protobuf_runtime.jar:/PROJECT_DIR/build/classes',
                 '/PROJECT_DIR/src/main/java/com/example/Main.java'
         ],
@@ -73,7 +73,7 @@ class TranslateTaskTest {
         mockProjectExec.demandExecAndReturn([
                 '/J2OBJC_HOME/j2objc',
                 '-d', '/PROJECT_DIR/build/j2objcSrcGenTest',
-                '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java',
+                '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java:/PROJECT_DIR/build/classes/main',
                 '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/J2OBJC_HOME/lib/hamcrest-core-1.3.jar:/J2OBJC_HOME/lib/protobuf_runtime.jar:/PROJECT_DIR/build/classes',
                 '/PROJECT_DIR/src/test/java/com/example/Verify.java'
         ],
@@ -102,7 +102,7 @@ class TranslateTaskTest {
         mockProjectExec.demandExecAndReturn([
                 'INVALID-NEEDS-WINDOWS-SUBSTITUTION',
                 '-d', '/PROJECT_DIR/build/j2objcSrcGenMain',
-                '-sourcepath', '/PROJECT_DIR/src/main/java',
+                '-sourcepath', '/PROJECT_DIR/src/main/java;/PROJECT_DIR/build/classes/main',
                 '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar;/J2OBJC_HOME/lib/j2objc_guava.jar;/J2OBJC_HOME/lib/j2objc_junit.jar;/J2OBJC_HOME/lib/jre_emul.jar;/J2OBJC_HOME/lib/javax.inject-1.jar;/J2OBJC_HOME/lib/jsr305-3.0.0.jar;/J2OBJC_HOME/lib/mockito-core-1.9.5.jar;/J2OBJC_HOME/lib/hamcrest-core-1.3.jar;/J2OBJC_HOME/lib/protobuf_runtime.jar;/PROJECT_DIR/build/classes',
                 '/PROJECT_DIR/src/main/java/com/example/Main.java'
         ],
@@ -116,7 +116,7 @@ class TranslateTaskTest {
         mockProjectExec.demandExecAndReturn([
                 'INVALID-NEEDS-WINDOWS-SUBSTITUTION',
                 '-d', '/PROJECT_DIR/build/j2objcSrcGenTest',
-                '-sourcepath', '/PROJECT_DIR/src/main/java;/PROJECT_DIR/src/test/java',
+                '-sourcepath', '/PROJECT_DIR/src/main/java;/PROJECT_DIR/src/test/java;/PROJECT_DIR/build/classes/main',
                 '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar;/J2OBJC_HOME/lib/j2objc_guava.jar;/J2OBJC_HOME/lib/j2objc_junit.jar;/J2OBJC_HOME/lib/jre_emul.jar;/J2OBJC_HOME/lib/javax.inject-1.jar;/J2OBJC_HOME/lib/jsr305-3.0.0.jar;/J2OBJC_HOME/lib/mockito-core-1.9.5.jar;/J2OBJC_HOME/lib/hamcrest-core-1.3.jar;/J2OBJC_HOME/lib/protobuf_runtime.jar;/PROJECT_DIR/build/classes',
                 '/PROJECT_DIR/src/test/java/com/example/Verify.java'
         ],
@@ -157,7 +157,7 @@ class TranslateTaskTest {
         mockProjectExec.demandExecAndReturn([
                 '/J2OBJC_HOME/j2objc',
                 '-d', '/PROJECT_DIR/build/j2objcSrcGenMain',
-                '-sourcepath', "/PROJECT_DIR/src/main/java:/PROJECT_DIR/REL-SOURCEPATH:$absSourcePath:/PROJECT_DIR/REL-GENPATH:$absGenPath",
+                '-sourcepath', "/PROJECT_DIR/src/main/java:/PROJECT_DIR/REL-SOURCEPATH:$absSourcePath:/PROJECT_DIR/build/classes/main:/PROJECT_DIR/REL-GENPATH:$absGenPath",
                 '-classpath', "/PROJECT_DIR/REL-CLASSPATH:$absClassPath:/J2OBJC_HOME/lib/J2OBJC-LIB1:/J2OBJC_HOME/lib/J2OBJC-LIB2:/PROJECT_DIR/build/classes",
                 '-ARG1', '-ARG2',
                 '/PROJECT_DIR/src/main/java/com/example/Main.java'
@@ -171,7 +171,7 @@ class TranslateTaskTest {
         mockProjectExec.demandExecAndReturn([
                 '/J2OBJC_HOME/j2objc',
                 '-d', '/PROJECT_DIR/build/j2objcSrcGenTest',
-                '-sourcepath', "/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java:/PROJECT_DIR/REL-SOURCEPATH:$absSourcePath:/PROJECT_DIR/REL-GENPATH:$absGenPath",
+                '-sourcepath', "/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java:/PROJECT_DIR/REL-SOURCEPATH:$absSourcePath:/PROJECT_DIR/build/classes/main:/PROJECT_DIR/REL-GENPATH:$absGenPath",
                 '-classpath', "/PROJECT_DIR/REL-CLASSPATH:$absClassPath:/J2OBJC_HOME/lib/J2OBJC-LIB1:/J2OBJC_HOME/lib/J2OBJC-LIB2:/PROJECT_DIR/build/classes",
                 '-ARG1', '-ARG2',
                 '/PROJECT_DIR/src/test/java/com/example/Verify.java'

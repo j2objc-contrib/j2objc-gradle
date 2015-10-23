@@ -149,10 +149,6 @@ class J2objcPlugin implements Plugin<Project> {
                     dependsOn: 'j2objcPreBuild') {
                 group 'build'
                 description "Translates all the java source files in to Objective-C using 'j2objc'"
-                additionalMainSrcFiles = files(
-                        fileTree(dir: "build/source/apt",
-                                include: "**/*.java")
-                )
                 // Output directories of 'j2objcTranslate', input for all other tasks
                 srcGenMainDir = j2objcSrcGenMainDir
                 srcGenTestDir = j2objcSrcGenTestDir
