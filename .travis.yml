@@ -45,7 +45,7 @@ branches:
 sudo: false
 
 # Gradle Cache
-# Avoids uploading the cache after every build
+# Avoid uploading the cache after every build
 # http://docs.travis-ci.com/user/languages/android/#Default-Test-Command-for-Gradle
 before_cache:
   - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
