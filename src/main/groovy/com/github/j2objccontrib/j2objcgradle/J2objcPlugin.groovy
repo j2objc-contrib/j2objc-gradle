@@ -228,9 +228,23 @@ class J2objcPlugin implements Plugin<Project> {
                 srcGenMainDir = j2objcSrcGenMainDir
                 srcGenTestDir = j2objcSrcGenTestDir
             }
+            // Assemble podspec and update Xcode
+            tasks.create(name: 'j2objcPodspec', type: PodspecTask,
+                    dependsOn: ['j2objcPreBuild']) {
+                // podspec may reference resources that haven't yet been built
+                group 'build'
+                description 'Generate debug and release podspec that may be used for Xcode'
+            }
+            tasks.create(name: 'j2objcXcode', type: XcodeTask,
+                    dependsOn: 'j2objcPodspec') {
+                // pod install is ok when podspec references resources that haven't yet been built
+                group 'build'
+                description 'Depends on j2objc translation, create a Pod file link it to Xcode project'
+            }
             // Assemble libaries
             tasks.create(name: 'j2objcAssembleDebug', type: AssembleLibrariesTask,
-                    dependsOn: ['j2objcPackLibrariesDebug', 'j2objcAssembleSource', 'j2objcAssembleResources']) {
+                    dependsOn: ['j2objcPackLibrariesDebug', 'j2objcAssembleSource',
+                                'j2objcAssembleResources', 'j2objcXcode']) {
                 group 'build'
                 description 'Copies final generated source and debug libraries to assembly directories'
                 buildType = 'Debug'
@@ -238,28 +252,17 @@ class J2objcPlugin implements Plugin<Project> {
                 srcPackedLibDir = file("${buildDir}/packedBinaries/${project.name}-j2objcStaticLibrary")
             }
             tasks.create(name: 'j2objcAssembleRelease', type: AssembleLibrariesTask,
-                    dependsOn: ['j2objcPackLibrariesRelease', 'j2objcAssembleSource', 'j2objcAssembleResources']) {
+                    dependsOn: ['j2objcPackLibrariesRelease', 'j2objcAssembleSource',
+                                'j2objcAssembleResources', 'j2objcXcode']) {
                 group 'build'
                 description 'Copies final generated source and release libraries to assembly directories'
                 buildType = 'Release'
                 srcLibDir = file("${buildDir}/binaries/${project.name}-j2objcStaticLibrary")
                 srcPackedLibDir = file("${buildDir}/packedBinaries/${project.name}-j2objcStaticLibrary")
             }
-            // Assemble podspec and update Xcode
-            tasks.create(name: 'j2objcPodspec', type: PodspecTask,
-                    // Podspec may reference sources and resources that haven't yet been built
-                    dependsOn: ['j2objcPreBuild']) {
-                group 'build'
-                description 'Generate debug and release podspec that may be used for Xcode'
-            }
-            tasks.create(name: 'j2objcXcode', type: XcodeTask,
-                    dependsOn: 'j2objcPodspec') {
-                group 'build'
-                description 'Depends on j2objc translation, create a Pod file link it to Xcode project'
-            }
             // Assemble final task
             tasks.create(name: 'j2objcAssemble', type: DefaultTask,
-                    dependsOn: ['j2objcAssembleDebug', 'j2objcAssembleRelease', 'j2objcXcode']) {
+                    dependsOn: ['j2objcAssembleDebug', 'j2objcAssembleRelease']) {
                 group 'build'
                 description "Marker task for all assembly tasks that take part in regular j2objc builds"
             }
