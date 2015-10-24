@@ -833,6 +833,8 @@ class J2objcConfig {
             Utils.requireMacOSX('Native Compilation of translated code task')
         }
 
+        project.logger.info("J2objcPlugin: translateOnlyMode will disable most j2objc tasks")
+
         project.tasks.all { Task task ->
             String name = task.name
             // For convenience, disable all debug and/or release tasks if the user desires.
@@ -853,7 +855,8 @@ class J2objcConfig {
                 // First pattern matches all native-compilation tasks.
                 // Second pattern matches plugin-specific tasks beyond translation.
                 if ((name =~ /^.*((J|j)2objc(Executable|StaticLibrary|SharedLibrary|Objc))$/).matches() ||
-                    (name =~ /^j2objc(Assemble|PackLibraries|Test)(Debug|Release)$/).matches()) {
+                    (name =~ /^j2objc(Assemble|PackLibraries|Test)(Debug|Release)$/).matches() ||
+                    (name =~ /^j2objc(Podspec|Xcode)$/).matches()) {
                     task.enabled = false
                 }
             }
