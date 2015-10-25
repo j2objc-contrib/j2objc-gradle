@@ -79,19 +79,22 @@ Now try building again.
 
 ### How do I develop with Xcode?
 
-The J2ObjC Gradle Plugin configures your Xcode project with [CocoaPods](https://cocoapods.org/).
+The J2ObjC Gradle Plugin can configure your Xcode project with [CocoaPods](https://cocoapods.org/).
 To take advantage of this, specify the directory that contains `PROJECT.xcodeproj` as
-the `xcodeProjectDir` in your `j2objcConfig` per the [Quick Start Guide](README.md#quick-start-guide).
+the `xcodeProjectDir` in your shared `j2objcConfig` per the [Quick Start Guide](README.md#quick-start-guide).
+Gradle projects that `shared` depends on must not specify `xcodeProjectDir` so that only one project
+controls the Xcode updates.
 
 After running `j2objcXcode`, open the `.xcworkspace` file in Xcode. If the `.xcodeproj` file
 is opened in Xcode then CocoaPods will fail. This will appear as an Xcode build time error:
 
     library not found for -lPods-IOS-APP-j2objc-shared
 
-If you don't use CocoaPods, do not specify the `xcodeProjectDir` option;
-you'll have to [manually](#how-do-i-manually-configure-my-xcode-project-to-use-the-translated-libraries)
-add the static libraries and translated header directories to your Xcode project,
-and `j2objcXcode` will not do anything.
+The above system uses CocoaPods and is the quickest way to build in Xcode with this plugin.
+If you wish to avoid using CocoaPods, do not specify the `xcodeProjectDir` option and instead
+[manually](#how-do-i-manually-configure-my-xcode-project-to-use-the-translated-libraries)
+add the static libraries and translated header directories to your Xcode project.  The
+`j2objcXcode` task will not do anything.
 
 Also see the FAQ note on [developing with Swift](#how-do-i-develop-with-swift).
 
@@ -302,7 +305,9 @@ you'd like to access from Swift code.
 
 ### How do I manually configure my Xcode project to use the translated libraries?
 
-If you do not want to use CocoaPods, you will need to modify your Xcode project's build settings.
+Using CocoaPods is the quickest way to use the plugin. To configure Xcode manually,
+you will need to modify your Xcode project's build settings.
+
 In each case, you need to make sure the specification of the path is relative to the location
 of the Xcode project.  We'll assume your J2ObjC distribution is at `/J2OBJC_HOME`.
 
