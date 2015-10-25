@@ -40,7 +40,7 @@ group = 'com.github.j2objccontrib.j2objcgradle'
 // A suffix of -SNAPSHOT means this is not an official release of the
 // system, but built from an intermediate source tree.  Instructions:
 // https://github.com/j2objc-contrib/j2objc-gradle/blob/master/CONTRIBUTING.md#publishing-and-versioning
-version = '0.5.0-alpha'
+version = '0.5.1-alpha-SNAPSHOT'
 
 test {
     testLogging {
