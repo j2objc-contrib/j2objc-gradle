@@ -64,7 +64,7 @@ class XcodeTaskTest {
     }
 
     @Test
-    void testPodspecDetailsSerialization() {
+    void testPodspecDetails_serialization() {
         // From: http://stackoverflow.com/a/9775330/1509221
         XcodeTask.PodspecDetails podspecDetailsIn = new XcodeTask.PodspecDetails(
                 'pname', new File('fileDebug'), new File('fileRelease'))
@@ -83,6 +83,15 @@ class XcodeTaskTest {
         assert 'pname' == podspecDetailsOut.projectName
         assert 'fileDebug' == podspecDetailsOut.podspecDebug.path
         assert 'fileRelease' == podspecDetailsOut.podspecRelease.path
+    }
+
+    @Test
+    // Check that the project name is converted to a valid ruby method name
+    // http://stackoverflow.com/a/10542599/1509221
+    void testPodspecDetails_getPodMethodName_validForRuby() {
+        XcodeTask.PodspecDetails podspecDetails = new XcodeTask.PodspecDetails(
+                'project-NAME_09.!?=', null, null)
+        assert 'j2objc_project_NAME_09____' == podspecDetails.getPodMethodName()
     }
 
     @Test

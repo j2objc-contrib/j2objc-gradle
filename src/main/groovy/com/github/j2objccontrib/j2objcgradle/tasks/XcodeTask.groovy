@@ -102,7 +102,8 @@ class XcodeTask extends DefaultTask {
         }
 
         String getPodMethodName() {
-            return "j2objc_$projectName"
+            // Valid Ruby name requires replacing all non-alphanumeric characters with underscore
+            return "j2objc_$projectName".replaceAll(/[^a-zA-Z0-9]/, '_')
         }
 
         @SuppressWarnings('unused')
