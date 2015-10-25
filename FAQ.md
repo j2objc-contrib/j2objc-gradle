@@ -321,6 +321,8 @@ etc., you will need to add appropriate OTHER_LD_FLAGS for them as well.
 3.  Follow the instructions on "Build Phases" (only) [here](http://j2objc.org/docs/Xcode-Build-Rules.html#update-the-build-settings).
 
 In each case, if the setting has existing values, append the ones above.
+Wherever `shared` appears above, duplicate that value for every J2ObjC project used,
+including all transitive dependencies.
 
 ### How do I work with Package Prefixes?
 
