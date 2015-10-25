@@ -456,12 +456,18 @@ If you see a message similar to:
 ld: warning: ignoring file /PATH/j2objcOutputs/lib/iosDebug/libPROJECT-j2objc.a,
 missing required architecture i386 in file /PATH/j2objcOutputs/lib/iosDebug/libPROJECT-j2objc.a
 (3 slices)
-```
-and additionally get linker errors, you are not building all the neccessary architectures.
 
-By default (for performance), we build only modern iOS device and simulator architectures.
-If you need i386 for older simulators (iPhone 5, 5c and earlier devices), add the following
-to your build.gradle file:
+
+Undefined symbols for architecture i386:
+  "_OBJC_CLASS_$_ComExampleShared", referenced from:
+      type metadata accessor for ObjectiveC.ComExampleShared in ViewController.o
+ld: symbol(s) not found for architecture i386
+```
+You are not building all the neccessary architectures.
+
+By default (for performance), we build only modern iOS device and simulator
+architectures. If you need i386 for older simulators (iPhone 5, 5c and earlier
+devices), add the following to your build.gradle file:
 
 ```gradle
 // File: build.gradle
