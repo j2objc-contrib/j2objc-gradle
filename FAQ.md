@@ -19,7 +19,7 @@ and execute:
 Paste the results below, replacing existing contents.
 -->
 - [Start here for debugging (aka it's not working; aka don't panic)](#start-here-for-debugging-aka-its-not-working-aka-dont-panic)
-- [How do I develop with Xcode?](#how-do-i-develop-with-xcode)
+- [How do I develop with tasde?](#how-do-i-develop-with-tasde)
 - [How can I speed up my build?](#how-can-i-speed-up-my-build)
 - [What libraries are linked by default?](#what-libraries-are-linked-by-default)
 - [How do I setup dependencies with J2ObjC?](#how-do-i-setup-dependencies-with-j2objc)
@@ -31,7 +31,7 @@ Paste the results below, replacing existing contents.
 - [Why is my clean build failing?](#why-is-my-clean-build-failing)
 - [How do I include Java files from additional source directories?](#how-do-i-include-java-files-from-additional-source-directories)
 - [How do I develop with Swift?](#how-do-i-develop-with-swift)
-- [How do I solve 'File not found' import error in Xcode?](#how-do-i-solve-file-not-found-import-error-in-xcode)
+- [How do I solve 'File not found' import error in tasde?](#how-do-i-solve-file-not-found-import-error-in-tasde)
 - [How do I work with Package Prefixes?](#how-do-i-work-with-package-prefixes)
 - [How do I enable ARC for my translated Objective-C classes?](#how-do-i-enable-arc-for-my-translated-objective-c-classes)
 - [How do I call finalConfigure()?](#how-do-i-call-finalconfigure)
@@ -49,7 +49,7 @@ Paste the results below, replacing existing contents.
 
 Some common misconfigurations can cause numerous Gradle errors.
 
-1. First make sure you have a supported version of j2objc and Xcode
+1. First make sure you have a supported version of j2objc and tasde
 (see [README.md](README.md) for our current supported versions) installed locally,
 and that your J2OBJC_HOME property is set correctly to the distribution directory
 of j2objc.  This _is not_ the source repository root for j2objc.  The distribution
@@ -207,7 +207,7 @@ The main tasks for the plugin are:
 
 Running the `build` task from the Gradle Java plugin will automatically run the `j2objcBuild` task
 and all the previous tasks (which it depends on).  The `j2objcXcode` task will disable itself
-automatically if no xcode
+automatically if no `xcodeProjectDir` is specified.
 
 Note that you can use the Gradle shorthand of `$ gradlew jA` to do the `j2objcAssemble` task.
 
@@ -311,9 +311,9 @@ j2objcConfig {
 }
 ```
 
-If you'd like to preserve your folder hierarchy, you can alternatively change your 
+If you'd like to preserve your folder hierarchy, you can instead change your 
 [USER_HEADER_SEARCH_PATHS](https://developer.apple.com/library/mac/documentation/DeveloperTools/Reference/XcodeBuildSettingRef/1-Build_Setting_Reference/build_setting_ref.html#//apple_ref/doc/uid/TP40003931-CH3-SW21)
-setting in your Xcode projects to include `shared/build/j2objcOutputs/src/main/objc`.
+setting in your Xcode projects to include the `shared/build/j2objcOutputs/src/main/objc` folder.
 
 Example error:
 
@@ -352,7 +352,7 @@ This will map packages such as com.example.dirandcom.example.dir.subdir both to 
 
 ```
 com.example.dir.*: Ceds
-````
+```
 
 ### How do I enable ARC for my translated Objective-C classes?
 
@@ -413,11 +413,12 @@ disable the `j2objcTest` task, do the following:
 
 ```gradle
 // File: shared/build.gradle
-j2objcTest {
-    enabled = false
-}
 j2objcConfig {
     ...
+}
+
+j2objcTest {
+    enabled = false
 }
 ```
 
@@ -479,7 +480,7 @@ For more details:
 ### How do I develop on Windows or Linux?
 
 Windows and Linux support is limited to the `j2objcCycleFinder` and `j2objcTranslate` tasks.
-Mac OS X is required for the j2objcAssemble, j2objcTest and j2objcXcode tasks
+Mac OS X is required for the j2objcAssemble, j2objcTest and j2objctasde tasks
 (see [task descriptions](README.md#tasks)) This matches the
 [J2ObjC Requirements](http://j2objc.org/#requirements).
 
