@@ -8,8 +8,8 @@ The plugin:
 * translates your Java source code to Objective-C for iOS (iPhone/iPad) using [__J2ObjC__](https://github.com/google/j2objc), an open-source tool from Google
 * builds Objective-C static libraries and headers ready-to-use in Xcode
 * runs translated versions of your JUnit tests to ensure your code works in Objective-C form
-* handles multiple Java projects, external Java libraries (where source is appropriately licensed and available), and existing Objective-C code you'd like to link in
-* configures your Xcode projects to use your translated code, without requiring manual editing of the generated files (optionally, when using CocoaPods)
+* handles multiple Java projects, external Java libraries \[1\], and existing Objective-C code you'd like to link in
+* configures Xcode projects to use your translated libraries, using CocoaPods (optionally)
  
 The plugin is not affiliated with Google but was developed by former Google Engineers and others.
 Note that the plugin is currently in alpha; we may need to make breaking API changes
@@ -23,7 +23,7 @@ Home Page: https://github.com/j2objc-contrib/j2objc-gradle
 
 ### Quick Start Guide
 
-You should start with a clean java only project without any Android dependencies.
+You should start with a clean Java only project without any Android dependencies.
 It is suggested that the project is named `shared`. It must be buildable using the standard
 [Gradle Java plugin](https://docs.gradle.org/current/userguide/java_plugin.html).
 Starting with an empty project allows you to gradually shift over code from an existing
@@ -44,9 +44,7 @@ plugins {
 }
 
 dependencies {
-    compile 'com.google.j2objc:j2objc-annotations:0.9.8'
-    
-    // Any other standard libraries you depend on, like Guava or JUnit
+    // Any libraries you depend on, like Guava or JUnit
     compile 'com.google.guava:guava:18.0'
     testCompile 'junit:junit:4.11'
 }
@@ -64,14 +62,6 @@ j2objcConfig {
 }
 ```
 
-For more complex situations like:
-* building for OS X and ([soon](https://github.com/j2objc-contrib/j2objc-gradle/issues/525)) watchOS
-* [multiple Java projects and third-party libraries](FAQ.md#how-do-i-setup-dependencies-with-j2objc)
-* customizing the translation and compilation steps
-
-, check the [FAQ table of contents](FAQ.md) or see all of the `j2objcConfig` settings in
-[J2objcConfig.groovy](https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcConfig.groovy#L30).
-
 Finally, make the Android application's `android/build.gradle` depend on the `shared` project:
 
 ```gradle
@@ -80,6 +70,16 @@ dependencies {
     compile project(':shared')
 }
 ```
+
+For more complex situations like:
+* building for OS X and ([soon](https://github.com/j2objc-contrib/j2objc-gradle/issues/525)) watchOS
+* [multiple Java projects and third-party libraries](FAQ.md#how-do-i-setup-dependencies-with-j2objc)
+* customizing the translation and compilation steps
+* mixing Objective-C and Java implementations
+
+, check the [FAQ table of contents](FAQ.md) or see all of the `j2objcConfig` settings in
+[J2objcConfig.groovy](https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcConfig.groovy#L30).
+
 
 ### Minimum Requirements
 
@@ -101,7 +101,7 @@ Applications built with the plugin may target
 
 ### J2ObjC Installation
 
-If J2ObjC is not installed when the plugin is first run, on-screen instructons will guide
+If J2ObjC is not detected when the plugin is first run, on-screen instructons will guide
 you through installation from your Terminal.
 
 Alternatively:
@@ -160,3 +160,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md#quick-start).
 
 This library is distributed under the Apache 2.0 license found in the [LICENSE](./LICENSE) file.
 J2ObjC and libraries distributed with J2ObjC are under their own licenses.
+
+
+### Footnotes
+
+[1].  <a href='#footnote1'>where source is appropriately licensed and available</a>
