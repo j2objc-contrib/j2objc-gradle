@@ -25,14 +25,14 @@ j2objcConfig {
     // This should eventually become the default but doesn't have any use within this example
     autoConfigureDeps true
 
-    // Required to modify Xcode project
+    // Xcode
     xcodeProjectDir '../ios'
-
     xcodeTargetsIos 'IOS-APP', 'IOS-APPTests'
     xcodeTargetsOsx 'OSX-APP', 'OSX-APPTests'
-
-    // TODO: minVersionWatchos '2.0'  // min version for native app
     // TODO: xcodeTargetsWatchos 'WATCH-APP', 'WATCH-APPTests'
+
+    // For testing on the iPhone 5 simulator
+    supportedArchs += ['ios_i386']
 
     finalConfigure()
 }
