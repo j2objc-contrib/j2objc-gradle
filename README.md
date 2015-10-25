@@ -5,11 +5,11 @@ so you can write an app's non-UI code (such as application logic and data models
 which is then shared by Android apps (natively Java) and iOS apps (using J2ObjC).
 
 The plugin:
-* translates your Java source code to Objective-C for iOS (iPhone/iPad) using [__J2ObjC__](https://github.com/google/j2objc), an open-source tool from Google
-* builds Objective-C static libraries and headers ready-to-use in Xcode
-* runs translated versions of your JUnit tests to ensure your code works in Objective-C form
-* handles multiple Java projects, external Java libraries \[1\], and existing Objective-C code you'd like to link in
-* configures Xcode projects to use your translated libraries, using CocoaPods (optionally)
+* Translates your Java source code to Objective-C for iOS (iPhone/iPad) using [__J2ObjC__](https://github.com/google/j2objc), an open-source tool from Google
+* Builds Objective-C static libraries and headers ready-to-use in Xcode
+* Runs translated versions of your JUnit tests to ensure your code works in Objective-C form
+* Handles multiple Java projects, external Java libraries \[1\], and existing Objective-C code you'd like to link in
+* Configures Xcode projects to use your translated libraries, using CocoaPods (optionally)
  
 The plugin is not affiliated with Google but was developed by former Google Engineers and others.
 Note that the plugin is currently in alpha; we may need to make breaking API changes
@@ -132,13 +132,13 @@ Please first check the [Frequently Asked Questions](FAQ.md).
 
 Next, search the [Issues](https://github.com/j2objc-contrib/j2objc-gradle/issues) for a similar
 problem.  If your issue is not addressed, please file a new Issue, including the following
-details (if you are comfortable sharing publicly as "Contribution(s)" per
-the [LICENSE](LICENSE)):
+details:
 - build.gradle file(s)
 - contents of Gradle build errors if any
 - version of J2ObjC you have installed
 
 If you are not comfortable sharing these, the community may not be able to help as much.
+Please note your bug reports will be treated as "Contribution(s)" per the [LICENSE](LICENSE).
 
 Mozilla's [Bug writing guidelines](https://developer.mozilla.org/en-US/docs/Mozilla/QA/Bug_writing_guidelines)
 may be helpful. Having public, focused, and actionable Issues
@@ -164,4 +164,4 @@ J2ObjC and libraries distributed with J2ObjC are under their own licenses.
 
 ### Footnotes
 
-[1].  <a href='#footnote1'>where source is appropriately licensed and available</a>
+[1]  <a href='#footnote1'>where source is appropriately licensed and available</a>
