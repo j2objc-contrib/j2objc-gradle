@@ -31,7 +31,7 @@ Paste the results below, replacing existing contents.
 - [Why is my clean build failing?](#why-is-my-clean-build-failing)
 - [How do I include Java files from additional source directories?](#how-do-i-include-java-files-from-additional-source-directories)
 - [How do I develop with Swift?](#how-do-i-develop-with-swift)
-- [How do I solve 'File not found' import error in Xcode?](#how-do-i-solve-file-not-found-import-error-in-xcode)
+- [How do I manually configure my Xcode project to use the translated libraries?](#how-do-i-manually-configure-my-xcode-project-to-use-the-translated-libraries)
 - [How do I work with Package Prefixes?](#how-do-i-work-with-package-prefixes)
 - [How do I enable ARC for my translated Objective-C classes?](#how-do-i-enable-arc-for-my-translated-objective-c-classes)
 - [How do I call finalConfigure()?](#how-do-i-call-finalconfigure)
@@ -89,8 +89,9 @@ is opened in Xcode then CocoaPods will fail. This will appear as an Xcode build 
     library not found for -lPods-IOS-APP-j2objc-shared
 
 If you don't use CocoaPods, do not specify the `xcodeProjectDir` option;
-you'll have to manually add the static libraries and translated header directories
-to your Xcode project, and `j2objcXcode` will not do anything.
+you'll have to [manually](#how-do-i-manually-configure-my-xcode-project-to-use-the-translated-libraries)
+add the static libraries and translated header directories to your Xcode project,
+and `j2objcXcode` will not do anything.
 
 Also see the FAQ note on [developing with Swift](#how-do-i-develop-with-swift).
 
@@ -283,7 +284,7 @@ sourceSets {
 To work with Swift in Xcode, you need to configure a
 [bridging header](https://developer.apple.com/library/ios/documentation/Swift/Conceptual/BuildingCocoaApps/MixandMatch.html#//apple_ref/doc/uid/TP40014216-CH10-XID_81).
 Within that bridging header, include the files needed for using the JRE and any classes that
-you'd like to access from Swift code. Also see the FAQ item on [file not found](#how-do-i-solve-file-not-found-import-error-in-xcode) errors.
+you'd like to access from Swift code.
 
 ```objective-c
 // File: ios/IOS-APP/IOS-APP-bridging-header.h
@@ -299,32 +300,27 @@ you'd like to access from Swift code. Also see the FAQ item on [file not found](
 ```
 
 
-### How do I solve 'File not found' import error in Xcode?
+### How do I manually configure my Xcode project to use the translated libraries?
 
-This is typically caused by a limitation of Xcode that expects all the source to be in a
-top-level directory. You need to use the `--no-package-directories` argument to flatten
-the hierarchy. The plugin will warn if two files are mapped to a conflicting name.
+If you do not want to use CocoaPods, you will need to modify your Xcode project's build settings.
+In each case, you need to make sure the specification of the path is relative to the location
+of the Xcode project.  We'll assume your J2ObjC distribution is at `/J2OBJC_HOME`.
 
-```groovy
-j2objcConfig {
-    translateArgs '--no-package-directories'
-    ...
-}
-```
+1.  Add `/J2OBJC_HOME/include` and `shared/build/j2objcOutputs/src/main/objc` to
+[`USER_HEADER_SEARCH_PATHS`](https://developer.apple.com/library/mac/documentation/DeveloperTools/Reference/XcodeBuildSettingRef/1-Build_Setting_Reference/build_setting_ref.html#//apple_ref/doc/uid/TP40003931-CH3-SW21).
 
-If you'd like to preserve your folder hierarchy, you can instead change your 
-[USER_HEADER_SEARCH_PATHS](https://developer.apple.com/library/mac/documentation/DeveloperTools/Reference/XcodeBuildSettingRef/1-Build_Setting_Reference/build_setting_ref.html#//apple_ref/doc/uid/TP40003931-CH3-SW21)
-setting in your Xcode projects to include the `shared/build/j2objcOutputs/src/main/objc` folder.
+2.  Add `-lshared-j2objc` and `-ljre_emul` to `OTHER_LD_FLAGS`.  If you also use Guava, JSR 305,
+etc., you will need to add appropriate OTHER_LD_FLAGS for them as well.
 
-Example error:
+2.  For each build configuration and platform applicable to your project, add the following `LIBRARY_SEARCH_PATHS`:
+  * iOS Debug: /J2OBJC_HOME/lib/, shared/build/j2objcOutputs/lib/iosDebug
+  * iOS Release: /J2OBJC_HOME/lib/, shared/build/j2objcOutputs/lib/iosRelease
+  * OS X Debug: /J2OBJC_HOME/lib/macosx, shared/build/j2objcOutputs/lib/x86_64Debug
+  * OS X Release: /J2OBJC_HOME/lib/macosx, shared/build/j2objcOutputs/lib/x86_64Release
 
-```
-Bridging-Header.h:6:9: note: in file included from Bridging-Header.h:6:
-#import "MyClass.h"
-        ^
-Template.h:10:10: error: 'com/test/AnotherClass.h' file not found
-#include "com/test/AnotherClass.h"
-```
+3.  Follow the instructions on "Build Phases" (only) [here](http://j2objc.org/docs/Xcode-Build-Rules.html#update-the-build-settings).
+
+In each case, if the setting has existing values, append the ones above.
 
 ### How do I work with Package Prefixes?
 
