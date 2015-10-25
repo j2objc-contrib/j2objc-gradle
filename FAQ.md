@@ -19,7 +19,7 @@ and execute:
 Paste the results below, replacing existing contents.
 -->
 - [Start here for debugging (aka it's not working; aka don't panic)](#start-here-for-debugging-aka-its-not-working-aka-dont-panic)
-- [How do I develop with tasde?](#how-do-i-develop-with-tasde)
+- [How do I develop with Xcode?](#how-do-i-develop-with-xcode)
 - [How can I speed up my build?](#how-can-i-speed-up-my-build)
 - [What libraries are linked by default?](#what-libraries-are-linked-by-default)
 - [How do I setup dependencies with J2ObjC?](#how-do-i-setup-dependencies-with-j2objc)
@@ -31,7 +31,7 @@ Paste the results below, replacing existing contents.
 - [Why is my clean build failing?](#why-is-my-clean-build-failing)
 - [How do I include Java files from additional source directories?](#how-do-i-include-java-files-from-additional-source-directories)
 - [How do I develop with Swift?](#how-do-i-develop-with-swift)
-- [How do I solve 'File not found' import error in tasde?](#how-do-i-solve-file-not-found-import-error-in-tasde)
+- [How do I solve 'File not found' import error in Xcode?](#how-do-i-solve-file-not-found-import-error-in-xcode)
 - [How do I work with Package Prefixes?](#how-do-i-work-with-package-prefixes)
 - [How do I enable ARC for my translated Objective-C classes?](#how-do-i-enable-arc-for-my-translated-objective-c-classes)
 - [How do I call finalConfigure()?](#how-do-i-call-finalconfigure)
@@ -49,7 +49,7 @@ Paste the results below, replacing existing contents.
 
 Some common misconfigurations can cause numerous Gradle errors.
 
-1. First make sure you have a supported version of j2objc and tasde
+1. First make sure you have a supported version of j2objc and Xcode
 (see [README.md](README.md) for our current supported versions) installed locally,
 and that your J2OBJC_HOME property is set correctly to the distribution directory
 of j2objc.  This _is not_ the source repository root for j2objc.  The distribution
@@ -80,7 +80,8 @@ Now try building again.
 ### How do I develop with Xcode?
 
 The J2ObjC Gradle Plugin configures your Xcode project with [CocoaPods](https://cocoapods.org/).
-To take advantage of this, specify an `xcodeProjectDir` in your `j2objcConfig` per the Quick Start Guide.
+To take advantage of this, specify the directory that contains `PROJECT.xcodeproj` as
+the `xcodeProjectDir` in your `j2objcConfig` per the [Quick Start Guide](README.md#quick-start-guide).
 
 After running `j2objcXcode`, open the `.xcworkspace` file in Xcode. If the `.xcodeproj` file
 is opened in Xcode then CocoaPods will fail. This will appear as an Xcode build time error:
@@ -344,14 +345,14 @@ j2objcConfig {
 // File: resources/prefixes.properties
 // Storing at this location allows Class.forName(javaName) to work for mapped class.
 com.example.dir: Ced
-com.example.dir.subdir: Ceds
+com.example.dir.subdir: Ced
 ```
 
-As of J2ObjC verion 0.9.8 you can also use wildcards in your prefixes file. 
-This will map packages such as com.example.dirandcom.example.dir.subdir both to Ceds.
+You can also use wildcards in your prefixes file. 
+This will map packages such as com.example.dir and com.example.dir.subdir both to Ced.
 
 ```
-com.example.dir.*: Ceds
+com.example.dir.*: Ced
 ```
 
 ### How do I enable ARC for my translated Objective-C classes?
@@ -480,7 +481,7 @@ For more details:
 ### How do I develop on Windows or Linux?
 
 Windows and Linux support is limited to the `j2objcCycleFinder` and `j2objcTranslate` tasks.
-Mac OS X is required for the j2objcAssemble, j2objcTest and j2objctasde tasks
+Mac OS X is required for the j2objcAssemble, j2objcTest and j2objcXcode tasks
 (see [task descriptions](README.md#tasks)) This matches the
 [J2ObjC Requirements](http://j2objc.org/#requirements).
 
