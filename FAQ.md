@@ -313,8 +313,8 @@ of the Xcode project.  We'll assume your J2ObjC distribution is at `/J2OBJC_HOME
 etc., you will need to add appropriate OTHER_LD_FLAGS for them as well.
 
 2.  For each build configuration and platform applicable to your project, add the following `LIBRARY_SEARCH_PATHS`:
-  * iOS Debug: /J2OBJC_HOME/lib/, shared/build/j2objcOutputs/lib/iosDebug
-  * iOS Release: /J2OBJC_HOME/lib/, shared/build/j2objcOutputs/lib/iosRelease
+  * iOS Debug: /J2OBJC_HOME/lib, shared/build/j2objcOutputs/lib/iosDebug
+  * iOS Release: /J2OBJC_HOME/lib, shared/build/j2objcOutputs/lib/iosRelease
   * OS X Debug: /J2OBJC_HOME/lib/macosx, shared/build/j2objcOutputs/lib/x86_64Debug
   * OS X Release: /J2OBJC_HOME/lib/macosx, shared/build/j2objcOutputs/lib/x86_64Release
 
