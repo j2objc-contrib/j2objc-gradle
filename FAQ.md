@@ -82,14 +82,14 @@ Now try building again.
 The J2ObjC Gradle Plugin configures your Xcode project with [CocoaPods](https://cocoapods.org/).
 To take advantage of this, specify an `xcodeProjectDir` in your `j2objcConfig` per the Quick Start Guide.
 
-After using the `j2objcTask`, open the `.xcworkspace` file in Xcode. If the `.xcodeproj` file
+After running `j2objcXcode`, open the `.xcworkspace` file in Xcode. If the `.xcodeproj` file
 is opened in Xcode then CocoaPods will fail. This will appear as an Xcode build time error:
 
     library not found for -lPods-IOS-APP-j2objc-shared
 
 If you don't use CocoaPods, do not specify the `xcodeProjectDir` option;
 you'll have to manually add the static libraries and translated header directories
-to your Xcode project, and the `j2objcTask` will not do anything.
+to your Xcode project, and `j2objcXcode` will not do anything.
 
 Also see the FAQ note on [developing with Swift](#how-do-i-develop-with-swift).
 
