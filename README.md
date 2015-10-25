@@ -40,7 +40,7 @@ Configure `shared/build.gradle` for your Java-only project:
 // File: shared/build.gradle
 plugins {
     id 'java'
-    id 'com.github.j2objccontrib.j2objcgradle' version '0.4.3-alpha'
+    id 'com.github.j2objccontrib.j2objcgradle' version '0.5.0-alpha'
 }
 
 dependencies {
