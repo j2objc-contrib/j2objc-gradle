@@ -6,6 +6,17 @@ https://github.com/j2objc-contrib/j2objc-gradle/pull/NNN
 
 # Prerelease Alphas
 
+## vNext
+New functionality:
+* TBD
+
+Breaking changes/functionality:
+* TBD
+
+Code quality:
+* TBD
+
+
 ## v0.5.0-alpha
 New functionality:
 * Support for Xcode 7 and j2objc 0.9.8.2.1 #483
