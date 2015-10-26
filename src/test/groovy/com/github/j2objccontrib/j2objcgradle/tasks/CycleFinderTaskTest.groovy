@@ -141,7 +141,7 @@ class CycleFinderTaskTest {
 
         try {
             j2objcCycleFinder.cycleFinder()
-        } catch (Exception exception) {
+        } catch (Exception exception) {  // NOSONAR
             // Catch expected exception, do verifications, then throw again
             mockProjectExec.verify()
             throw exception
@@ -217,7 +217,7 @@ class CycleFinderTaskTest {
 
         try {
             j2objcCycleFinder.cycleFinder()
-        } catch (Exception exception) {
+        } catch (Exception exception) {  // NOSONAR
             // Catch expected exception, do verifications, then throw again
             mockProjectExec.verify()
             throw exception

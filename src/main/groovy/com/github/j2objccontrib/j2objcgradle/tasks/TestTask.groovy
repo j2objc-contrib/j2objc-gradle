@@ -136,7 +136,7 @@ class TestTask extends DefaultTask {
                 setErrorOutput stderr
             })
 
-        } catch (Exception exception) {
+        } catch (Exception exception) {  // NOSONAR
             String message =
                     "The j2objcTest task failed. Given that the java plugin 'test' task\n" +
                     "completed successfully, this is an error specific to the J2ObjC Gradle\n" +
