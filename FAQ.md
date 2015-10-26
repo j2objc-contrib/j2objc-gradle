@@ -32,6 +32,7 @@ Paste the results below, replacing existing contents.
 - [How do I include Java files from additional source directories?](#how-do-i-include-java-files-from-additional-source-directories)
 - [How do I develop with Swift?](#how-do-i-develop-with-swift)
 - [How do I manually configure my Xcode project to use the translated libraries?](#how-do-i-manually-configure-my-xcode-project-to-use-the-translated-libraries)
+- [How do I update my J2ObjC translated code from Xcode?](#how-do-i-update-my-j2objc-translated-code-from-xcode)
 - [How do I work with Package Prefixes?](#how-do-i-work-with-package-prefixes)
 - [How do I enable ARC for my translated Objective-C classes?](#how-do-i-enable-arc-for-my-translated-objective-c-classes)
 - [How do I call finalConfigure()?](#how-do-i-call-finalconfigure)
@@ -328,6 +329,42 @@ etc., you will need to add appropriate OTHER_LD_FLAGS for them as well.
 In each case, if the setting has existing values, append the ones above.
 Wherever `shared` appears above, duplicate that value for every J2ObjC project used,
 including all transitive dependencies.
+
+
+### How do I update my J2ObjC translated code from Xcode?
+
+It is suggested to first develop and debug in Android, then after that is working to
+build in iOS. If you want to update your generated Objective-C code while working in
+Xcode, then you can add the J2ObjC build as an External Build System target:
+
+1.  Select the main iOS project.  File -> New Target -> Other -> External Build System.
+    Set the build tool as `/bin/sh`, and name the target j2objcGradle.
+2.  In the 'External Build Tool Configuration' screen that appears, set the following values:
+  * Build Tool: `/bin/sh`
+  * Arguments: `./gradleJ2objcBuild.sh`
+  * Directory: (the root Gradle project directory, where your settings.gradle file lives)
+  * __Uncheck__ 'Pass build settings in environment'
+3.  Add the following script named `gradleJ2objcBuild.sh` in your root Gradle project directory.
+
+  ```sh
+  #!/bin/sh
+  # Don't contaminate the build with Xcode env vars.
+  unset DEVELOPER_DIR
+  # CUSTOMIZE: Add any needed paths here.
+  export PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+  if [ "$ACTION" != "clean" ]; then
+      # CUSTOMIZE: List the j2objcBuild task for each J2ObjC project.
+      ./gradlew shared:j2objcBuild -q
+  else
+      echo "Skipping Gradle Build for Clean"
+  fi
+  ```
+4.  Click on your your project in the left pane, select your main app target,
+    and in 'Build Phases' select 'Target Dependencies'.  Click the plus sign and find the j2objcGradle
+    target added earlier.
+
+From now on, building your iOS project will first update any J2ObjC code (if needed).
+
 
 ### How do I work with Package Prefixes?
 
