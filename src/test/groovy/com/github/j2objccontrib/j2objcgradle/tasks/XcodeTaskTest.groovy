@@ -17,7 +17,6 @@
 package com.github.j2objccontrib.j2objcgradle.tasks
 
 import com.github.j2objccontrib.j2objcgradle.J2objcConfig
-import com.google.common.annotations.VisibleForTesting
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
@@ -429,7 +428,7 @@ class XcodeTaskTest {
                 new File(podspecBuildDir + '/j2objc-PROJ-debug.podspec'),
                 new File(podspecBuildDir + '/j2objc-PROJ-release.podspec')))
         XcodeTask.writeUpdatedPodfileIfNeeded(
-                podspecDetailsList, xcodeTargetDetailsIosAppOnly, podfile, null)
+                podspecDetailsList, xcodeTargetDetailsIosAppOnly, podfile)
 
         // Verify modified Podfile
         List<String> expectedLines = [
@@ -450,7 +449,7 @@ class XcodeTaskTest {
         // Verify unmodified on second call
         // TODO: verify that file wasn't written a second time
         XcodeTask.writeUpdatedPodfileIfNeeded(
-                podspecDetailsList, xcodeTargetDetailsIosAppOnly, podfile, null)
+                podspecDetailsList, xcodeTargetDetailsIosAppOnly, podfile)
         readPodfileLines = podfile.readLines()
         assert expectedLines == readPodfileLines
     }

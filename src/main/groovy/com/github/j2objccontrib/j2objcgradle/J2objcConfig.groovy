@@ -773,7 +773,7 @@ class J2objcConfig {
                 setErrorOutput stderr
             })
 
-        } catch (Exception exception) {
+        } catch (Exception exception) {  // NOSONAR
             // Likely too old to understand -version,
             // but include the error since it could be something else.
             Utils.throwJ2objcConfigFailure(project, exception.toString() + "\n\n" +

@@ -122,6 +122,7 @@ class NativeCompilation {
     }
 
     @PackageScope
+    @SuppressWarnings("grvy:org.codenarc.rule.size.NestedBlockDepthRule")
     void apply(File srcGenMainDir, File srcGenTestDir) {
         project.with {
             // Wire up dependencies with tasks created dynamically by native plugin(s).
@@ -329,5 +330,3 @@ class NativeCompilation {
         assert added
     }
 }
-
-

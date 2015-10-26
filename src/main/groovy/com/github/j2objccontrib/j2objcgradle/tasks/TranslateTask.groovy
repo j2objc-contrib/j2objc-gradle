@@ -207,7 +207,15 @@ class TranslateTask extends DefaultTask {
             logger.debug("Unchanged main files: " + unchangedMainSrcFiles.getFiles().size())
             logger.debug("Unchanged test files: " + unchangedTestSrcFiles.getFiles().size())
 
-            if (!nonSourceFileChanged) {
+            if (nonSourceFileChanged) {
+                // A change outside of the source set directories has occurred, so an incremental build isn't possible.
+                // The most common such change is in the JAR for a dependent library, for example if Java project
+                // that this project depends on had its source changed and was recompiled.
+                Utils.projectClearDir(project, srcGenMainDir)
+                Utils.projectClearDir(project, srcGenTestDir)
+                mainSrcFilesChanged = originalMainSrcFiles
+                testSrcFilesChanged = originalTestSrcFiles
+            } else {
                 // All changes were within srcFiles (i.e. in a Java source-set).
                 int translatedFiles = 0
                 if (srcGenMainDir.exists()) {
@@ -230,14 +238,6 @@ class TranslateTask extends DefaultTask {
                 if (translatedFiles > 0 && J2objcConfig.from(project).UNSAFE_incrementalBuildClosure) {
                     translateArgs.remove('--build-closure')
                 }
-            } else {
-                // A change outside of the source set directories has occurred, so an incremental build isn't possible.
-                // The most common such change is in the JAR for a dependent library, for example if Java project
-                // that this project depends on had its source changed and was recompiled.
-                Utils.projectClearDir(project, srcGenMainDir)
-                Utils.projectClearDir(project, srcGenTestDir)
-                mainSrcFilesChanged = originalMainSrcFiles
-                testSrcFilesChanged = originalTestSrcFiles
             }
         }
 
@@ -346,7 +346,7 @@ class TranslateTask extends DefaultTask {
                 setErrorOutput stderr
             })
 
-        } catch (Exception exception) {
+        } catch (Exception exception) {  // NOSONAR
             // TODO: match on common failures and provide useful help
             throw exception
         }

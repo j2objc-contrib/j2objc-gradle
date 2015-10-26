@@ -149,7 +149,8 @@ class DependencyResolver {
     protected void visitLinkSelfResolvingDependency(
             SelfResolvingDependency dep, boolean isTest) {
         // TODO: handle native prebuilt libraries as files.
-        throw new UnsupportedOperationException("Cannot automatically link J2ObjC dependency: $dep")
+        throw new UnsupportedOperationException(
+            "Cannot automatically link J2ObjC dependency: $dep, test: $isTest")
     }
 
     protected void visitLinkProjectDependency(ProjectDependency dep, boolean isTest) {
@@ -191,6 +192,7 @@ class DependencyResolver {
     }
 
     protected void visitLinkGenericDependency(Dependency dep, boolean isTest) {
-        throw new UnsupportedOperationException("Cannot automatically link J2ObjC dependency: $dep")
+        throw new UnsupportedOperationException(
+            "Cannot automatically link J2ObjC dependency: $dep, test: $isTest")
     }
 }

@@ -24,7 +24,6 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.api.logging.Logger
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
@@ -106,12 +105,12 @@ class XcodeTask extends DefaultTask {
             return "j2objc_$projectName".replaceAll(/[^a-zA-Z0-9]/, '_')
         }
 
-        @SuppressWarnings('unused')
+        @SuppressWarnings(['unused', 'grvy:org.codenarc.rule.unused.UnusedPrivateMethodRule'])
         private static void writeObject(ObjectOutputStream s) throws IOException {
             s.defaultWriteObject();
         }
 
-        @SuppressWarnings('unused')
+        @SuppressWarnings(['unused', 'grvy:org.codenarc.rule.unused.UnusedPrivateMethodRule'])
         private static void readObject(ObjectInputStream s) throws IOException {
             s.defaultReadObject();
         }
@@ -194,7 +193,7 @@ class XcodeTask extends DefaultTask {
                 getXcodeTargetsIos(), getXcodeTargetsOsx(), getXcodeTargetsWatchos(),
                 getMinVersionIos(), getMinVersionOsx(), getMinVersionWatchos())
 
-        writeUpdatedPodfileIfNeeded(podspecDetailsList, xcodeTargetDetails, podfile, logger)
+        writeUpdatedPodfileIfNeeded(podspecDetailsList, xcodeTargetDetails, podfile)
 
         // install the pod
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
@@ -209,7 +208,7 @@ class XcodeTask extends DefaultTask {
                 setErrorOutput stderr
             })
 
-        } catch (Exception exception) {
+        } catch (Exception exception) {  // NOSONAR
             if (exception.getMessage().find(
                     "A problem occurred starting process 'command 'pod''")) {
                 String message =
@@ -377,7 +376,7 @@ class XcodeTask extends DefaultTask {
     static void writeUpdatedPodfileIfNeeded(
             List<PodspecDetails> podspecDetailsList,
             XcodeTargetDetails xcodeTargetDetails,
-            File podfile, Logger logger) {
+            File podfile) {
 
         List<String> oldPodfileLines = podfile.readLines()
         List<String> newPodfileLines = new ArrayList<String>(oldPodfileLines)

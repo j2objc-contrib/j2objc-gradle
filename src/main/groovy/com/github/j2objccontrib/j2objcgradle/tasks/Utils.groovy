@@ -659,7 +659,7 @@ class Utils {
                 }
             }
 
-        } catch (Exception exception) {
+        } catch (Exception exception) {  // NOSONAR
             // ExecException is most common, which indicates "non-zero exit"
             String exceptionMsg = projectExecLog(execSpec, stdout, stderr, execSucceeded, exception)
             throw new InvalidUserDataException(exceptionMsg, exception)

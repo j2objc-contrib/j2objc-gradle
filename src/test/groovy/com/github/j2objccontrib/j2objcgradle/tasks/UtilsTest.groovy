@@ -16,7 +16,6 @@
 
 package com.github.j2objccontrib.j2objcgradle.tasks
 
-import com.github.j2objccontrib.j2objcgradle.J2objcConfig
 import groovy.transform.CompileStatic
 import org.apache.commons.io.output.TeeOutputStream
 import org.gradle.api.InvalidUserDataException

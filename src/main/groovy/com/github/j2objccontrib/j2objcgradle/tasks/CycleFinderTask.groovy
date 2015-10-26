@@ -169,13 +169,13 @@ class CycleFinderTask extends DefaultTask {
             logger.debug("CycleFinder found 0 cycles")
             assert 0 == getCycleFinderExpectedCycles()
 
-        } catch (Exception exception) {
+        } catch (Exception exception) {  // NOSONAR
             // ExecException is converted to InvalidUserDataException in Utils.projectExec(...)
 
             if (!Utils.isProjectExecNonZeroExit(exception)) {
                 throw exception
             }
-            
+
             String cyclesFoundStr = Utils.matchRegexOutputs(stdout, stderr, cyclesFoundRegex)
             if (!cyclesFoundStr?.isInteger()) {
                 String message =

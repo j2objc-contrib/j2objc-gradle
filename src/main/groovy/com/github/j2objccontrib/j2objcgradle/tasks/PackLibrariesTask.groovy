@@ -82,7 +82,7 @@ class PackLibrariesTask extends DefaultTask {
                 setStandardOutput stderr
             })
 
-        } catch (Exception exception) {
+        } catch (Exception exception) {  // NOSONAR
             // TODO: match on common failures and provide useful help
             throw exception
         }
