@@ -180,7 +180,7 @@ class XcodeTaskTest {
         String podNameMethod = "j2objc_${proj.name}"
         String podNameDebug = "j2objc-${proj.name}-debug"
         String podNameRelease = "j2objc-${proj.name}-release"
-        String path = "../${proj.getProjectDir().getName()}/build"
+        String path = "../${proj.getProjectDir().getName()}/build/j2objcOutputs"
         List<String> expectedPodfile = [
                 "use_frameworks!",
                 "",
