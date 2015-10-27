@@ -232,6 +232,8 @@ class XcodeTaskTest {
             assert exception.toString().contains('Within that directory, create the Podfile with:')
             assert exception.toString().contains("(cd ${proj.file('ios').absolutePath} && pod init)")
             assert exception.toString().contains('sudo gem install cocoapods')
+            assert exception.toString().contains('.xcworkspace')
+            assert exception.toString().contains('bridging header')
         }
 
         // Verify no calls to project.copy, project.delete or project.exec

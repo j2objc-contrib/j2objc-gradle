@@ -174,14 +174,21 @@ class XcodeTask extends DefaultTask {
                     "To fix this:\n" +
                     "\n" +
                     "1) Set xcodeProjectDir to the directory containing 'IOS-APP.xcodeproj':\n" +
-                    "    curent value: ${getXcodeProjectDir()}\n" +
-                    "    resolves to: $xcodeAbsPath\n" +
+                    "    current value: ${getXcodeProjectDir()}\n" +
+                    "    absolute path: $xcodeAbsPath\n" +
                     "\n" +
                     "2) Within that directory, create the Podfile with:\n" +
                     "    (cd $xcodeAbsPath && pod init)\n" +
                     "\n" +
                     "If the pod command isn't found, then install CocoaPods:\n" +
-                    "    sudo gem install cocoapods"
+                    "    sudo gem install cocoapods\n" +
+                    "\n" +
+                    "NOTE: After building, open the '.xcworkspace' file in Xcode. Opening '.xcodeproj' will fail.\n" +
+                    "\n" +
+                    "NOTE: When working with Swift, setup your bridging header:\n" +
+                    "https://github.com/j2objc-contrib/j2objc-gradle/blob/master/FAQ.md#how-do-i-develop-with-swift"
+
+
             throw new InvalidUserDataException(message)
         }
         logger.debug("Pod exists at path: ${getXcodeProjectDir()}")
@@ -221,14 +228,6 @@ class XcodeTask extends DefaultTask {
             // unrecognized errors are rethrown:
             throw exception
         }
-
-        // Warning to avoid breaking CocoaPods
-        // Error: "library not found for -lPods-*-j2objc-shared"
-        // See: https://github.com/j2objc-contrib/j2objc-gradle/issues/273
-        logger.warn("NOTE: open the '.xcworkspace' file in Xcode. It will fail if you open the '.xcodeproj' file.")
-        // Warning to aid setup when developing with Swift
-        logger.warn("NOTE: when working with Swift, setup your bridging header:")
-        logger.warn("https://github.com/j2objc-contrib/j2objc-gradle/blob/master/FAQ.md#how-do-i-develop-with-swift")
     }
 
 
