@@ -19,9 +19,10 @@ package com.github.j2objccontrib.j2objcgradle.tasks
 import com.github.j2objccontrib.j2objcgradle.J2objcConfig
 import groovy.transform.CompileStatic
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.FileTree
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
-import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.OutputDirectories
 import org.gradle.api.tasks.TaskAction
 
 /**
@@ -32,20 +33,49 @@ import org.gradle.api.tasks.TaskAction
 class AssembleLibrariesTask extends DefaultTask {
 
     // Generated ObjC libraries
-    @InputDirectory
     File srcLibDir
-
-    @InputDirectory
     File srcPackedLibDir
+
+    // Only treat as inputs the files of relevant buildType.
+    @InputFiles
+    FileTree getSrcLibs() {
+        return project.fileTree(dir: srcLibDir, include: getLibraryPattern()) +
+               project.fileTree(dir: srcPackedLibDir, include: getLibraryPattern())
+    }
 
     // Debug or Release
     @Input
     String buildType
 
+    String getLibraryPattern() { return "*$buildType/*.a" }
 
-    @OutputDirectory
     File getDestLibDirFile() { return J2objcConfig.from(project).getDestLibDirFile() }
 
+    // Only treat as outputs the directories of relevant buildType.
+    @SuppressWarnings('unused')
+    @OutputDirectories
+    List<File> getDestLibSubdirs() {
+        List<File> inputDirs = []
+        FileFilter filter = new FileFilter() {
+            @Override boolean accept(File pathname) {
+                // We care only about architecture directories (other files could be in here,
+                // like .DS_Store)
+                return pathname.isDirectory() && pathname.name.endsWith(buildType)
+            }
+        }
+        File[] filtered = srcLibDir.listFiles(filter)
+        // Can legitimately be null when the parent directory doesn't exist.
+        // If the prior tasks are disabled, it would be correct for this task to pack nothing.
+        // When testing we don't actually create all these directories either.
+        if (filtered != null) {
+            inputDirs.addAll(filtered)
+        }
+        filtered = srcPackedLibDir.listFiles(filter)
+        if (filtered != null) {
+            inputDirs.addAll(filtered)
+        }
+        return inputDirs.collect({ project.file("${getDestLibDirFile().absolutePath}/${it.name}") })
+    }
 
     @TaskAction
     void assembleLibraries() {
@@ -59,7 +89,7 @@ class AssembleLibrariesTask extends DefaultTask {
             from srcLibDir
             from srcPackedLibDir
             into getDestLibDirFile()
-            include "*$buildType/*.a"
+            include getLibraryPattern()
         })
     }
 }
