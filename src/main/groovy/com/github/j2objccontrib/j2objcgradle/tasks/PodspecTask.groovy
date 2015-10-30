@@ -57,10 +57,17 @@ class PodspecTask extends DefaultTask {
     String getJ2objcHome() { return Utils.j2objcHome(project) }
 
     @Input
-    File getDestLibDirFile() { return J2objcConfig.from(project).getDestLibDirFile() }
-
-    @Input
     String getLibName() { return "${project.name}-j2objc" }
+
+    // Default: build/j2objcOutputs
+    // Podspec Requirements require this location:
+    //     Podspecs should be located at the root of the repository, and paths to files should be specified relative
+    //     to the root of the repository as well. File patterns do not support traversing the parent directory ( .. ).
+    //     https://guides.cocoapods.org/syntax/podspec.html#group_file_patterns
+    @Input
+    File getDestPodspecDirFile() { return J2objcConfig.from(project).getDestPodspecDirFile() }
+    @Input
+    File getDestLibDirFile() { return J2objcConfig.from(project).getDestLibDirFile() }
 
     @Input
     String getPodNameDebug() { "j2objc-${project.name}-debug" }
@@ -74,12 +81,14 @@ class PodspecTask extends DefaultTask {
     @Input
     String getMinVersionWatchos() { return J2objcConfig.from(project).getMinVersionWatchos() }
 
-
-    // CocoaPods podspec files that are referenced by the Podfile
     @OutputFile
-    File getPodspecDebug() { new File(project.buildDir, "${getPodNameDebug()}.podspec") }
+    File getPodspecDebug() {
+        return new File(getDestPodspecDirFile(), "${getPodNameDebug()}.podspec")
+    }
     @OutputFile
-    File getPodspecRelease() { new File(project.buildDir, "${getPodNameRelease()}.podspec") }
+    File getPodspecRelease() {
+        return new File(getDestPodspecDirFile(), "${getPodNameRelease()}.podspec")
+    }
 
 
     @TaskAction
@@ -90,12 +99,12 @@ class PodspecTask extends DefaultTask {
 
         // TODO: allow custom list of libraries
         // podspec paths must be relative to podspec file, which is in buildDir
-        String resourceIncludePath = relativizeToBuildDir(getDestSrcMainResourcesDirFile(), project)
+        String resourceIncludePath = Utils.relativizeNonParent(getDestPodspecDirFile(), getDestSrcMainResourcesDirFile())
         // iOS packed libraries are shared with watchOS
-        String libDirIosDebug = relativizeToBuildDir(new File(getDestLibDirFile(), 'iosDebug'), project)
-        String libDirIosRelease = relativizeToBuildDir(new File(getDestLibDirFile(), 'iosRelease'), project)
-        String libDirOsxDebug = relativizeToBuildDir(new File(getDestLibDirFile(), 'x86_64Debug'), project)
-        String libDirOsxRelease = relativizeToBuildDir(new File(getDestLibDirFile(), 'x86_64Release'), project)
+        String libDirIosDebug = Utils.relativizeNonParent(getDestPodspecDirFile(), new File(getDestLibDirFile(), 'iosDebug'))
+        String libDirIosRelease = Utils.relativizeNonParent(getDestPodspecDirFile(), new File(getDestLibDirFile(), 'iosRelease'))
+        String libDirOsxDebug = Utils.relativizeNonParent(getDestPodspecDirFile(), new File(getDestLibDirFile(), 'x86_64Debug'))
+        String libDirOsxRelease = Utils.relativizeNonParent(getDestPodspecDirFile(), new File(getDestLibDirFile(), 'x86_64Release'))
 
         validateNumericVersion(getMinVersionIos(), 'minVersionIos')
         validateNumericVersion(getMinVersionOsx(), 'minVersionOsx')
@@ -112,16 +121,11 @@ class PodspecTask extends DefaultTask {
                         getMinVersionIos(), getMinVersionOsx(), getMinVersionWatchos(),
                         getLibName(), getJ2objcHome())
 
+        Utils.projectMkDir(project, getDestPodspecDirFile())
         logger.debug("Writing debug podspec... ${getPodspecDebug()}")
         getPodspecDebug().write(podspecContentsDebug)
         logger.debug("Writing release podspec... ${getPodspecRelease()}")
         getPodspecRelease().write(podspecContentsRelease)
-    }
-
-    static private String relativizeToBuildDir(File path, Project proj) {
-        // NOTE: toURI() adds trailing slash in production but not in unit tests
-        return Utils.trimTrailingForwardSlash(
-                proj.getBuildDir().toURI().relativize(path.toURI()).toString())
     }
 
     // Podspec references are relative to project.buildDir
@@ -207,6 +211,11 @@ class PodspecTask extends DefaultTask {
         }
         if (!relativeRequired && !absolutePath) {
             throw new InvalidUserDataException("Path shouldn't be relative: $path")
+        }
+        if (relativeRequired && path.startsWith('../')) {
+            // Pod references must be relative to podspec and not traverse parent, i.e. '../'
+            // https://guides.cocoapods.org/syntax/podspec.html#group_file_patterns
+            throw new InvalidUserDataException("Path can't traverse parent: $path")
         }
     }
 }

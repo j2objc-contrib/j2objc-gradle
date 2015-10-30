@@ -53,9 +53,10 @@ class J2objcConfigTest {
     void testConstructor() {
         J2objcConfig ext = new J2objcConfig(proj)
 
+        assert proj.file('build/j2objcOutputs').absolutePath == ext.destPodspecDir
+        assert proj.file('build/j2objcOutputs/lib').absolutePath == ext.destLibDir
         assert proj.file('build/j2objcOutputs/src/main').absolutePath == ext.destSrcMainDir
         assert proj.file('build/j2objcOutputs/src/test').absolutePath == ext.destSrcTestDir
-        assert proj.file('build/j2objcOutputs/lib').absolutePath == ext.destLibDir
     }
 
     @Test

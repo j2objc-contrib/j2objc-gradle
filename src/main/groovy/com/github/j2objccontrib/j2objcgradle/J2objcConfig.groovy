@@ -66,9 +66,11 @@ class J2objcConfig {
         nativeCompilation = new NativeCompilation(project)
 
         // Provide defaults for assembly output locations.
+        destLibDir = new File(project.buildDir, 'j2objcOutputs/lib').absolutePath
+        // Can't be in subdirectory as podspec paths must be relative and not traverse parent ('..')
+        destPodspecDir = new File(project.buildDir, 'j2objcOutputs').absolutePath
         destSrcMainDir = new File(project.buildDir, 'j2objcOutputs/src/main').absolutePath
         destSrcTestDir = new File(project.buildDir, 'j2objcOutputs/src/test').absolutePath
-        destLibDir = new File(project.buildDir, 'j2objcOutputs/lib').absolutePath
     }
 
     /**
@@ -81,6 +83,13 @@ class J2objcConfig {
      * who know what they are doing and may wish to use a custom-build J2ObjC distribution.
      */
     boolean skipJ2objcVerification = false;
+
+    /**
+     * Where to assemble generated main libraries.
+     * <p/>
+     * Defaults to $buildDir/j2objcOutputs
+     */
+    String destPodspecDir = null
 
     /**
      * Where to assemble generated main libraries.
@@ -123,6 +132,10 @@ class J2objcConfig {
         }
 
         return project.file(new File(destSrcDir, fileType))
+    }
+
+    File getDestPodspecDirFile() {
+        return project.file(destPodspecDir)
     }
 
     /**
@@ -793,6 +806,7 @@ class J2objcConfig {
         verifyJ2objcRequirements()
 
         assert destLibDir != null
+        assert destPodspecDir != null
         assert destSrcMainDir != null
         assert destSrcTestDir != null
 
