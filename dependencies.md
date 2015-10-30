@@ -110,7 +110,7 @@ dependencies {
 ```
 
 You can see many examples of configuring builds for third-party libraries
-[here](https://github.com/madvay/j2objc-common-libs-e2e-test/tree/master/libraryBuilds).
+[here](https://github.com/j2objc-contrib/j2objc-common-libs-e2e-test/tree/master/libraryBuilds).
 
 
 ## Multiple projects and external libraries
