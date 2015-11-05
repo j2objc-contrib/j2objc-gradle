@@ -659,7 +659,7 @@ class J2objcConfig {
      * Directory of the target Xcode project.
      *
      * Suggested location is '../ios'
-     * See J2ObjC Plugin <a href="https://github.com/j2objc-contrib/j2objc-gradle/blob/master/README.md#folder-structure">Folder Structure</a>
+     * See J2ObjC Plugin <a href="https://github.com/j2objc-contrib/j2objc-gradle/blob/master/FAQ.md#what-is-the-recommended-folder-structure-for-my-app">Folder Structure</a>
      *
      */
     String xcodeProjectDir = null
@@ -813,7 +813,7 @@ class J2objcConfig {
         // TODO: watchOS build support
         if (xcodeTargetsWatchos.size() > 0) {
             throw new InvalidUserDataException(
-                    "WatchOS isn't yet supported, please unset xcodeTargetsWatchos for now." +
+                    "watchOS isn't yet supported, please unset xcodeTargetsWatchos for now." +
                     "Follow this issue for updates: https://github.com/j2objc-contrib/j2objc-gradle/issues/525")
         }
     }

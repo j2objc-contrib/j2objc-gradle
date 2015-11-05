@@ -205,8 +205,8 @@ class Utils {
         if (!proj.plugins.hasPlugin('java')) {
             String message =
                     "J2ObjC Gradle Plugin: missing 'java' plugin for '${proj.name}' project.\n" +
-                    "This is a requirement for using J2ObjC. Please see usage information at:\n" +
-                    "https://github.com/j2objc-contrib/j2objc-gradle/#usage"
+                    "This is a requirement for using J2ObjC. Please see:\n" +
+                    "https://github.com/j2objc-contrib/j2objc-gradle/#quick-start-guide"
             throw new InvalidUserDataException(message)
         }
     }
