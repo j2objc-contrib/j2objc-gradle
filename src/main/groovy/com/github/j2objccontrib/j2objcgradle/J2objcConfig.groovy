@@ -664,6 +664,8 @@ class J2objcConfig {
      */
     String xcodeProjectDir = null
 
+    boolean onlyAddJ2ObjcToPodfile = false
+
     /**
      * iOS app and test Xcode targets to link to the generated libraries.
      *

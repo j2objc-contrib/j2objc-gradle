@@ -53,6 +53,9 @@ class XcodeTask extends DefaultTask {
     @Input @Optional
     String getXcodeProjectDir() { return J2objcConfig.from(project).xcodeProjectDir }
 
+    @Input
+    boolean isOnlyAddJ2ObjcToPodfile() { return J2objcConfig.from(project).onlyAddJ2ObjcToPodfile }
+
     boolean isTaskActive() { return getXcodeProjectDir() != null }
 
     @Input
@@ -200,7 +203,7 @@ class XcodeTask extends DefaultTask {
                 getXcodeTargetsIos(), getXcodeTargetsOsx(), getXcodeTargetsWatchos(),
                 getMinVersionIos(), getMinVersionOsx(), getMinVersionWatchos())
 
-        writeUpdatedPodfileIfNeeded(podspecDetailsList, xcodeTargetDetails, podfile)
+        writeUpdatedPodfileIfNeeded(podspecDetailsList, xcodeTargetDetails,!isOnlyAddJ2ObjcToPodfile(), podfile)
 
         // install the pod
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
@@ -374,14 +377,14 @@ class XcodeTask extends DefaultTask {
     @VisibleForTesting
     static void writeUpdatedPodfileIfNeeded(
             List<PodspecDetails> podspecDetailsList,
-            XcodeTargetDetails xcodeTargetDetails,
+            XcodeTargetDetails xcodeTargetDetails, boolean updateTargets,
             File podfile) {
 
         List<String> oldPodfileLines = podfile.readLines()
         List<String> newPodfileLines = new ArrayList<String>(oldPodfileLines)
 
         newPodfileLines = updatePodfile(
-                newPodfileLines, podspecDetailsList, xcodeTargetDetails, podfile)
+                newPodfileLines, podspecDetailsList, xcodeTargetDetails,updateTargets, podfile)
 
         // Write file only if it's changed
         if (!oldPodfileLines.equals(newPodfileLines)) {
@@ -393,34 +396,38 @@ class XcodeTask extends DefaultTask {
     static List<String> updatePodfile(
             List<String> podfileLines,
             List<PodspecDetails> podspecDetailsList,
-            XcodeTargetDetails xcodeTargetDetails,
+            XcodeTargetDetails xcodeTargetDetails,boolean updateTargets,
             File podfile) {
 
-        List<String> podfileTargets = extractXcodeTargets(podfileLines)
-        verifyTargets(xcodeTargetDetails.xcodeTargetsIos, podfileTargets, 'xcodeTargetsIos')
-        verifyTargets(xcodeTargetDetails.xcodeTargetsOsx, podfileTargets, 'xcodeTargetsOsx')
-        verifyTargets(xcodeTargetDetails.xcodeTargetsWatchos, podfileTargets, 'xcodeTargetsWatchos')
+        if(updateTargets){
+            List<String> podfileTargets = extractXcodeTargets(podfileLines)
+            verifyTargets(xcodeTargetDetails.xcodeTargetsIos, podfileTargets, 'xcodeTargetsIos')
+            verifyTargets(xcodeTargetDetails.xcodeTargetsOsx, podfileTargets, 'xcodeTargetsOsx')
+            verifyTargets(xcodeTargetDetails.xcodeTargetsWatchos, podfileTargets, 'xcodeTargetsWatchos')
 
-        if (xcodeTargetDetails.xcodeTargetsIos.isEmpty() &&
-            xcodeTargetDetails.xcodeTargetsOsx.isEmpty() &&
-            xcodeTargetDetails.xcodeTargetsWatchos.isEmpty()) {
-            // Give example for configuring iOS as that's the common case
-            throw new InvalidUserDataException(
-                    "You must configure the xcode targets for the J2ObjC Gradle Plugin.\n" +
-                    "It must be a subset of the valid targets: '${podfileTargets.join("', '")}'\n" +
-                    "\n" +
-                    "j2objcConfig {\n" +
-                    "    xcodeTargetsIos 'IOS-APP', 'IOS-APPTests'  // example\n" +
-                    "}\n" +
-                    "\n" +
-                    "Can be optionally configured for xcodeTargetsOsx and xcodeTargetsWatchos\n")
+            if (xcodeTargetDetails.xcodeTargetsIos.isEmpty() &&
+                xcodeTargetDetails.xcodeTargetsOsx.isEmpty() &&
+                xcodeTargetDetails.xcodeTargetsWatchos.isEmpty()) {
+                // Give example for configuring iOS as that's the common case
+                throw new InvalidUserDataException(
+                        "You must configure the xcode targets for the J2ObjC Gradle Plugin.\n" +
+                        "It must be a subset of the valid targets: '${podfileTargets.join("', '")}'\n" +
+                        "\n" +
+                        "j2objcConfig {\n" +
+                        "    xcodeTargetsIos 'IOS-APP', 'IOS-APPTests'  // example\n" +
+                        "}\n" +
+                        "\n" +
+                        "Can be optionally configured for xcodeTargetsOsx and xcodeTargetsWatchos\n")
+            }
         }
 
         // update pod methods
         List<String> newPodfileLines = updatePodMethods(podfileLines, podspecDetailsList, podfile)
 
         // update pod targets
-        newPodfileLines = updatePodfileTargets(newPodfileLines, podspecDetailsList, xcodeTargetDetails)
+        if(updateTargets){
+             newPodfileLines = updatePodfileTargets(newPodfileLines, podspecDetailsList, xcodeTargetDetails)
+        }
 
         return newPodfileLines
     }
