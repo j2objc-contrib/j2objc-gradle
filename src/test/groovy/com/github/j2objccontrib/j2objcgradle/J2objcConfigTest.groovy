@@ -255,6 +255,8 @@ class J2objcConfigTest {
     // A small number of the configuration variable must be String[]
     // instead of List<String>, this tests 'extraLinkerArgs' as an example.
     @Test
+    // Skip to allow: "= ['-arg1']" as it would be used in j2objcConfig
+    @CompileStatic(TypeCheckingMode.SKIP)
     void testStringArrayArgs() {
         J2objcConfig j2objcConfig = new J2objcConfig(proj)
         j2objcConfig.extraLinkerArgs = ['-arg1']
@@ -282,6 +284,8 @@ class J2objcConfigTest {
     }
 
     @Test
+    // Skip to allow: "+= 'ios_armv7s'" as it would be used in j2objcConfig
+    @CompileStatic(TypeCheckingMode.SKIP)
     void testSupportedAndEnabledArchs_SubsetEnabledArchsSpecifiedWithAdditionalSupportedArchs() {
         J2objcConfig j2objcConfig = TestingUtils.setupProjectJ2objcConfig(
                 new TestingUtils.ProjectConfig(createJ2objcConfig: true,
