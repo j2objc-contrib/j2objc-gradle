@@ -46,6 +46,9 @@ class XcodeTaskTest {
                 'PROJ',
                 new File('/SRC/PROJ/BUILD/j2objc-PROJ-debug.podspec'),
                 new File('/SRC/PROJ/BUILD/j2objc-PROJ-release.podspec'))]
+    XcodeTask.XcodeTargetDetails xcodeTargetDetailsEmpty =
+            new XcodeTask.XcodeTargetDetails(
+                    [], [], [],null,null,null)
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -430,7 +433,7 @@ class XcodeTaskTest {
                 new File(podspecBuildDir + '/j2objc-PROJ-debug.podspec'),
                 new File(podspecBuildDir + '/j2objc-PROJ-release.podspec')))
         XcodeTask.writeUpdatedPodfileIfNeeded(
-                podspecDetailsList, xcodeTargetDetailsIosAppOnly, true, podfile)
+                podspecDetailsList, xcodeTargetDetailsIosAppOnly, false, podfile)
 
         // Verify modified Podfile
         List<String> expectedLines = [
@@ -451,7 +454,7 @@ class XcodeTaskTest {
         // Verify unmodified on second call
         // TODO: verify that file wasn't written a second time
         XcodeTask.writeUpdatedPodfileIfNeeded(
-                podspecDetailsList, xcodeTargetDetailsIosAppOnly, true, podfile)
+                podspecDetailsList, xcodeTargetDetailsIosAppOnly, false, podfile)
         readPodfileLines = podfile.readLines()
         assert expectedLines == readPodfileLines
     }
@@ -465,7 +468,8 @@ class XcodeTaskTest {
         List<String> newPodfileLines = XcodeTask.updatePodfile(
                 podfileLines,
                 podspecDetailsProj,
-                xcodeTargetDetailsIosAppOnly, true,
+                xcodeTargetDetailsIosAppOnly,
+                false,
                 new File('/SRC/ios/Podfile'))
 
         List<String> expectedPodfileLines = [
@@ -485,13 +489,14 @@ class XcodeTaskTest {
         newPodfileLines = XcodeTask.updatePodfile(
                 newPodfileLines,
                 podspecDetailsProj,
-                xcodeTargetDetailsIosAppOnly, true,
+                xcodeTargetDetailsIosAppOnly,
+                false,
                 new File('/SRC/ios/Podfile'))
         assert expectedPodfileLines == newPodfileLines
     }
 
     @Test
-    void testUpdatePodfile_onlyAddMethod() {
+    void testUpdatePodfile_xcodeTargetsManualConfig() {
         List<String> podfileLines = [
                 "target 'IOS-APP' do",
                 "end"]
@@ -499,7 +504,8 @@ class XcodeTaskTest {
         List<String> newPodfileLines = XcodeTask.updatePodfile(
                 podfileLines,
                 podspecDetailsProj,
-                xcodeTargetDetailsIosAppOnly, false,
+                xcodeTargetDetailsEmpty ,
+                true,
                 new File('/SRC/ios/Podfile'))
 
         List<String> expectedPodfileLines = [
@@ -517,7 +523,8 @@ class XcodeTaskTest {
         newPodfileLines = XcodeTask.updatePodfile(
                 newPodfileLines,
                 podspecDetailsProj,
-                xcodeTargetDetailsIosAppOnly, false,
+                xcodeTargetDetailsEmpty,
+                true,
                 new File('/SRC/ios/Podfile'))
         assert expectedPodfileLines == newPodfileLines
     }
@@ -541,7 +548,8 @@ class XcodeTaskTest {
         List<String> newPodfileLines = XcodeTask.updatePodfile(
                 podfileLines,
                 podspecDetailsProj,
-                xcodeTargetDetails, true,
+                xcodeTargetDetails,
+                false,
                 new File('/SRC/ios/Podfile'))
 
         List<String> expectedPodfileLines = [
@@ -571,7 +579,8 @@ class XcodeTaskTest {
         newPodfileLines = XcodeTask.updatePodfile(
                 newPodfileLines,
                 podspecDetailsProj,
-                xcodeTargetDetails, true,
+                xcodeTargetDetails,
+                false,
                 new File('/SRC/ios/Podfile'))
         assert expectedPodfileLines == newPodfileLines
     }
@@ -594,7 +603,8 @@ class XcodeTaskTest {
                 [],
                 new XcodeTask.XcodeTargetDetails(
                         [], [], [],
-                        '6.0.0', '10.6.0', '1.0.0'), true,
+                        '6.0.0', '10.6.0', '1.0.0'),
+                false,
                 null)
     }
 
@@ -615,7 +625,8 @@ class XcodeTaskTest {
                 [],
                 new XcodeTask.XcodeTargetDetails(
                         ['TARGET-DOES-NOT-EXIST'], [], [],
-                        '6.0.0', '10.6.0', '1.0.0'), true,
+                        '6.0.0', '10.6.0', '1.0.0'),
+                false,
                 null)
     }
 
@@ -625,7 +636,8 @@ class XcodeTaskTest {
 
         List<String> newPodfileLines = XcodeTask.updatePodfile(
                 podfileLines, podspecDetailsProj,
-                xcodeTargetDetailsIosAppOnly, false,
+                xcodeTargetDetailsEmpty,
+                true,
                 new File('/SRC/ios/Podfile'))
 
         List<String> expectedLines = [

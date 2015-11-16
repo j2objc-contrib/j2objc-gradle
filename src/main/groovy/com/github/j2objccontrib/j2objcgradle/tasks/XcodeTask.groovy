@@ -54,7 +54,7 @@ class XcodeTask extends DefaultTask {
     String getXcodeProjectDir() { return J2objcConfig.from(project).xcodeProjectDir }
 
     @Input
-    boolean isOnlyAddJ2ObjcToPodfile() { return J2objcConfig.from(project).onlyAddJ2ObjcToPodfile }
+    boolean getXcodeTargetsManualConfig() { return J2objcConfig.from(project).xcodeTargetsManualConfig }
 
     boolean isTaskActive() { return getXcodeProjectDir() != null }
 
@@ -203,7 +203,7 @@ class XcodeTask extends DefaultTask {
                 getXcodeTargetsIos(), getXcodeTargetsOsx(), getXcodeTargetsWatchos(),
                 getMinVersionIos(), getMinVersionOsx(), getMinVersionWatchos())
 
-        writeUpdatedPodfileIfNeeded(podspecDetailsList, xcodeTargetDetails,!isOnlyAddJ2ObjcToPodfile(), podfile)
+        writeUpdatedPodfileIfNeeded(podspecDetailsList, xcodeTargetDetails, getXcodeTargetsManualConfig(), podfile)
 
         // install the pod
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
@@ -377,14 +377,15 @@ class XcodeTask extends DefaultTask {
     @VisibleForTesting
     static void writeUpdatedPodfileIfNeeded(
             List<PodspecDetails> podspecDetailsList,
-            XcodeTargetDetails xcodeTargetDetails, boolean updateTargets,
+            XcodeTargetDetails xcodeTargetDetails,
+            boolean xcodeTargetsManualConfig,
             File podfile) {
 
         List<String> oldPodfileLines = podfile.readLines()
         List<String> newPodfileLines = new ArrayList<String>(oldPodfileLines)
 
         newPodfileLines = updatePodfile(
-                newPodfileLines, podspecDetailsList, xcodeTargetDetails,updateTargets, podfile)
+                newPodfileLines, podspecDetailsList, xcodeTargetDetails, xcodeTargetsManualConfig, podfile)
 
         // Write file only if it's changed
         if (!oldPodfileLines.equals(newPodfileLines)) {
@@ -396,38 +397,49 @@ class XcodeTask extends DefaultTask {
     static List<String> updatePodfile(
             List<String> podfileLines,
             List<PodspecDetails> podspecDetailsList,
-            XcodeTargetDetails xcodeTargetDetails,boolean updateTargets,
+            XcodeTargetDetails xcodeTargetDetails,
+            boolean xcodeTargetsManualConfig,
             File podfile) {
 
-        if(updateTargets){
+        List<String> newPodfileLines = podfileLines;
+
+        boolean xcodeTargetsAllEmpty =
+                xcodeTargetDetails.xcodeTargetsIos.isEmpty() &&
+                        xcodeTargetDetails.xcodeTargetsOsx.isEmpty() &&
+                        xcodeTargetDetails.xcodeTargetsWatchos.isEmpty()
+
+        if (xcodeTargetsManualConfig) {
+            if (!xcodeTargetsAllEmpty) {
+                throw new InvalidUserDataException(
+                        "Xcode targets must all be blank when using xcodeTargetsManualConfig.\n" +
+                                "Please update j2objcConfig by removing xcodeTargetsIos, xcodeTargetsOsx & xcodeTargetsWatchos")
+            }
+        } else {
+            // xcodeTargetsManualConfig = false  (default)
             List<String> podfileTargets = extractXcodeTargets(podfileLines)
             verifyTargets(xcodeTargetDetails.xcodeTargetsIos, podfileTargets, 'xcodeTargetsIos')
             verifyTargets(xcodeTargetDetails.xcodeTargetsOsx, podfileTargets, 'xcodeTargetsOsx')
             verifyTargets(xcodeTargetDetails.xcodeTargetsWatchos, podfileTargets, 'xcodeTargetsWatchos')
 
             if (xcodeTargetDetails.xcodeTargetsIos.isEmpty() &&
-                xcodeTargetDetails.xcodeTargetsOsx.isEmpty() &&
-                xcodeTargetDetails.xcodeTargetsWatchos.isEmpty()) {
+                    xcodeTargetDetails.xcodeTargetsOsx.isEmpty() &&
+                    xcodeTargetDetails.xcodeTargetsWatchos.isEmpty()) {
                 // Give example for configuring iOS as that's the common case
                 throw new InvalidUserDataException(
                         "You must configure the xcode targets for the J2ObjC Gradle Plugin.\n" +
-                        "It must be a subset of the valid targets: '${podfileTargets.join("', '")}'\n" +
-                        "\n" +
-                        "j2objcConfig {\n" +
-                        "    xcodeTargetsIos 'IOS-APP', 'IOS-APPTests'  // example\n" +
-                        "}\n" +
-                        "\n" +
-                        "Can be optionally configured for xcodeTargetsOsx and xcodeTargetsWatchos\n")
+                                "It must be a subset of the valid targets: '${podfileTargets.join("', '")}'\n" +
+                                "\n" +
+                                "j2objcConfig {\n" +
+                                "    xcodeTargetsIos 'IOS-APP', 'IOS-APPTests'  // example\n" +
+                                "}\n" +
+                                "\n" +
+                                "Can be optionally configured for xcodeTargetsOsx and xcodeTargetsWatchos\n")
             }
+            newPodfileLines = updatePodfileTargets(newPodfileLines, podspecDetailsList, xcodeTargetDetails)
         }
 
         // update pod methods
-        List<String> newPodfileLines = updatePodMethods(podfileLines, podspecDetailsList, podfile)
-
-        // update pod targets
-        if(updateTargets){
-             newPodfileLines = updatePodfileTargets(newPodfileLines, podspecDetailsList, xcodeTargetDetails)
-        }
+        newPodfileLines = updatePodMethods(newPodfileLines, podspecDetailsList, podfile)
 
         return newPodfileLines
     }
@@ -437,7 +449,8 @@ class XcodeTask extends DefaultTask {
             if (! podfileTargets.contains(xcodeTarget)) {
                 throw new InvalidUserDataException(
                         "Invalid j2objcConfig { $xcodeTargetsName '$xcodeTarget' }\n" +
-                        "Must be one of the valid targets: '${podfileTargets.join("', '")}'")
+                                "Must be one of the valid targets: '${podfileTargets.join("', '")}'\n" +
+                                "NOTE: if your Podfile is too complex, you may need to use xcodeTargetsManualConfig")
             }
         }
     }
