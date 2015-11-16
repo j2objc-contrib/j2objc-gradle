@@ -203,7 +203,7 @@ class XcodeTask extends DefaultTask {
                 getXcodeTargetsIos(), getXcodeTargetsOsx(), getXcodeTargetsWatchos(),
                 getMinVersionIos(), getMinVersionOsx(), getMinVersionWatchos())
 
-        writeUpdatedPodfileIfNeeded(podspecDetailsList, xcodeTargetDetails, getXcodeTargetsManualConfig(), podfile)
+        writeUpdatedPodfileIfNeeded(podspecDetailsList, xcodeTargetDetails, xcodeTargetsManualConfig, podfile)
 
         // install the pod
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
