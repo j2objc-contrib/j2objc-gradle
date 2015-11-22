@@ -332,11 +332,11 @@ class XcodeTask extends DefaultTask {
         boolean endOfRegex = false
 
         for (line in podfileLines) {
-            if (!active && (line =~ startRegex).find()) {
+            if (!active && (line =~ startRegex)) {
                 active = true
                 result.addAll(newPodFileLines)
             }
-            if (active && (line =~ endRegex).find()) {
+            if (active && (line =~ endRegex)) {
                 active = false
                 endOfRegex = true
             }
