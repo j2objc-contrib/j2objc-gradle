@@ -49,6 +49,8 @@ class XcodeTask extends DefaultTask {
     public static final String targetNamedRegex = /^\s*target\s+'TARGET'\s+do\s*$/
     public static final String podMethodStartRegex = /^\s*((def\s*j2objc_)|(# J2ObjC Gradle Plugin)).*/
     public static final String endRegex = /^\s*end\s*/
+    public static final String sourceLineRegex = /^source 'http.*Specs.git'$/  // https://guides.cocoapods.org/syntax/podfile.html#podfile
+    public static final String platformLineRegex = /^platform :.*/
 
     @Input @Optional
     String getXcodeProjectDir() { return J2objcConfig.from(project).xcodeProjectDir }
@@ -320,6 +322,41 @@ class XcodeTask extends DefaultTask {
     }
 
     /**
+     * Replaces lines between two regexps
+     */
+    @VisibleForTesting
+    static List<String> regexReplaceLines(List<String> podfileLines,
+                                        String startRegex, String endRegex, List<String> newPodFileLines) {
+        List<String> result = new ArrayList<>()
+        boolean active = false
+        boolean endOfRegex = false
+
+        for (line in podfileLines) {
+            if (!active && (line =~ startRegex).find()) {
+                active = true
+                result.addAll(newPodFileLines)
+            }
+            if (active && (line =~ endRegex).find()) {
+                active = false
+                endOfRegex = true
+            }
+            if (!active && !endOfRegex) {
+                result.add(line)
+            }
+
+            if(endOfRegex){
+                endOfRegex=false
+            }
+        }
+        if (active) {
+            throw new InvalidUserDataException(
+                    "Failed to find endRegex: ${Utils.escapeSlashyString(endRegex)}\n" +
+                            podfileLines.join('\n'))
+        }
+        return result
+    }
+
+    /**
      * Insert new lines in to podfile between startRegex to endRegex.
      *
      * Throws error for no match or multiple matches.
@@ -372,6 +409,116 @@ class XcodeTask extends DefaultTask {
     }
 
     /**
+     * Searches for the line where to insert new methods into the podfile
+     */
+    @VisibleForTesting
+    static int findInsertLine(List<String> podfileLines) {
+
+        boolean noneCommentLineFound =false
+        boolean platformStatementFound =false
+        boolean sourceStatementFound =false
+
+        int counter = 0
+        int insertLineNumber = 0
+        for (line in podfileLines) {
+
+            // if a target statement is found. insert before this statement
+            if(line =~ targetStartRegex) {
+                return counter
+            }
+
+            counter++
+
+            // else insert after platform statement (platform :ios, '6.0')
+            if(platformStatementFound) continue
+            if(line =~ platformLineRegex) {
+                insertLineNumber = counter
+                platformStatementFound = true
+                continue
+            }
+
+            // else insert after platform statement (source 'https://github.com/CocoaPods/Specs.git')
+            if(sourceStatementFound) continue
+            if(line =~ sourceLineRegex) {
+                insertLineNumber = counter
+                sourceStatementFound = true
+                continue
+            }
+
+            // else insert at first none commented line
+            if(noneCommentLineFound) continue
+
+            if(!line.trim().startsWith("#")){
+                insertLineNumber = counter-1
+                noneCommentLineFound = true
+            }
+
+        }
+
+        return insertLineNumber
+    }
+
+    /**
+     * Insert new lines in to podfile at a certain line
+     * @param surroundWithEmptyLines regulates if inserted lines should be surrounded with empty ones
+     *
+     */
+    @VisibleForTesting
+    static List<String> insertAtLineNumber(List<String> podfileLines,List<String> insertLines, int line, boolean surroundWithEmptyLines) {
+        List<String> result = new ArrayList<>()
+        result.addAll(podfileLines.subList(0,line))
+
+        assert podfileLines.size() >= line
+
+        boolean insertAtTheEnd = podfileLines.size()==line
+        boolean insertAtTheBeginning = line==0
+
+        if(surroundWithEmptyLines){
+            if(!insertAtTheBeginning){
+                if(!isBlankLine(podfileLines,line-1)){
+                    result.add('')
+                }
+                if(isBlankLine(podfileLines,line)){
+                    line++
+                }
+            }
+            if(!insertAtTheEnd){
+                insertLines.add('')
+                if(isBlankLine(podfileLines,line)){
+                    line++
+                }
+            }
+        }
+        result.addAll(insertLines)
+        if(!insertAtTheEnd){
+            result.addAll(podfileLines.subList(line,podfileLines.size()))
+        }
+        return result
+    }
+
+    static boolean isBlankLine(List<String> podfileLines,int line){
+        if(line>=podfileLines.size()){
+            return false
+        }
+        return podfileLines.get(line).trim()==''
+    }
+
+    /**
+     * Checks if Podfile contains a certain regex
+     *
+     */
+    @VisibleForTesting
+    static boolean containsRegex(List<String> podfileLines, String startRegex) {
+
+        for (line in podfileLines) {
+            if ((line =~ startRegex).find()) {
+                return true
+            }
+        }
+        return false
+    }
+
+    /**
      * Modify in place the existing podfile.
      */
     @VisibleForTesting
@@ -405,14 +552,14 @@ class XcodeTask extends DefaultTask {
 
         boolean xcodeTargetsAllEmpty =
                 xcodeTargetDetails.xcodeTargetsIos.isEmpty() &&
-                        xcodeTargetDetails.xcodeTargetsOsx.isEmpty() &&
-                        xcodeTargetDetails.xcodeTargetsWatchos.isEmpty()
+                xcodeTargetDetails.xcodeTargetsOsx.isEmpty() &&
+                xcodeTargetDetails.xcodeTargetsWatchos.isEmpty()
 
         if (xcodeTargetsManualConfig) {
             if (!xcodeTargetsAllEmpty) {
                 throw new InvalidUserDataException(
                         "Xcode targets must all be blank when using xcodeTargetsManualConfig.\n" +
-                                "Please update j2objcConfig by removing xcodeTargetsIos, xcodeTargetsOsx & xcodeTargetsWatchos")
+                        "Please update j2objcConfig by removing xcodeTargetsIos, xcodeTargetsOsx & xcodeTargetsWatchos")
             }
         } else {
             // xcodeTargetsManualConfig = false  (default)
@@ -421,19 +568,17 @@ class XcodeTask extends DefaultTask {
             verifyTargets(xcodeTargetDetails.xcodeTargetsOsx, podfileTargets, 'xcodeTargetsOsx')
             verifyTargets(xcodeTargetDetails.xcodeTargetsWatchos, podfileTargets, 'xcodeTargetsWatchos')
 
-            if (xcodeTargetDetails.xcodeTargetsIos.isEmpty() &&
-                    xcodeTargetDetails.xcodeTargetsOsx.isEmpty() &&
-                    xcodeTargetDetails.xcodeTargetsWatchos.isEmpty()) {
+            if (xcodeTargetsAllEmpty) {
                 // Give example for configuring iOS as that's the common case
                 throw new InvalidUserDataException(
                         "You must configure the xcode targets for the J2ObjC Gradle Plugin.\n" +
-                                "It must be a subset of the valid targets: '${podfileTargets.join("', '")}'\n" +
-                                "\n" +
-                                "j2objcConfig {\n" +
-                                "    xcodeTargetsIos 'IOS-APP', 'IOS-APPTests'  // example\n" +
-                                "}\n" +
-                                "\n" +
-                                "Can be optionally configured for xcodeTargetsOsx and xcodeTargetsWatchos\n")
+                        "It must be a subset of the valid targets: '${podfileTargets.join("', '")}'\n" +
+                        "\n" +
+                        "j2objcConfig {\n" +
+                        "    xcodeTargetsIos 'IOS-APP', 'IOS-APPTests'  // example\n" +
+                        "}\n" +
+                        "\n" +
+                        "Can be optionally configured for xcodeTargetsOsx and xcodeTargetsWatchos\n")
             }
             newPodfileLines = updatePodfileTargets(newPodfileLines, podspecDetailsList, xcodeTargetDetails)
         }
@@ -449,8 +594,8 @@ class XcodeTask extends DefaultTask {
             if (! podfileTargets.contains(xcodeTarget)) {
                 throw new InvalidUserDataException(
                         "Invalid j2objcConfig { $xcodeTargetsName '$xcodeTarget' }\n" +
-                                "Must be one of the valid targets: '${podfileTargets.join("', '")}'\n" +
-                                "NOTE: if your Podfile is too complex, you may need to use xcodeTargetsManualConfig")
+                        "Must be one of the valid targets: '${podfileTargets.join("', '")}'\n" +
+                        "NOTE: if your Podfile is too complex, you may need to use xcodeTargetsManualConfig")
             }
         }
     }
@@ -459,10 +604,6 @@ class XcodeTask extends DefaultTask {
     static List<String> updatePodMethods(
             List<String> podfileLines, List<PodspecDetails> podspecDetailsList, File podfile) {
 
-        // strip all old methods
-        // Note: use of preserveEndLine=true so that the targetStartRegex isn't removed
-        List<String> newPodfileLines =
-                regexStripLines(podfileLines, false, podMethodStartRegex, targetStartRegex, /.*/)
 
         // create new methods
         List<String> insertLines = new ArrayList<>()
@@ -472,10 +613,16 @@ class XcodeTask extends DefaultTask {
             insertLines.add('')
         }
 
-        // insert new methods immediately before first target
-        newPodfileLines = regexInsertLines(newPodfileLines, false, /.*/, targetStartRegex, insertLines)
+        // remove last empty line
+        insertLines.remove(insertLines.size()-1)
 
-        return newPodfileLines
+        if(containsRegex(podfileLines,podMethodStartRegex)){
+             return regexReplaceLines(podfileLines, podMethodStartRegex, endRegex, insertLines)
+        }else {
+            int lineNr = findInsertLine(podfileLines)
+            return insertAtLineNumber(podfileLines, insertLines, lineNr, true)
+        }
+
     }
 
     @VisibleForTesting
