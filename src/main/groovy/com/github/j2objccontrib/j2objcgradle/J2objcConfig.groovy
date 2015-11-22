@@ -153,7 +153,7 @@ class J2objcConfig {
      * @param generatedSourceDirs adds generated source directories for j2objc translate
      */
     void generatedSourceDirs(String... generatedSourceDirs) {
-        appendArgs(this.generatedSourceDirs, 'generatedSourceDirs', generatedSourceDirs)
+        appendArgs(this.generatedSourceDirs, 'generatedSourceDirs', true, generatedSourceDirs)
     }
 
 
@@ -174,7 +174,7 @@ class J2objcConfig {
      * @param cycleFinderArgs add args for 'cycle_finder' tool
      */
     void cycleFinderArgs(String... cycleFinderArgs) {
-        appendArgs(this.cycleFinderArgs, 'cycleFinderArgs', cycleFinderArgs)
+        appendArgs(this.cycleFinderArgs, 'cycleFinderArgs', true, cycleFinderArgs)
     }
     /**
      * Expected number of cycles, defaults to all those found in JRE.
@@ -202,7 +202,7 @@ class J2objcConfig {
      * @param translateArgs add args for the 'j2objc' tool
      */
     void translateArgs(String... translateArgs) {
-        appendArgs(this.translateArgs, 'translateArgs', translateArgs)
+        appendArgs(this.translateArgs, 'translateArgs', true, translateArgs)
     }
 
     /**
@@ -228,7 +228,7 @@ class J2objcConfig {
      *  @param translateClasspaths add libraries for -classpath argument
      */
     void translateClasspaths(String... translateClasspaths) {
-        appendArgs(this.translateClasspaths, 'translateClasspaths', translateClasspaths)
+        appendArgs(this.translateClasspaths, 'translateClasspaths', true, translateClasspaths)
     }
 
     /**
@@ -241,7 +241,7 @@ class J2objcConfig {
      *  @param translateSourcepaths args add source jar for translation
      */
     void translateSourcepaths(String... translateSourcepaths) {
-        appendArgs(this.translateSourcepaths, 'translateSourcepaths', translateSourcepaths)
+        appendArgs(this.translateSourcepaths, 'translateSourcepaths', true, translateSourcepaths)
     }
 
     /**
@@ -512,7 +512,7 @@ class J2objcConfig {
      * @param testArgs add args for the 'j2objcTest' task
      */
     void testArgs(String... testArgs) {
-        appendArgs(this.testArgs, 'testArgs', testArgs)
+        appendArgs(this.testArgs, 'testArgs', true, testArgs)
     }
 
     /**
@@ -572,7 +572,7 @@ class J2objcConfig {
      * @param extraObjcSrcDirs add directories for Objective-C source to be compiled
      */
     void extraObjcSrcDirs(String... extraObjcSrcDirs) {
-        verifyNoSpaceArgs('extraObjcSrcDirs', extraObjcSrcDirs)
+        verifyArgs('extraObjcSrcDirs', true, extraObjcSrcDirs)
         for (String arg in extraObjcSrcDirs) {
             this.extraObjcSrcDirs += arg
         }
@@ -588,7 +588,7 @@ class J2objcConfig {
      * @param extraObjcCompilerArgs add arguments to pass to the native compiler.
      */
     void extraObjcCompilerArgs(String... extraObjcCompilerArgs) {
-        verifyNoSpaceArgs('extraObjcCompilerArgs', extraObjcCompilerArgs)
+        verifyArgs('extraObjcCompilerArgs', true, extraObjcCompilerArgs)
         for (String arg in extraObjcCompilerArgs) {
             this.extraObjcCompilerArgs += arg
         }
@@ -604,7 +604,7 @@ class J2objcConfig {
      * @param extraLinkerArgs add arguments to pass to the native linker.
      */
     void extraLinkerArgs(String... extraLinkerArgs) {
-        verifyNoSpaceArgs('extraLinkerArgs', extraLinkerArgs)
+        verifyArgs('extraLinkerArgs', true, extraLinkerArgs)
         for (String arg in extraLinkerArgs) {
             this.extraLinkerArgs += arg
         }
@@ -677,7 +677,7 @@ class J2objcConfig {
      * @param xcodeTargetsIos targets to link to the generated libraries.
      */
     void xcodeTargetsIos(String... xcodeTargetsIos) {
-        appendArgs(this.xcodeTargetsIos, 'xcodeTargetsIos', xcodeTargetsIos)
+        appendArgs(this.xcodeTargetsIos, 'xcodeTargetsIos', false, xcodeTargetsIos)
     }
 
     /**
@@ -693,7 +693,7 @@ class J2objcConfig {
      * @param xcodeTargetsOsx targets to link to the generated libraries.
      */
     void xcodeTargetsOsx(String... xcodeTargetsOsx) {
-        appendArgs(this.xcodeTargetsOsx, 'xcodeTargetsOsx', xcodeTargetsOsx)
+        appendArgs(this.xcodeTargetsOsx, 'xcodeTargetsOsx', false, xcodeTargetsOsx)
     }
 
     /**
@@ -709,7 +709,7 @@ class J2objcConfig {
      * @param xcodeTargetsWatchos targets to link to the generated libraries.
      */
     void xcodeTargetsWatchos(String... xcodeTargetsWatchos) {
-        appendArgs(this.xcodeTargetsWatchos, 'xcodeTargetsWatchos', xcodeTargetsWatchos)
+        appendArgs(this.xcodeTargetsWatchos, 'xcodeTargetsWatchos', false, xcodeTargetsWatchos)
     }
 
     /**
@@ -822,8 +822,8 @@ class J2objcConfig {
 
         // TODO: watchOS build support
         if (xcodeTargetsWatchos.size() > 0) {
-            throw new InvalidUserDataException(
-                    "watchOS isn't yet supported, please unset xcodeTargetsWatchos for now." +
+            project.logger.warn(
+                    "watchOS isn't yet supported, please unset xcodeTargetsWatchos for now.\n" +
                     "Follow this issue for updates: https://github.com/j2objc-contrib/j2objc-gradle/issues/525")
         }
     }
@@ -898,23 +898,29 @@ class J2objcConfig {
     //     translateArgs '--no-package-directories', '--prefixes', 'prefixes.properties'
     // }
     @VisibleForTesting
-    static void appendArgs(List<String> listArgs, String nameArgs, String... args) {
-        verifyNoSpaceArgs(nameArgs, args)
+    static void appendArgs(List<String> listArgs, String nameArgs, boolean rejectSpaces, String... args) {
+        verifyArgs(nameArgs, rejectSpaces, args)
         listArgs.addAll(Arrays.asList(args))
     }
 
     // Verify that no argument contains a space
     @VisibleForTesting
-    static void verifyNoSpaceArgs(String nameArgs, String... args) {
+    static void verifyArgs(String nameArgs, boolean rejectSpaces, String... args) {
         if (args == null) {
             throw new InvalidUserDataException("$nameArgs == null!")
         }
         for (String arg in args) {
-            if (arg.contains(' ')) {
-                String rewrittenArgs = "'" + arg.split(' ').join("', '") + "'"
+            if (arg.isAllWhitespace()) {
                 throw new InvalidUserDataException(
-                        "'$arg' argument should not contain spaces and be written out as distinct entries:\n" +
-                        "$nameArgs $rewrittenArgs")
+                        "$nameArgs is all whitespace: '$arg'")
+            }
+            if (rejectSpaces) {
+                if (arg.contains(' ')) {
+                    String rewrittenArgs = "'" + arg.split(' ').join("', '") + "'"
+                    throw new InvalidUserDataException(
+                            "'$arg' argument should not contain spaces and be written out as distinct entries:\n" +
+                            "$nameArgs $rewrittenArgs")
+                }
             }
         }
     }
