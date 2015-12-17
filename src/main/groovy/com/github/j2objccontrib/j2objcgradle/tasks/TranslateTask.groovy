@@ -165,14 +165,14 @@ class TranslateTask extends DefaultTask {
                 void execute(InputFileDetails details) {
                     // We must filter by srcFiles, since all possible input files are @InputFiles to this task.
                     if (originalMainSrcFiles.contains(details.file)) {
-                        logger.debug("New or Updated main file: " + details.file)
+                        getLogger().debug("New or Updated main file: " + details.file)
                         mainSrcFilesChanged += project.files(details.file)
                     } else if (originalTestSrcFiles.contains(details.file)) {
-                        logger.debug("New or Updated test file: " + details.file)
+                        getLogger().debug("New or Updated test file: " + details.file)
                         testSrcFilesChanged += project.files(details.file)
                     } else {
                         nonSourceFileChanged = true
-                        logger.debug("New or Updated non-source file: " + details.file)
+                        getLogger().debug("New or Updated non-source file: " + details.file)
                     }
                 }
             })
@@ -183,16 +183,16 @@ class TranslateTask extends DefaultTask {
                 void execute(InputFileDetails details) {
                     // We must filter by srcFiles, since all possible input files are @InputFiles to this task.
                     if (originalMainSrcFiles.contains(details.file)) {
-                        logger.debug("Removed main file: " + details.file.name)
+                        getLogger().debug("Removed main file: " + details.file.name)
                         String nameWithoutExt = details.file.name.toString().replaceFirst("\\..*", "")
                         removedMainFileNames += nameWithoutExt
                     } else if (originalTestSrcFiles.contains(details.file)) {
-                        logger.debug("Removed test file: " + details.file.name)
+                        getLogger().debug("Removed test file: " + details.file.name)
                         String nameWithoutExt = details.file.name.toString().replaceFirst("\\..*", "")
                         removedTestFileNames += nameWithoutExt
                     } else {
                         nonSourceFileChanged = true
-                        logger.debug("Removed non-source file: " + details.file)
+                        getLogger().debug("Removed non-source file: " + details.file)
                     }
                 }
             })

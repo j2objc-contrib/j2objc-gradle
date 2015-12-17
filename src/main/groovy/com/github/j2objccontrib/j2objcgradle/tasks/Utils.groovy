@@ -413,7 +413,7 @@ class Utils {
     static FileTree javaTrees(Project proj, List<String> treePaths) {
         List<? extends FileTree> trees =
             treePaths.collect({ String treePath -> proj.fileTree(dir: treePath, includes: ["**/*.java"]) })
-        return new UnionFileTree("javaTrees_j2objc", trees)
+        return new UnionFileTree("javaTrees_j2objc", (Collection<? extends FileTree>) trees)
     }
 
     static List<String> j2objcLibs(String j2objcHome,
