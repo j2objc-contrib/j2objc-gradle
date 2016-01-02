@@ -43,6 +43,7 @@ Paste the results below, replacing existing contents.
 - [Cycle Finder Advanced Setup](#cycle-finder-advanced-setup)
 - [How do I develop on Windows or Linux?](#how-do-i-develop-on-windows-or-linux)
 - [How do I fix missing required architecture linker warning?](#how-do-i-fix-missing-required-architecture-linker-warning)
+- [How do I fix Undefined symbols for architecture linker warning?](#how-do-i-fix-undefined-symbols-for-architecture-linker-warning)
 - [How do I solve the Eclipse error message Obtaining Gradle model...?](#how-do-i-solve-the-eclipse-error-message-obtaining-gradle-model)
 
 
@@ -548,7 +549,7 @@ Undefined symbols for architecture i386:
       type metadata accessor for ObjectiveC.ComExampleShared in ViewController.o
 ld: symbol(s) not found for architecture i386
 ```
-You are not building all the neccessary architectures.
+You are not building all the necessary architectures.
 
 By default (for performance), we build only modern iOS device and simulator
 architectures. If you need i386 for older simulators (iPhone 5, 5c and earlier
@@ -559,6 +560,47 @@ devices), add the following to your build.gradle file:
 j2objcConfig {
     supportedArchs += ['ios_i386']
 }
+```
+
+### How do I fix `Undefined symbols for architecture` linker warning?
+
+This usually occurs with `architecture x86_64` when using the simulator and
+`architecture arm64` when running on a device. The error should look
+similar to this:
+
+```
+Undefined symbols for architecture x86_64:
+  "_OBJC_METACLASS_$_MyClassMethodName", referenced from:
+     _OBJC_METACLASS_$_MethodName in MyClass.o
+```
+
+It can usually be fixed by manually running the Cocoapods install command
+(adjust based on your Xcode directory):
+
+```shell
+(cd Xcode && pod install)
+```
+
+Note that re-running the build from Gradle as it will skip re-running the
+`j2objcXcode` task unless one of the dependencies has changed.
+
+The problem occurs due to flakiness in Cocoapods. You can see this in the
+linker output, it fails to include the `-lshared-j2objc` library in the linker
+flags. When working correctly, the linker flags should include the following:
+
+```
+-ObjC -lObjC -lshared-j2objc -lguava -licucore -ljavax_inject -ljre_emul -ljsr305 -lz
+```
+
+If you still have further issues, use the following commands to investigate
+the built libraries:
+
+```shell
+# list the architectures in the library. This should include "x86_64":
+lipo -info shared/build/j2objcOutputs/lib/iosDebug/libshared-j2objc.a
+
+# list out the methods in the file and look for the missing methods:
+otool -SV base/build/j2objcOutputs/lib/iosDebug/libbase-j2objc.a
 ```
 
 
