@@ -695,4 +695,25 @@ class Utils {
         }
         return files
     }
+
+
+    // Max number of characters for OS command line
+    static int maxArgs() {
+        if (isMacOSX()) {
+            // http://www.in-ulm.de/~mascheck/various/argmax/
+            return 262144
+        }
+        if (isWindows()) {
+            // Assume Windows XP or later which has max of 8191
+            // https://support.microsoft.com/en-us/kb/830473
+            return 8191
+        }
+        if (isLinux()) {
+            // v2.6.23 (released 2007) or later limit is 1/4 of stack size,
+            // so Linux is presumed to have no limit
+            // http://www.in-ulm.de/~mascheck/various/argmax/
+            return Integer.MAX_VALUE
+        }
+        assert false
+    }
 }
