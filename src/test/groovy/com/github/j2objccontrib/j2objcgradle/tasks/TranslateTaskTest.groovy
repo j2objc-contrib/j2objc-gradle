@@ -38,10 +38,9 @@ class TranslateTaskTest {
         (proj, j2objcHome, j2objcConfig) = TestingUtils.setupProject(
                 new TestingUtils.ProjectConfig(applyJavaPlugin: true, createJ2objcConfig: true))
 
+        // The files in these folders are created by the 'genNonIncrementalInputs' method
         proj.file('src/main/java/com/example').mkdirs()
-        proj.file('src/main/java/com/example/Main.java').write("// Fake")
         proj.file('src/test/java/com/example').mkdirs()
-        proj.file('src/test/java/com/example/Verify.java').write("// Fake")
     }
 
     // TODO: add java source files to the test cases
@@ -61,7 +60,7 @@ class TranslateTaskTest {
                 '-d', '/PROJECT_DIR/build/j2objcSrcGenMain',
                 '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/build/classes/main',
                 '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/J2OBJC_HOME/lib/hamcrest-core-1.3.jar:/J2OBJC_HOME/lib/protobuf_runtime.jar:/PROJECT_DIR/build/classes',
-                '/PROJECT_DIR/src/main/java/com/example/Main.java'
+                '/PROJECT_DIR/src/main/java/com/example/Main1.java'
         ],
         // expectedWindowsExecutableAndArgs
         [
@@ -75,7 +74,7 @@ class TranslateTaskTest {
                 '-d', '/PROJECT_DIR/build/j2objcSrcGenTest',
                 '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java:/PROJECT_DIR/build/classes/main',
                 '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/J2OBJC_HOME/lib/hamcrest-core-1.3.jar:/J2OBJC_HOME/lib/protobuf_runtime.jar:/PROJECT_DIR/build/classes',
-                '/PROJECT_DIR/src/test/java/com/example/Verify.java'
+                '/PROJECT_DIR/src/test/java/com/example/Verify1.java'
         ],
         // expectedWindowsExecutableAndArgs
         [
@@ -104,7 +103,7 @@ class TranslateTaskTest {
                 '-d', '/PROJECT_DIR/build/j2objcSrcGenMain',
                 '-sourcepath', '/PROJECT_DIR/src/main/java;/PROJECT_DIR/build/classes/main',
                 '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar;/J2OBJC_HOME/lib/j2objc_guava.jar;/J2OBJC_HOME/lib/j2objc_junit.jar;/J2OBJC_HOME/lib/jre_emul.jar;/J2OBJC_HOME/lib/javax.inject-1.jar;/J2OBJC_HOME/lib/jsr305-3.0.0.jar;/J2OBJC_HOME/lib/mockito-core-1.9.5.jar;/J2OBJC_HOME/lib/hamcrest-core-1.3.jar;/J2OBJC_HOME/lib/protobuf_runtime.jar;/PROJECT_DIR/build/classes',
-                '/PROJECT_DIR/src/main/java/com/example/Main.java'
+                '/PROJECT_DIR/src/main/java/com/example/Main1.java'
         ],
         // expectedWindowsExecutableAndArgs
         [
@@ -118,7 +117,7 @@ class TranslateTaskTest {
                 '-d', '/PROJECT_DIR/build/j2objcSrcGenTest',
                 '-sourcepath', '/PROJECT_DIR/src/main/java;/PROJECT_DIR/src/test/java;/PROJECT_DIR/build/classes/main',
                 '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar;/J2OBJC_HOME/lib/j2objc_guava.jar;/J2OBJC_HOME/lib/j2objc_junit.jar;/J2OBJC_HOME/lib/jre_emul.jar;/J2OBJC_HOME/lib/javax.inject-1.jar;/J2OBJC_HOME/lib/jsr305-3.0.0.jar;/J2OBJC_HOME/lib/mockito-core-1.9.5.jar;/J2OBJC_HOME/lib/hamcrest-core-1.3.jar;/J2OBJC_HOME/lib/protobuf_runtime.jar;/PROJECT_DIR/build/classes',
-                '/PROJECT_DIR/src/test/java/com/example/Verify.java'
+                '/PROJECT_DIR/src/test/java/com/example/Verify1.java'
         ],
         // expectedWindowsExecutableAndArgs
         [
@@ -160,7 +159,7 @@ class TranslateTaskTest {
                 '-sourcepath', "/PROJECT_DIR/src/main/java:/PROJECT_DIR/REL-SOURCEPATH:$absSourcePath:/PROJECT_DIR/build/classes/main:/PROJECT_DIR/REL-GENPATH:$absGenPath",
                 '-classpath', "/PROJECT_DIR/REL-CLASSPATH:$absClassPath:/J2OBJC_HOME/lib/J2OBJC-LIB1:/J2OBJC_HOME/lib/J2OBJC-LIB2:/PROJECT_DIR/build/classes",
                 '-ARG1', '-ARG2',
-                '/PROJECT_DIR/src/main/java/com/example/Main.java'
+                '/PROJECT_DIR/src/main/java/com/example/Main1.java'
         ],
         // expectedWindowsExecutableAndArgs
         [
@@ -174,7 +173,7 @@ class TranslateTaskTest {
                 '-sourcepath', "/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java:/PROJECT_DIR/REL-SOURCEPATH:$absSourcePath:/PROJECT_DIR/build/classes/main:/PROJECT_DIR/REL-GENPATH:$absGenPath",
                 '-classpath', "/PROJECT_DIR/REL-CLASSPATH:$absClassPath:/J2OBJC_HOME/lib/J2OBJC-LIB1:/J2OBJC_HOME/lib/J2OBJC-LIB2:/PROJECT_DIR/build/classes",
                 '-ARG1', '-ARG2',
-                '/PROJECT_DIR/src/test/java/com/example/Verify.java'
+                '/PROJECT_DIR/src/test/java/com/example/Verify1.java'
         ],
         // expectedWindowsExecutableAndArgs
         [
@@ -189,18 +188,88 @@ class TranslateTaskTest {
         mockProjectExec.verify()
     }
 
+    @Test
+    void translate_MaxArgsExceeded() {
+        // Artificially enforce max arg limit
+        // Use Windows here, because the test takes <1 second, compared to ~8 seconds on OS X
+        Utils.setFakeOSWindows()
+        // Translate large number of files to exceed max args
+        // srcFilesArgsCharCount = 40 (min chars for file path assumption) * 220
+        //                       = 8,800  (this is greater than 8,191, which is max args on Windows XP and above)
+        int fileCount = 220
+
+        TranslateTask j2objcTranslate = (TranslateTask) proj.tasks.create(
+                name: 'j2objcTranslate', type: TranslateTask) {
+            srcGenMainDir = proj.file(proj.file('build/j2objcSrcGenMain').absolutePath)
+            srcGenTestDir = proj.file(proj.file('build/j2objcSrcGenTest').absolutePath)
+        }
+
+        MockProjectExec mockProjectExec = new MockProjectExec(proj, j2objcHome)
+        mockProjectExec.demandExecAndReturn([
+                '/J2OBJC_HOME/j2objc',
+                '-d', '/PROJECT_DIR/build/j2objcSrcGenMain',
+                '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/build/classes/main',
+                '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/J2OBJC_HOME/lib/hamcrest-core-1.3.jar:/J2OBJC_HOME/lib/protobuf_runtime.jar:/PROJECT_DIR/build/classes',
+                '@/PROJECT_DIR/build/tmp/j2objcTranslate/mainSrcFilesArgFile'
+        ],
+        // expectedWindowsExecutableAndArgs
+        [
+                'java',
+                '-jar',
+                '/J2OBJC_HOME/lib/j2objc.jar'
+        ])
+
+        mockProjectExec.demandExecAndReturn([
+                '/J2OBJC_HOME/j2objc',
+                '-d', '/PROJECT_DIR/build/j2objcSrcGenTest',
+                '-sourcepath', '/PROJECT_DIR/src/main/java:/PROJECT_DIR/src/test/java:/PROJECT_DIR/build/classes/main',
+                '-classpath', '/J2OBJC_HOME/lib/j2objc_annotations.jar:/J2OBJC_HOME/lib/j2objc_guava.jar:/J2OBJC_HOME/lib/j2objc_junit.jar:/J2OBJC_HOME/lib/jre_emul.jar:/J2OBJC_HOME/lib/javax.inject-1.jar:/J2OBJC_HOME/lib/jsr305-3.0.0.jar:/J2OBJC_HOME/lib/mockito-core-1.9.5.jar:/J2OBJC_HOME/lib/hamcrest-core-1.3.jar:/J2OBJC_HOME/lib/protobuf_runtime.jar:/PROJECT_DIR/build/classes',
+                '@/PROJECT_DIR/build/tmp/j2objcTranslate/testSrcFilesArgFile'
+        ],
+        // expectedWindowsExecutableAndArgs
+        [
+                'java',
+                '-jar',
+                '/J2OBJC_HOME/lib/j2objc.jar'
+        ])
+
+        j2objcTranslate.translate(genNonIncrementalInputs(proj, fileCount))
+
+        // Verify arg files
+        List<String> mainSrcFiles = new File(j2objcTranslate.getTemporaryDir(), "mainSrcFilesArgFile").readLines()
+        assert mainSrcFiles.size() == fileCount
+        assert mainSrcFiles[0] == proj.file('src/main/java/com/example/Main1.java').path
+        assert mainSrcFiles[1] == proj.file('src/main/java/com/example/Main2.java').path
+        assert mainSrcFiles[fileCount - 1] == proj.file("src/main/java/com/example/Main${fileCount}.java").path
+
+        List<String> testSrcFiles = new File(j2objcTranslate.getTemporaryDir(), "testSrcFilesArgFile").readLines()
+        assert testSrcFiles.size() == fileCount
+        assert testSrcFiles[0] == proj.file('src/test/java/com/example/Verify1.java').path
+        assert testSrcFiles[1] == proj.file('src/test/java/com/example/Verify2.java').path
+        assert testSrcFiles[fileCount - 1] == proj.file("src/test/java/com/example/Verify${fileCount}.java").path
+
+        mockProjectExec.verify()
+    }
+
 
     // Utility Method
-    private static IncrementalTaskInputs genNonIncrementalInputs(Project proj) {
+    private static IncrementalTaskInputs genNonIncrementalInputs(Project proj, int fileCountMultiplier = 1) {
         IncrementalTaskInputs incrementalTaskInputs = new IncrementalTaskInputs() {
             @Override
             boolean isIncremental() { return false }
 
             @Override
             void outOfDate(Action<? super InputFileDetails> outOfDateAction) {
-                proj.files('src/main/java/com/example/Main.java',
-                           'src/test/java/com/example/Verify.java').each {
-                    final File file ->
+                assert fileCountMultiplier >= 1
+                List<String> srcFiles = []
+                (1..fileCountMultiplier).each { int idx ->
+                    srcFiles.add("src/main/java/com/example/Main${idx}.java")
+                    srcFiles.add("src/test/java/com/example/Verify${idx}.java")
+                }
+                proj.files(srcFiles).each { final File file ->
+                    // Create the files
+                    // TODO: prefer not to create all these temporary files just to run the test
+                    file.write("// Fake")
                     outOfDateAction.execute(new InputFileDetails() {
                         @Override
                         boolean isAdded() {

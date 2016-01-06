@@ -842,4 +842,22 @@ class UtilsTest {
         assert !Utils.isAtLeastVersion("0.9.8.1.2", "0.9.8.2.1")
         assert !Utils.isAtLeastVersion("0.7.9", "0.9.8.2.1")
     }
+
+    @Test
+    void testMaxArgs_Linux() {
+        Utils.setFakeOSLinux()
+        assert Integer.MAX_VALUE == Utils.maxArgs()
+    }
+
+    @Test
+    void testMaxArgs_OSX() {
+        Utils.setFakeOSMacOSX()
+        assert 262144 == Utils.maxArgs()
+    }
+
+    @Test
+    void testMaxArgs_Windows() {
+        Utils.setFakeOSWindows()
+        assert 8191 == Utils.maxArgs()
+    }
 }

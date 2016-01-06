@@ -252,7 +252,7 @@ class TranslateTask extends DefaultTask {
                 project.files(getTranslateSourcepaths()),
                 project.files(getGeneratedSourceDirs())
         ])
-        doTranslate(sourcepathDirs, srcGenMainDir, translateArgs, mainSrcFilesChanged)
+        doTranslate(sourcepathDirs, srcGenMainDir, translateArgs, mainSrcFilesChanged, "mainSrcFilesArgFile")
 
         // Translate test code. Tests are never built with --build-closure; otherwise
         // we will get duplicate symbol errors.
@@ -269,7 +269,7 @@ class TranslateTask extends DefaultTask {
                 project.files(getTranslateSourcepaths()),
                 project.files(getGeneratedSourceDirs())
         ])
-        doTranslate(sourcepathDirs, srcGenTestDir, testTranslateArgs, testSrcFilesChanged)
+        doTranslate(sourcepathDirs, srcGenTestDir, testTranslateArgs, testSrcFilesChanged, "testSrcFilesArgFile")
     }
 
     int deleteRemovedFiles(List<String> removedFileNames, File dir) {
@@ -292,7 +292,7 @@ class TranslateTask extends DefaultTask {
     }
 
     void doTranslate(UnionFileCollection sourcepathDirs, File srcDir, List<String> translateArgs,
-                     FileCollection srcFilesToTranslate) {
+                     FileCollection srcFilesToTranslate, String srcFilesArgFilename) {
         int num = srcFilesToTranslate.getFiles().size()
         logger.info("Translating $num files with j2objc...")
         if (srcFilesToTranslate.getFiles().size() == 0) {
@@ -318,6 +318,27 @@ class TranslateTask extends DefaultTask {
         String classpathArg = Utils.joinedPathArg(classpathFiles) +
                               Utils.pathSeparator() + "${project.buildDir}/classes"
 
+        // Source files arguments
+        List<String> srcFilesArgs = []
+        int srcFilesArgsCharCount = 0
+        for (File file in srcFilesToTranslate) {
+            String filePath = file.getPath()
+            srcFilesArgs.add(filePath)
+            srcFilesArgsCharCount += filePath.length() + 1
+        }
+
+        // Handle command line that's too long
+        // Allow up to 2,000 characters for command line excluding src files
+        // http://docs.oracle.com/javase/7/docs/technotes/tools/windows/javac.html#commandlineargfile
+        if (srcFilesArgsCharCount + 2000 > Utils.maxArgs()) {
+            File srcFilesArgFile = new File(getTemporaryDir(), srcFilesArgFilename);
+            FileWriter writer = new FileWriter(srcFilesArgFile);
+            writer.append(srcFilesArgs.join('\n'));
+            writer.close()
+            // Replace src file arguments by referencing file
+            srcFilesArgs = ["@${srcFilesArgFile.path}".toString()]
+        }
+
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()
 
@@ -338,8 +359,9 @@ class TranslateTask extends DefaultTask {
                 }
 
                 // File Inputs
-                srcFilesToTranslate.each { File file ->
-                    args file.path
+                srcFilesArgs.each { String arg ->
+                    // Can be list of src files or a single @/../srcFilesArgFile reference
+                    args arg
                 }
 
                 setStandardOutput stdout
