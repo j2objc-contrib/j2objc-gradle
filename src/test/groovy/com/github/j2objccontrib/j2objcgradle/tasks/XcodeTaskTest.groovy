@@ -46,6 +46,9 @@ class XcodeTaskTest {
                 'PROJ',
                 new File('/SRC/PROJ/BUILD/j2objc-PROJ-debug.podspec'),
                 new File('/SRC/PROJ/BUILD/j2objc-PROJ-release.podspec'))]
+    XcodeTask.XcodeTargetDetails xcodeTargetDetailsEmpty =
+            new XcodeTask.XcodeTargetDetails(
+                    [], [], [], null, null, null)
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -308,6 +311,28 @@ class XcodeTaskTest {
     }
 
     @Test
+    void testRegexReplace_noChange() {
+        List<String> oldLines = [
+                'strip outside',
+                'start',
+                'replace',
+                'replace too',
+                'end']
+
+        List<String> newLines = XcodeTask.regexReplaceLines(
+                oldLines, /start/, /end/, [/start/, /replace/, /replace too/, /end/])
+
+        List<String> expectedNewLines = [
+                'strip outside',
+                'start',
+                'replace',
+                'replace too',
+                'end']
+
+        assert expectedNewLines == newLines
+    }
+
+    @Test
     void testRegexStripLines_removeInclusivePreserveEndLine() {
         List<String> oldLines = [
                 'BEFORE',
@@ -411,6 +436,146 @@ class XcodeTaskTest {
     }
 
     @Test
+    void testInsertAtLineNumber_insertInTheMiddle() {
+        List<String> oldLines = [
+                'start',
+                'in-between',
+                'end']
+
+        List<String> newLines = XcodeTask.insertAtLineNumber(
+                oldLines, ['line1', 'line2'],2,false)
+
+        List<String> expectedNewLines = [
+                'start',
+                'in-between',
+                'line1',
+                'line2',
+                'end']
+        assert expectedNewLines == newLines
+    }
+
+    @Test
+    void testInsertAtLineNumber_insertAtTheBeginning() {
+        List<String> oldLines = [
+                'start',
+                'in-between',
+                'end']
+
+        List<String> newLines = XcodeTask.insertAtLineNumber(
+                oldLines, ['line1', 'line2'],0,false)
+
+        List<String> expectedNewLines = [
+                'line1',
+                'line2',
+                'start',
+                'in-between',
+                'end']
+        assert expectedNewLines == newLines
+    }
+
+    @Test
+    void testInsertAtLineNumber_insertInTheEnd() {
+        List<String> oldLines = [
+                'start',
+                'in-between',
+                'end']
+
+        List<String> newLines = XcodeTask.insertAtLineNumber(
+                oldLines, ['line1', 'line2'],3,false)
+
+        List<String> expectedNewLines = [
+                'start',
+                'in-between',
+                'end',
+                'line1',
+                'line2']
+        assert expectedNewLines == newLines
+    }
+
+    @Test
+    void testInsertAtLineNumberWithEmptyLines_insertInTheMiddle() {
+        List<String> oldLines = [
+                'start',
+                'in-between',
+                'end']
+
+        List<String> newLines = XcodeTask.insertAtLineNumber(
+                oldLines, ['line1', 'line2'],2,true)
+
+        List<String> expectedNewLines = [
+                'start',
+                'in-between',
+                '',
+                'line1',
+                'line2',
+                '',
+                'end']
+        assert expectedNewLines == newLines
+    }
+
+    @Test
+    void testInsertAtLineNumberWithEmptyLines_insertInTheMiddleExistingEmptyLines() {
+        List<String> oldLines = [
+                'start',
+                'in-between',
+                '',
+                'end']
+
+        List<String> newLines = XcodeTask.insertAtLineNumber(
+                oldLines, ['line1', 'line2'],2,true)
+
+        List<String> expectedNewLines = [
+                'start',
+                'in-between',
+                '',
+                'line1',
+                'line2',
+                '',
+                'end']
+        assert expectedNewLines == newLines
+    }
+
+    @Test
+    void testInsertAtLineNumberWithEmptyLines_insertAtTheBeginning() {
+        List<String> oldLines = [
+                'start',
+                'in-between',
+                'end']
+
+        List<String> newLines = XcodeTask.insertAtLineNumber(
+                oldLines, ['line1', 'line2'],0,true)
+
+        List<String> expectedNewLines = [
+                'line1',
+                'line2',
+                '',
+                'start',
+                'in-between',
+                'end']
+        assert expectedNewLines == newLines
+    }
+
+    @Test
+    void testInsertAtLineNumberWithEmptyLines_insertInTheEnd() {
+        List<String> oldLines = [
+                'start',
+                'in-between',
+                'end']
+
+        List<String> newLines = XcodeTask.insertAtLineNumber(
+                oldLines, ['line1', 'line2'],3,true)
+
+        List<String> expectedNewLines = [
+                'start',
+                'in-between',
+                'end',
+                '',
+                'line1',
+                'line2']
+        assert expectedNewLines == newLines
+    }
+
+    @Test
     void testWriteUpdatedPodfileIfNeeded_Needed_ThenNotNeeded() {
 
         // Write temp Podfile that's deleted on exit
@@ -430,11 +595,12 @@ class XcodeTaskTest {
                 new File(podspecBuildDir + '/j2objc-PROJ-debug.podspec'),
                 new File(podspecBuildDir + '/j2objc-PROJ-release.podspec')))
         XcodeTask.writeUpdatedPodfileIfNeeded(
-                podspecDetailsList, xcodeTargetDetailsIosAppOnly, podfile)
+                podspecDetailsList, xcodeTargetDetailsIosAppOnly, false, podfile)
 
         // Verify modified Podfile
         List<String> expectedLines = [
                 "#user comment",
+                '',
                 "# J2ObjC Gradle Plugin - DO NOT MODIFY from here to the first target",
                 "def j2objc_PROJ",
                 "    pod 'j2objc-PROJ-debug', :configuration => ['Debug'], :path => '../PROJ/BUILD'",
@@ -451,7 +617,7 @@ class XcodeTaskTest {
         // Verify unmodified on second call
         // TODO: verify that file wasn't written a second time
         XcodeTask.writeUpdatedPodfileIfNeeded(
-                podspecDetailsList, xcodeTargetDetailsIosAppOnly, podfile)
+                podspecDetailsList, xcodeTargetDetailsIosAppOnly, false, podfile)
         readPodfileLines = podfile.readLines()
         assert expectedLines == readPodfileLines
     }
@@ -466,6 +632,7 @@ class XcodeTaskTest {
                 podfileLines,
                 podspecDetailsProj,
                 xcodeTargetDetailsIosAppOnly,
+                false,
                 new File('/SRC/ios/Podfile'))
 
         List<String> expectedPodfileLines = [
@@ -486,6 +653,41 @@ class XcodeTaskTest {
                 newPodfileLines,
                 podspecDetailsProj,
                 xcodeTargetDetailsIosAppOnly,
+                false,
+                new File('/SRC/ios/Podfile'))
+        assert expectedPodfileLines == newPodfileLines
+    }
+
+    @Test
+    void testUpdatePodfile_xcodeTargetsManualConfig() {
+        List<String> podfileLines = [
+                "target 'IOS-APP' do",
+                "end"]
+
+        List<String> newPodfileLines = XcodeTask.updatePodfile(
+                podfileLines,
+                podspecDetailsProj,
+                xcodeTargetDetailsEmpty ,
+                true,
+                new File('/SRC/ios/Podfile'))
+
+        List<String> expectedPodfileLines = [
+                "# J2ObjC Gradle Plugin - DO NOT MODIFY from here to the first target",
+                "def j2objc_PROJ",
+                "    pod 'j2objc-PROJ-debug', :configuration => ['Debug'], :path => '../PROJ/BUILD'",
+                "    pod 'j2objc-PROJ-release', :configuration => ['Release'], :path => '../PROJ/BUILD'",
+                "end",
+                "",
+                "target 'IOS-APP' do",
+                "end"]
+        assert expectedPodfileLines == newPodfileLines
+
+        // Second time around is a no-op
+        newPodfileLines = XcodeTask.updatePodfile(
+                newPodfileLines,
+                podspecDetailsProj,
+                xcodeTargetDetailsEmpty,
+                true,
                 new File('/SRC/ios/Podfile'))
         assert expectedPodfileLines == newPodfileLines
     }
@@ -510,6 +712,7 @@ class XcodeTaskTest {
                 podfileLines,
                 podspecDetailsProj,
                 xcodeTargetDetails,
+                false,
                 new File('/SRC/ios/Podfile'))
 
         List<String> expectedPodfileLines = [
@@ -540,6 +743,7 @@ class XcodeTaskTest {
                 newPodfileLines,
                 podspecDetailsProj,
                 xcodeTargetDetails,
+                false,
                 new File('/SRC/ios/Podfile'))
         assert expectedPodfileLines == newPodfileLines
     }
@@ -563,6 +767,7 @@ class XcodeTaskTest {
                 new XcodeTask.XcodeTargetDetails(
                         [], [], [],
                         '6.0.0', '10.6.0', '1.0.0'),
+                false,
                 null)
     }
 
@@ -584,7 +789,87 @@ class XcodeTaskTest {
                 new XcodeTask.XcodeTargetDetails(
                         ['TARGET-DOES-NOT-EXIST'], [], [],
                         '6.0.0', '10.6.0', '1.0.0'),
+                false,
                 null)
+    }
+
+    @Test
+    void testUpdatePodfile_xcodeManualConfigWithNoContent() {
+        List<String> podfileLines = []
+
+        List<String> newPodfileLines = XcodeTask.updatePodfile(
+                podfileLines, podspecDetailsProj,
+                xcodeTargetDetailsEmpty,
+                true,
+                new File('/SRC/ios/Podfile'))
+
+        List<String> expectedLines = [
+                "# J2ObjC Gradle Plugin - DO NOT MODIFY from here to the first target",
+                "def j2objc_PROJ",
+                "    pod 'j2objc-PROJ-debug', :configuration => ['Debug'], :path => '../PROJ/BUILD'",
+                "    pod 'j2objc-PROJ-release', :configuration => ['Release'], :path => '../PROJ/BUILD'",
+                "end"]
+
+        assert expectedLines == newPodfileLines
+    }
+
+    @Test
+    void testUpdatePodfile_xcodeManualConfigComplexPodfile() {
+        List<String> podfileLines = [
+                "source 'https://github.com/CocoaPods/Specs.git'",
+                "platform :ios, '7.0'",
+                "",
+                "# ignore all warnings from all pods",
+                "inhibit_all_warnings!",
+                "",
+                "pod 'AFNetworking'",
+                "pod 'OpenCV', '2.4.9.1'",
+                "pod 'Facebook-iOS-SDK'",
+                "",
+                "post_install do |installer|",
+                "target = installer.project.targets.find{|t| t.to_s == \"Pods-MagicalRecord\"}",
+                "target.build_configurations.each do |config|",
+                "s = config.build_settings['GCC_PREPROCESSOR_DEFINITIONS']",
+                "s = [ '\$(inherited)' ] if s == nil;",
+                "s.push('MR_ENABLE_ACTIVE_RECORD_LOGGING=0') if config.to_s == \"Debug\";",
+                "config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = s",
+                "end",
+                "end"]
+
+        List<String> newPodfileLines = XcodeTask.updatePodfile(
+                podfileLines, podspecDetailsProj,
+                xcodeTargetDetailsEmpty,
+                true,
+                new File('/SRC/ios/Podfile'))
+
+        List<String> expectedLines = [
+                "source 'https://github.com/CocoaPods/Specs.git'",
+                "platform :ios, '7.0'",
+                "",
+                "# J2ObjC Gradle Plugin - DO NOT MODIFY from here to the first target",
+                "def j2objc_PROJ",
+                "    pod 'j2objc-PROJ-debug', :configuration => ['Debug'], :path => '../PROJ/BUILD'",
+                "    pod 'j2objc-PROJ-release', :configuration => ['Release'], :path => '../PROJ/BUILD'",
+                "end",
+                "",
+                "# ignore all warnings from all pods",
+                "inhibit_all_warnings!",
+                "",
+                "pod 'AFNetworking'",
+                "pod 'OpenCV', '2.4.9.1'",
+                "pod 'Facebook-iOS-SDK'",
+                "",
+                "post_install do |installer|",
+                "target = installer.project.targets.find{|t| t.to_s == \"Pods-MagicalRecord\"}",
+                "target.build_configurations.each do |config|",
+                "s = config.build_settings['GCC_PREPROCESSOR_DEFINITIONS']",
+                "s = [ '\$(inherited)' ] if s == nil;",
+                "s.push('MR_ENABLE_ACTIVE_RECORD_LOGGING=0') if config.to_s == \"Debug\";",
+                "config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = s",
+                "end",
+                "end"]
+
+        assert expectedLines == newPodfileLines
     }
 
     @Test
@@ -631,7 +916,6 @@ class XcodeTaskTest {
                 "    pod 'j2objc-TO_BE_DELETED-debug', :configuration => ['Debug'], :path => '../shared/build'",
                 "    pod 'j2objc-TO_BE_DELETED-release', :configuration => ['Release'], :path => '../shared/build'",
                 "end",
-                "",
                 "",
                 "target 'IOS-APP' do",
                 "    j2objc_DELETED_BY_ANOTHER_METHOD",
