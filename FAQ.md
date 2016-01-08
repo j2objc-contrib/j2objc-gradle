@@ -20,6 +20,7 @@ Paste the results below, replacing existing contents.
 -->
 - [Start here for debugging (aka it's not working; aka don't panic)](#start-here-for-debugging-aka-its-not-working-aka-dont-panic)
 - [How do I develop with Xcode?](#how-do-i-develop-with-xcode)
+- [How do I build against a specific version of OS X, iOS or watchOS?](#how-do-i-build-against-a-specific-version-of-os-x-ios-or-watchos)
 - [How can I speed up my build?](#how-can-i-speed-up-my-build)
 - [What libraries are linked by default?](#what-libraries-are-linked-by-default)
 - [How do I setup dependencies with J2ObjC?](#how-do-i-setup-dependencies-with-j2objc)
@@ -68,16 +69,19 @@ https://plugins.gradle.org/plugin/com.github.j2objccontrib.j2objcgradle.
 and you've verified that your J2OBJC_HOME is set correctly, you may have stale Gradle
 caches, which can be cleared as follows.  Note the following steps will cause you to
 rebuild everything, so the next build may take a long time.
-  ```shell
-  # (from your Gradle project's root directory)
-  # Stops any Gradle daemons if they are running.
-  ./gradlew --stop
-  # Remove cached Gradle database.
-  rm -rf .gradle/
-  # Remove cached Gradle outputs.
-  rm -rf build/
-  ```
+
+```shell
+# (from your Gradle project's root directory)
+# Stops any Gradle daemons if they are running.
+./gradlew --stop
+# Remove cached Gradle database.
+rm -rf .gradle/
+# Remove cached Gradle outputs.
+rm -rf build/
+```
+
 Now try building again.
+
 
 ### How do I develop with Xcode?
 
@@ -101,12 +105,29 @@ add the static libraries and translated header directories to your Xcode project
 Also see the FAQ note on [developing with Swift](#how-do-i-develop-with-swift).
 
 
+### How do I build against a specific version of OS X, iOS or watchOS?
+
+For example, to use methods only available in iOS 9.2:
+
+```gradle
+// File: shared/build.gradle
+j2objcConfig {
+    minVersionIos '9.2'
+    ...
+}
+```
+
+The settings are `minVersionIos, minVersionOsx & minVersionWatchos`. You can see the
+defaults in [J2objcConfig.groovy](https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcConfig.groovy#L636).
+
+
 ### How can I speed up my build?
 
 You can reduce the build time by 50% by skipping the release binaries by adding the
 following to your root level `local.properties` file:
 
 ```properties
+# File: local.properties
 j2objc.release.enabled=false
 ```
 
@@ -129,18 +150,20 @@ by default when using the plugin. To add other libraries, see the FAQs about
 [dependencies](#how-do-i-setup-dependencies-with-j2objc).
 The standard libraries are:
 
-    com.google.guava:guava
-    com.google.j2objc:j2objc-annotations
-    com.google.protobuf:protobuf-java
-    junit:junit (test only)
-    org.mockito:mockito-core (test only)
-    org.hamcrest:hamcrest-core (test only)
+```
+com.google.guava:guava
+com.google.j2objc:j2objc-annotations
+com.google.protobuf:protobuf-java
+junit:junit (test only)
+org.mockito:mockito-core (test only)
+org.hamcrest:hamcrest-core (test only)
+```
 
 Note that this only covers the Objective-C libraries; if you want to use these
 libraries in your Java code, you must still include the standard dependency directives like:
 
 ```gradle
-// shared/build.gradle
+// File: shared/build.gradle
 dependencies {
     compile 'com.google.guava:guava:18.0'
     testCompile 'junit:junit:4.11'
@@ -161,11 +184,15 @@ See [dependencies.md](dependencies.md).
 The .gitignore file should follow existing conventions for Android Studio and Xcode.
 Once that's configured, check that it contains the following:
 
-    # Includes j2objc.home setting (Android Studio should have added this)
-    local.properties
+```properties
+# File: .gitignore
 
-    # CocoaPods temporary files used for Xcode
-    Pods/
+# Includes j2objc.home setting (Android Studio should have added this)
+local.properties
+
+# CocoaPods temporary files used for Xcode
+Pods/
+```
 
 
 ### What is the recommended folder structure for my app?
@@ -237,6 +264,7 @@ j2objcConfig {
 
     // WRONG
     translateArgs '-use-arc -prefixes file.prefixes'
+    ...
 }
 ```
 
@@ -374,17 +402,20 @@ For the class `com.example.dir.MyClass`, J2ObjC will by default translate the na
 to something much more manageable, like `CedMyClass`. See the example below on how to do this.
 Also see the reference docs on [package name prefixes](http://j2objc.org/docs/Package-Prefixes.html).
 
-```groovy
-// File: build.gradle
+```gradle
+// File: shared/build.gradle
 j2objcConfig {
-    translateArgs '--prefixes', 'resources/prefixes.properties'
+    translateArgs '--prefixes', 'src/main/resources/prefixes.properties'
     ...
 }
 ```
 
-```
-// File: resources/prefixes.properties
-// Storing at this location allows Class.forName(javaName) to work for mapped class.
+Storing `prefixes.properties` in the resource folder will mean that it's copied in to the
+Xcode build. Without having this file in the Xcode, calls to `Class.forName("MyClass")`
+will fail for the mapped classes.
+
+```properties
+# File: shared/src/main/resources/prefixes.properties
 com.example.dir: Ced
 com.example.dir.subdir: Ced
 ```
@@ -396,6 +427,7 @@ This will map packages such as com.example.dir and com.example.dir.subdir both t
 com.example.dir.*: Ced
 ```
 
+
 ### How do I enable ARC for my translated Objective-C classes?
 
 __Note__: The use of ARC for the translated code is not recommended and is not required
@@ -405,9 +437,11 @@ Add the following to your configuration block. See
 [here](https://developer.apple.com/library/mac/releasenotes/ObjectiveC/RN-TransitioningToARC/Introduction/Introduction.html#//apple_ref/doc/uid/TP40011226-CH1-SW15).
 
 ```gradle
+// File: shared/build.gradle
 j2objcConfig {
    translateArgs '-use-arc'
    extraObjcCompilerArgs '-fobjc-arc'
+   ...
 }
 ```
 
@@ -419,6 +453,7 @@ You must always call `finalConfigure()` at the end of `j2objcConfig {...}` withi
 call even if you do not need to customize any other `j2objConfig` option.
 
 ```gradle
+// File: shared/build.gradle
 j2objcConfig {
     ...
     finalConfigure()
@@ -511,6 +546,7 @@ j2objcConfig {
     cycleFinderArgs '--whitelist', 'J2OBJC_REPO/jre_emul/cycle_whitelist.txt'
     cycleFinderArgs '--sourcefilelist', 'J2OBJC_REPO/jre_emul/build_result/java_sources.mf'
     cycleFinderExpectedCycles 0
+    ...
 }
 ```
 
@@ -556,9 +592,10 @@ architectures. If you need i386 for older simulators (iPhone 5, 5c and earlier
 devices), add the following to your build.gradle file:
 
 ```gradle
-// File: build.gradle
+// File: shared/build.gradle
 j2objcConfig {
     supportedArchs += ['ios_i386']
+    ...
 }
 ```
 

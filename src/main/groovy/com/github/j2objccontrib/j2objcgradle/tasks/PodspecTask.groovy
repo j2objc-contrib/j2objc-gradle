@@ -132,7 +132,7 @@ class PodspecTask extends DefaultTask {
     @VisibleForTesting
     static String genPodspec(String podname, String publicHeadersDir, String resourceDir,
                              String libDirIos, String libDirOsx, String libDirWatchos,
-                             String minIosVersion, String minOsxVersion, String minWatchosVersion,
+                             String minVersionIos, String minVersionOsx, String minVersionWatchos,
                              String libName, String j2objcHome) {
 
         // Relative paths for content referenced by CocoaPods
@@ -176,9 +176,9 @@ class PodspecTask extends DefaultTask {
                "    'LIBRARY_SEARCH_PATHS' => '$j2objcHome/lib'\n" +
                "  }\n" +
                 // http://guides.cocoapods.org/syntax/podspec.html#deployment_target
-               "  spec.ios.deployment_target = '$minIosVersion'\n" +
-               "  spec.osx.deployment_target = '$minOsxVersion'\n" +
-               "  spec.watchos.deployment_target = '$minWatchosVersion'\n" +
+               "  spec.ios.deployment_target = '$minVersionIos'\n" +
+               "  spec.osx.deployment_target = '$minVersionOsx'\n" +
+               "  spec.watchos.deployment_target = '$minVersionWatchos'\n" +
                "  spec.osx.frameworks = 'ExceptionHandling'\n" +
                "end\n"
     }
