@@ -34,7 +34,7 @@ dependencies {
     // to be translated and built into a standalone Objective C library.
     // j2objcTranslation must always be passed a *source* jar,
     // therefore, note the ':sources' classifier.
-    j2objcTranslation 'com.google.guava:guava:19.0-rc1:sources'
+    j2objcTranslation 'com.google.guava:guava:19.0:sources'
 }
 
 j2objcConfig {
