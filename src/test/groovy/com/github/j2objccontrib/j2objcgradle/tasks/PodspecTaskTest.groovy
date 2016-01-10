@@ -89,9 +89,9 @@ class PodspecTaskTest {
                 "  spec.watchos.xcconfig = {",
                 "    'LIBRARY_SEARCH_PATHS' => '${j2objcHome}/lib'",
                 "  }",
-                "  spec.ios.deployment_target = '6.0'",
+                "  spec.ios.deployment_target = '8.3'",
                 "  spec.osx.deployment_target = '10.6'",
-                "  spec.watchos.deployment_target = '1.0'",
+                "  spec.watchos.deployment_target = '2.0'",
                 "  spec.osx.frameworks = 'ExceptionHandling'",
                 "end"]
         File podspecDebug = proj.file("build/j2objcOutputs/${expectedPodNameDebug}.podspec")
@@ -122,9 +122,9 @@ class PodspecTaskTest {
                 "  spec.watchos.xcconfig = {",
                 "    'LIBRARY_SEARCH_PATHS' => '${j2objcHome}/lib'",
                 "  }",
-                "  spec.ios.deployment_target = '6.0'",
+                "  spec.ios.deployment_target = '8.3'",
                 "  spec.osx.deployment_target = '10.6'",
-                "  spec.watchos.deployment_target = '1.0'",
+                "  spec.watchos.deployment_target = '2.0'",
                 "  spec.osx.frameworks = 'ExceptionHandling'",
                 "end"]
 

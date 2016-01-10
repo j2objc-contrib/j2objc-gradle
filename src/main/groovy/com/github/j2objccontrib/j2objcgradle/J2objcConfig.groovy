@@ -632,8 +632,9 @@ class J2objcConfig {
      * <p/>
      * See https://developer.apple.com/library/ios/documentation/DeveloperTools/Conceptual/cross_development/Configuring/configuring.html#//apple_ref/doc/uid/10000163i-CH1-SW2
      */
-    // Matches the oldest version supported in Xcode 7
-    String minVersionIos = '6.0'
+    // Chosen to broaden compatibility for initial use
+    // Maintain at one version behind current
+    String minVersionIos = '8.3'
 
     /**
      * The minimum OS X version to build against.  You cannot use APIs that are not supported
@@ -651,8 +652,9 @@ class J2objcConfig {
      * <p/>
      * See https://developer.apple.com/library/ios/documentation/DeveloperTools/Conceptual/cross_development/Configuring/configuring.html#//apple_ref/doc/uid/10000163i-CH1-SW2
      */
-    // Matches the oldest version supported in Xcode 7
-    String minVersionWatchos = '1.0'
+    // Chosen to broaden compatibility for initial use
+    // Maintain at one version behind current
+    String minVersionWatchos = '2.0'
 
     // XCODE
     /**
