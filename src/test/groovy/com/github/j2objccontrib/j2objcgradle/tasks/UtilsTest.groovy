@@ -58,17 +58,35 @@ class UtilsTest {
     }
 
     @Test
-    void testCheckMinGradleVersion_valid() {
-        Utils.checkMinGradleVersion(GradleVersion.version('2.4'))
-        Utils.checkMinGradleVersion(GradleVersion.version('2.4.1'))
-        Utils.checkMinGradleVersion(GradleVersion.version('2.5'))
-        Utils.checkMinGradleVersion(GradleVersion.version('3.0'))
-        Utils.checkMinGradleVersion(GradleVersion.version('10.0'))
+    void testCheckGradleVersion_valid() {
+        assert !Utils.checkGradleVersion(GradleVersion.version('2.4'), false)
+        assert !Utils.checkGradleVersion(GradleVersion.version('2.4.1'), false)
+        assert !Utils.checkGradleVersion(GradleVersion.version('2.5'), false)
+        assert !Utils.checkGradleVersion(GradleVersion.version('2.8'), false)
+    }
+
+    @Test
+    void testCheckGradleVersion_validAndThrowIfUnsupported() {
+        assert !Utils.checkGradleVersion(GradleVersion.version('2.4'), true)
+        assert !Utils.checkGradleVersion(GradleVersion.version('2.4.1'), true)
+        assert !Utils.checkGradleVersion(GradleVersion.version('2.5'), true)
+        assert !Utils.checkGradleVersion(GradleVersion.version('2.8'), true)
+    }
+
+    @Test
+    void testCheckGradleVersion_invalid() {
+        assert Utils.checkGradleVersion(GradleVersion.version('2.3'), false)
+        assert Utils.checkGradleVersion(GradleVersion.version('2.9'), false)
     }
 
     @Test(expected=InvalidUserDataException)
-    void testCheckMinGradleVersion_invalid() {
-        Utils.checkMinGradleVersion(GradleVersion.version('2.3'))
+    void testCheckGradleVersion_invalidBelowMinimum() {
+        Utils.checkGradleVersion(GradleVersion.version('2.3'), true)
+    }
+
+    @Test(expected=InvalidUserDataException)
+    void testCheckGradleVersion_invalidAboveMaximum() {
+        Utils.checkGradleVersion(GradleVersion.version('2.9'), true)
     }
 
     @Test
