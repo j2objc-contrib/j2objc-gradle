@@ -34,15 +34,10 @@ dependencies {
     // to be translated and built into a standalone Objective C library.
     // j2objcTranslation must always be passed a *source* jar,
     // therefore, note the ':sources' classifier.
-    j2objcTranslation 'com.google.guava:guava:18.0:sources'
+    j2objcTranslation 'com.google.guava:guava:19.0:sources'
 }
 
 j2objcConfig {
-    // Per https://github.com/google/j2objc/blob/0.9.8.1/guava/README.txt
-    translatePattern {
-        exclude 'com/google/common/reflect/ClassPath.java'
-    }
-
     // For now, default config links in prebuilt Guava; that defeats the point.
     translateJ2objcLibs.remove("j2objc_guava.jar")
     linkJ2objcLibs.remove("guava")
@@ -55,9 +50,6 @@ j2objcConfig {
             "--final-methods-as-functions",
             "-q"
 
-    // Iterators and the like are common names across packages.  This library must
-    // be compiled with full directory paths.
-    forceFilenameCollisionCheck false
     autoConfigureDeps true
     // Almost always there are no tests provided in an external source jar.
     testMinExpectedTests 0
