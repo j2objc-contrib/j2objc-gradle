@@ -55,12 +55,33 @@ class Utils {
     // Prevent construction of this class, confines usage to static methods
     private Utils() { }
 
-    static void checkMinGradleVersion(GradleVersion gradleVersion) {
+    static boolean checkGradleVersion(boolean throwIfUnsupported) {
+        return checkGradleVersion(GradleVersion.current(), throwIfUnsupported)
+    }
+
+    @VisibleForTesting
+    static boolean checkGradleVersion(GradleVersion gradleVersion, boolean throwIfUnsupported) {
+        String errorMsg = ''
+
         final GradleVersion minGradleVersion = GradleVersion.version('2.4')
-        if (gradleVersion.compareTo(minGradleVersion) < 0) {
-            throw new InvalidUserDataException(
-                    "J2ObjC Gradle Plugin requires minimum Gradle version: $minGradleVersion")
+        if (gradleVersion.compareTo(GradleVersion.version('2.4')) < 0) {
+            errorMsg = "J2ObjC Gradle Plugin requires minimum Gradle version: $minGradleVersion"
         }
+
+        final GradleVersion unsupportedGradleVersion = GradleVersion.version('2.9')
+        if (gradleVersion.compareTo(unsupportedGradleVersion) >= 0) {
+            errorMsg = "Please use Gradle 2.8 as $unsupportedGradleVersion is unsupported:\n" +
+                       "https://github.com/j2objc-contrib/j2objc-gradle/issues/568"
+        }
+
+        if (!errorMsg.isEmpty()) {
+            if (throwIfUnsupported) {
+                throw new InvalidUserDataException(errorMsg)
+            } else {
+                return true
+            }
+        }
+        return false
     }
 
     static List<Integer> parseVersionComponents(String ver) {

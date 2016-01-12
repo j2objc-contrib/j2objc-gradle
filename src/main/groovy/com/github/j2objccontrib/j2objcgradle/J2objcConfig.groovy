@@ -733,6 +733,20 @@ class J2objcConfig {
      */
     @VisibleForTesting
     void finalConfigure() {
+
+        // Gradle 2.9 build will fail if it calls configureNativeCompilation:
+        //     https://github.com/j2objc-contrib/j2objc-gradle/issues/568
+        // Return early without error to avoid deadlock:
+        //     https://github.com/j2objc-contrib/j2objc-gradle/issues/585
+        // Exception is thrown when TranslateTask is run. Safest approach is to disable
+        // all setup logic even though only NativeCompilation appears to cause any issue.
+        if (Utils.checkGradleVersion(false)) {
+            configureNativeCompilationForUnsupported()
+            // Avoid misleading error message that finalConfigured() wasn't in build.gradle
+            finalConfigured = true
+            return
+        }
+
         validateConfiguration()
         // Conversion of compile and testCompile dependencies occurs optionally.
         if (autoConfigureDeps) {
@@ -838,6 +852,10 @@ class J2objcConfig {
         // https://discuss.gradle.org/t/problem-with-model-block-when-switching-from-2-2-1-to-2-4/9937
         nativeCompilation.apply(project.file("${project.buildDir}/j2objcSrcGenMain"),
                                 project.file("${project.buildDir}/j2objcSrcGenTest"))
+    }
+
+    protected void configureNativeCompilationForUnsupported() {
+        nativeCompilation.applyWhenUnsupported()
     }
 
     protected void convertDeps() {

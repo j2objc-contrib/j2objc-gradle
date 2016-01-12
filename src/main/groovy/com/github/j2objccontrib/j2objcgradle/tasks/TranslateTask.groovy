@@ -135,6 +135,11 @@ class TranslateTask extends DefaultTask {
 
     @TaskAction
     void translate(IncrementalTaskInputs inputs) {
+        // Exceptions must be delayed until Plugin tasks are run
+        // Doing it earlier causes Gradle deadlock:
+        // https://github.com/j2objc-contrib/j2objc-gradle/issues/585
+        Utils.checkGradleVersion(true)
+
         List<String> translateArgs = getTranslateArgs()
         // Don't evaluate this expensive property multiple times.
         FileCollection originalMainSrcFiles = getMainSrcFiles()
