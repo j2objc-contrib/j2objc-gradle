@@ -714,6 +714,17 @@ class J2objcConfig {
         appendArgs(this.xcodeTargetsWatchos, 'xcodeTargetsWatchos', false, xcodeTargetsWatchos)
     }
 
+    /**
+     * Allows manual config of Xcode targets in the Podfile (default is false).
+     *
+     * When set to true, this allows manual configuring of the Podfile targets.
+     * This is necessary when your Podfile is too complex to be automatically
+     * updated. It will still add the "Pod Method" (e.g. j2objc_shared) but it
+     * will not update the targets within the Podfile. When used, you must also
+     * set xcodeTargets{Ios|Osx|Watchos) to empty.
+     */
+    boolean xcodeTargetsManualConfig = false
+
 
     protected boolean finalConfigured = false
     /**

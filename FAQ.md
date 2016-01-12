@@ -32,6 +32,7 @@ Paste the results below, replacing existing contents.
 - [Why is my clean build failing?](#why-is-my-clean-build-failing)
 - [How do I include Java files from additional source directories?](#how-do-i-include-java-files-from-additional-source-directories)
 - [How do I develop with Swift?](#how-do-i-develop-with-swift)
+- [How do I manually configure the Cocoapods Podfile?](#how-do-i-manually-configure-the-cocoapods-podfile)
 - [How do I manually configure my Xcode project to use the translated libraries?](#how-do-i-manually-configure-my-xcode-project-to-use-the-translated-libraries)
 - [How do I update my J2ObjC translated code from Xcode?](#how-do-i-update-my-j2objc-translated-code-from-xcode)
 - [How do I work with Package Prefixes?](#how-do-i-work-with-package-prefixes)
@@ -254,6 +255,7 @@ with `translateArgs`.
 Make sure your arguments are separate strings, not a single space-concatenated string.
 
 ```gradle
+// File: shared/build.gradle
 j2objcConfig {
     // CORRECT
     translateArgs '-use-arc'
@@ -302,6 +304,7 @@ For example, if you want to include files from `src-gen/base` both into your JAR
 your Objective C libraries, then add to your `shared/build.gradle`:
 
 ```gradle
+// File: shared/build.gradle
 sourceSets {
     main {
         java {
@@ -330,6 +333,57 @@ you'd like to access from Swift code.
 // Included from `shared/build/j2objcOutputs/src/main/objc`
 #import "MyClassOne.h"
 #import "MyClassTwo.h"
+```
+
+
+### How do I manually configure the Cocoapods Podfile?
+
+The plugin will try to automatically update the Cocoapods Podfile but that may fail if
+the Podfile is too complex. In that situation, you can manually configure the pod method.
+
+```gradle
+// File: shared/build.gradle
+j2objcConfig {
+    xcodeTargetsManualConfig true
+    ...
+}
+```
+
+The "pod method" definition will still be added automatically (e.g.
+`def j2objc_shared...`). However, the "pod method" will not be added to any
+targets, so that needs to be done manually. See example of the Podfile below:
+
+```
+// File: ios/Podfile
+...
+
+# J2ObjC Gradle Plugin - PodMethods - DO NOT MODIFY START - can be moved as a block
+def j2objc_shared
+    pod 'j2objc-shared-debug', :configuration => ['Debug'], :path => '../shared/build/j2objcOutputs'
+    pod 'j2objc-shared-release', :configuration => ['Release'], :path => '../shared/build/j2objcOutputs'
+end
+# J2ObjC Gradle Plugin - PodMethods - DO NOT MODIFY END
+
+<SOME COMPLEX RUBY>
+    ...
+    # NOTE: this line must be added manually for the relevant targets:
+    j2objc_shared
+    ...
+end
+```
+
+To disable all modifications of the Podfile, disable the `j2objcXcode` task.
+This will also skip the `pod install` step. The podspec files will still
+be written (done by the `j2objcPodspec` task).
+
+```gradle
+// File: shared/build.gradle
+j2objcConfig {
+    ...
+}
+j2objcXcode {
+    enabled = false
+}
 ```
 
 
