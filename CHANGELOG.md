@@ -17,6 +17,24 @@ Code quality:
 * TBD
 
 
+## v0.6.0-alpha
+New functionality:
+* Support for arbitrary count of files that otherwise exceeds command line max args #574
+* Podfile manual configure of targets using xcodeTargetsManualConfig #561 #562
+* Podspec output to build/j2objcOutputs #558
+* Default minVersionIos => 8.3, minVersionWatchos => 2.0 #584
+
+Fixes:
+* Allow spaces in Xcode target names #564
+* Gradle 2.8 compatibility #567
+* Gradle 2.9 unsupported message #581
+* Gradle unsupport version causes deadlock #585
+* Several broken links from plugin #563
+
+Code quality:
+* Guava 19.0 system test (updated from Guava 18.0)
+
+
 ## v0.5.0-alpha
 New functionality:
 * Support for Xcode 7 and j2objc 0.9.8.2.1 #483
@@ -46,6 +64,7 @@ Code quality:
 * System tests include Xcode and Android Studio project examples #508 #523
 * Podspecs distinguish project libraries versus J2ObjC libraries #512
 
+
 ## v0.4.3-alpha
 New functionality:
 * Automatic dependency resolution for Maven jars and Gradle projects #420
@@ -70,6 +89,7 @@ Code quality:
 * Prevent publishing of bad releases #395 #398
 * Docs updates (various)
 
+
 ## v0.4.2-alpha
 Functionality:
 * Translation-only mode (skips building Objective-C libraries) #349
@@ -85,8 +105,10 @@ Code quality:
 * Documentation fixes (various)
 * Updating package prefixes will now correctly cause retranslation/recompile
 
+
 ## 0.4.1-alpha
 (Ignore - use v0.4.2 instead).
+
 
 ## v0.4.0-alpha
 Functionality:
@@ -100,6 +122,7 @@ Code Quality:
 - Expanded unit test coverage now comprises 81 tests
 - Numerous bug fixes
 
+
 ## v0.3.0-alpha
 Functionality:
 - Args groovy style syntax for config closure
@@ -110,12 +133,14 @@ Functionality:
 Code Quality:
 - Added unit test framework
 
+
 ## v0.2.2-alpha
 - Requires buildscript syntax as a workaround to the plugins {} syntax not working
 - Lots of fixes and improvements through the system
 
 Upgrading in-place from v0.1.0-alpha is not supported: please read README.md and
 J2objcPluginExtension.groovy for instructions on using and configuring the new version.
+
 
 ## v0.1.0-alpha
 Initial working version.
