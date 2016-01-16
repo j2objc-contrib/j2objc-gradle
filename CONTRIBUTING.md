@@ -433,13 +433,17 @@ verify that no additional commits/PRs have been merged that you don't want in th
 git tag -a v0.4.1-alpha cfdc1aa
 git push upstream v0.4.1-alpha
 ```
-6.  Do a clean build and then publish the new version to https://plugins.gradle.org<br>
+6. Do a clean build and then publish the new version to https://plugins.gradle.org<br>
 ```sh
 ./gradlew clean build publishPlugins
 ```
-7.  Push a new PR that increments build.gradle to `vX.Y.(Z+1)-SNAPSHOT`.  `-SNAPSHOT`
+7. Push a new PR that increments build.gradle to `vX.Y.(Z+1)-SNAPSHOT`.  `-SNAPSHOT`
 is standard convention for marking an unofficial build (if users happen to get their
 hands on one built directly from source).
+8. Update j2objc-common-libs-e2e-test to use the latest plugin version,
+[see instructions](https://github.com/j2objc-contrib/j2objc-common-libs-e2e-test/blob/master/CONTRIBUTING.md#updating-j2objc-gradle).
+The commit SHA should match the SHA shown in the PR.
+
 
 ### Hotfixes
 

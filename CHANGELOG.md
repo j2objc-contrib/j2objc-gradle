@@ -1,8 +1,18 @@
-To see everything that has changed between version vA.B.C and vX.Y.Z, visit:
-https://github.com/j2objc-contrib/j2objc-gradle/compare/vA.B.C...vX.Y.Z
+The following link can be adapted to see the differences between two versions.
+Example is given for differences between `v0.5.0-alpha` and `v0.6.0-alpha`:
+
+https://github.com/j2objc-contrib/j2objc-gradle/compare/v0.5.0-alpha...v0.6.0-alpha
+
+
+The list of releases with working links is most easily viewed here:
+
+https://github.com/j2objc-contrib/j2objc-gradle/releases
+
 
 Change numbers below are github.com pull requests; peruse #NNN at:
+
 https://github.com/j2objc-contrib/j2objc-gradle/pull/NNN
+
 
 # Prerelease Alphas
 
@@ -32,7 +42,7 @@ Fixes:
 * Several broken links from plugin #563
 
 Code quality:
-* Guava 19.0 system test (updated from Guava 18.0)
+* Guava 19.0 system test (updated from Guava 18.0) #434
 
 
 ## v0.5.0-alpha
