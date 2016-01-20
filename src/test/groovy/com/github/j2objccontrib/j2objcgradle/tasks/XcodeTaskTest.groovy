@@ -45,7 +45,8 @@ class XcodeTaskTest {
             [new XcodeTask.PodspecDetails(
                     'PROJ',
                     new File('/SRC/PROJ/BUILD/j2objc-PROJ-debug.podspec'),
-                    new File('/SRC/PROJ/BUILD/j2objc-PROJ-release.podspec'))]
+                    new File('/SRC/PROJ/BUILD/j2objc-PROJ-release.podspec'),
+                    ['Debug'], ['Release'])]
     XcodeTask.XcodeTargetDetails xcodeTargetDetailsEmpty =
             new XcodeTask.XcodeTargetDetails(
                     [], [], [], null, null, null)
@@ -69,7 +70,8 @@ class XcodeTaskTest {
     void testPodspecDetails_serialization() {
         // From: http://stackoverflow.com/a/9775330/1509221
         XcodeTask.PodspecDetails podspecDetailsIn = new XcodeTask.PodspecDetails(
-                'pname', new File('fileDebug'), new File('fileRelease'))
+                'pname', new File('fileDebug'), new File('fileRelease'),
+                ['Debug'], ['Release'])
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream()
         ObjectOutputStream sOut = new ObjectOutputStream(bOut)
@@ -92,7 +94,7 @@ class XcodeTaskTest {
     // http://stackoverflow.com/a/10542599/1509221
     void testPodspecDetails_getPodMethodName_validForRuby() {
         XcodeTask.PodspecDetails podspecDetails = new XcodeTask.PodspecDetails(
-                'project-NAME_09.!?=', null, null)
+                'project-NAME_09.!?=', null, null, ['Debug'], ['Release'])
         assert 'j2objc_project_NAME_09____' == podspecDetails.getPodMethodName()
     }
 
@@ -651,7 +653,8 @@ class XcodeTaskTest {
                 'PROJ',
                 // Only their relative path to Podfile matters, they don't need to exist
                 new File(podspecBuildDir + '/j2objc-PROJ-debug.podspec'),
-                new File(podspecBuildDir + '/j2objc-PROJ-release.podspec')))
+                new File(podspecBuildDir + '/j2objc-PROJ-release.podspec'),
+                ['Debug'], ['Release']))
         XcodeTask.writeUpdatedPodfileIfNeeded(
                 podspecDetailsList, xcodeTargetDetailsIosAppOnly, false, podfile)
 
@@ -1078,11 +1081,13 @@ class XcodeTaskTest {
                 [new XcodeTask.PodspecDetails(
                         'PROJA',
                         new File('/SRC/PROJA/BUILD/j2objc-PROJA-debug.podspec'),
-                        new File('/SRC/PROJA/BUILD/j2objc-PROJB-release.podspec')),
+                        new File('/SRC/PROJA/BUILD/j2objc-PROJB-release.podspec'),
+                        ['Debug'], ['Release']),
                  new XcodeTask.PodspecDetails(
                          'PROJB',
                          new File('/SRC/PROJB/BUILD/j2objc-PROJB-debug.podspec'),
-                         new File('/SRC/PROJB/BUILD/j2objc-PROJB-release.podspec'))],
+                         new File('/SRC/PROJB/BUILD/j2objc-PROJB-release.podspec'),
+                        ['Debug'], ['Release'])],
                 new File('/SRC/ios/Podfile'))
 
         List<String> expectedLines = [
@@ -1104,6 +1109,61 @@ class XcodeTaskTest {
                 "end"]
 
         assert expectedLines == newPodfileLines
+    }
+
+    @Test
+    void testUpdatePodMethods_customConfigurations() {
+        XcodeTask.PodspecDetails podspecDetails =
+                new XcodeTask.PodspecDetails(
+                        'PROJ',
+                        new File('/SRC/PROJ/BUILD/j2objc-PROJ-debug.podspec'),
+                        new File('/SRC/PROJ/BUILD/j2objc-PROJ-release.podspec'),
+                        ['Debug', 'Beta'], ['Release', 'Preview'])
+        List<String> podMethodLines = XcodeTask.podMethodLines(
+                podspecDetails,
+                new File('/SRC/ios/Podfile'))
+        List<String> expectedLines = [
+                "def j2objc_PROJ",
+                "    pod 'j2objc-PROJ-debug', :configuration => ['Debug','Beta'], :path => '../PROJ/BUILD'",
+                "    pod 'j2objc-PROJ-release', :configuration => ['Release','Preview'], :path => '../PROJ/BUILD'",
+                "end"]
+        assert expectedLines == podMethodLines
+    }
+
+    @Test
+    void testUpdatePodMethods_emptyConfigurations() {
+        // Empty configurations list should omit pod line, while an empty string should be included
+        // even though this would usually cause a CocoaPod error since an empty string is
+        // unlikely to be a valid target name.
+        XcodeTask.PodspecDetails debugPodspecDetails  =
+                new XcodeTask.PodspecDetails(
+                        'PROJ',
+                        new File('/SRC/PROJ/BUILD/j2objc-PROJ-debug.podspec'),
+                        new File('/SRC/PROJ/BUILD/j2objc-PROJ-release.podspec'),
+                        ['Debug'], [])
+        List<String> debugMethodLines = XcodeTask.podMethodLines(
+                debugPodspecDetails,
+                new File('/SRC/ios/Podfile'))
+        List<String> debugExpectedLines = [
+                "def j2objc_PROJ",
+                "    pod 'j2objc-PROJ-debug', :configuration => ['Debug'], :path => '../PROJ/BUILD'",
+                "end"]
+        assert debugExpectedLines == debugMethodLines
+
+        XcodeTask.PodspecDetails releasePodspecDetails  =
+                new XcodeTask.PodspecDetails(
+                        'PROJ',
+                        new File('/SRC/PROJ/BUILD/j2objc-PROJ-debug.podspec'),
+                        new File('/SRC/PROJ/BUILD/j2objc-PROJ-release.podspec'),
+                        [], ['Release'])
+        List<String> releaseMethodLines = XcodeTask.podMethodLines(
+                releasePodspecDetails,
+                new File('/SRC/ios/Podfile'))
+        List<String> releaseExpectedLines = [
+                "def j2objc_PROJ",
+                "    pod 'j2objc-PROJ-release', :configuration => ['Release'], :path => '../PROJ/BUILD'",
+                "end"]
+        assert releaseExpectedLines == releaseMethodLines
     }
 
     @Test
@@ -1187,8 +1247,8 @@ class XcodeTaskTest {
         // Update podfile targets
         List<String> newPodfileLines = XcodeTask.updatePodfileTargets(
                 podfileLines,
-                [new XcodeTask.PodspecDetails('PROJ_A', null, null),
-                 new XcodeTask.PodspecDetails('PROJ_B', null, null)],
+                [new XcodeTask.PodspecDetails('PROJ_A', null, null, ['Debug'], ['Release']),
+                 new XcodeTask.PodspecDetails('PROJ_B', null, null, ['Debug'], ['Release'])],
                 new XcodeTask.XcodeTargetDetails(
                         ['IOS-APP', 'IOS-APPTests'], ['OSX-APP', 'OSX-APPTests'], ['WATCH-APP', 'WATCH-APPTests'],
                         '6.0.0', '10.6.0', '1.0.0'))

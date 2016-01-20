@@ -87,6 +87,15 @@ class XcodeTask extends DefaultTask {
     @Input
     String getMinVersionWatchos() { return J2objcConfig.from(project).minVersionWatchos }
 
+    // TODO: remove '2' suffix
+    // The '2' suffix here is purely to get around what appears to be a groovy compiler bug.
+    // groovy output includes: "BUG! exception in phase 'instruction selection'"
+    @Input
+    List<String> getXcodeDebugConfigurations2() { return J2objcConfig.from(project).xcodeDebugConfigurations }
+    @Input
+    List<String> getXcodeReleaseConfigurations2() { return J2objcConfig.from(project).xcodeReleaseConfigurations }
+
+
     @OutputFile
     File getPodfileFile() {
         return project.file(new File(getXcodeProjectDir(), '/Podfile'))
@@ -101,11 +110,16 @@ class XcodeTask extends DefaultTask {
         String projectName
         File podspecDebug
         File podspecRelease
+        List<String> xcodeDebugConfigurations
+        List<String> xcodeReleaseConfigurations
 
-        PodspecDetails(String projectNameIn, File podspecDebugIn, File podspecReleaseIn) {
+        PodspecDetails(String projectNameIn, File podspecDebugIn, File podspecReleaseIn,
+                       List<String> xcodeDebugConfigurationsIn, List<String> xcodeReleaseConfigurationsIn) {
             projectName = projectNameIn
             podspecDebug = podspecDebugIn
             podspecRelease = podspecReleaseIn
+            xcodeDebugConfigurations = xcodeDebugConfigurationsIn
+            xcodeReleaseConfigurations = xcodeReleaseConfigurationsIn
         }
 
         String getPodMethodName() {
@@ -259,7 +273,8 @@ class XcodeTask extends DefaultTask {
         logger.debug("${proj.getName()} project podspecs: " +
                      "${j2objcPodspec.getPodNameDebug()}, ${j2objcPodspec.getPodNameRelease()}")
         podspecs.add(new PodspecDetails(proj.getName(),
-                j2objcPodspec.getPodspecDebug(), j2objcPodspec.getPodspecRelease()))
+                j2objcPodspec.getPodspecDebug(), j2objcPodspec.getPodspecRelease(),
+                getXcodeDebugConfigurations2(), getXcodeReleaseConfigurations2()))
 
         J2objcConfig j2objcConfig = proj.getExtensions().getByType(J2objcConfig)
         j2objcConfig.getBeforeProjects().each { Project beforeProject ->
@@ -666,8 +681,14 @@ class XcodeTask extends DefaultTask {
         // Either update pod line in place or add line if pod doesn't exist
         List<String> podMethodLines = new ArrayList<>()
         podMethodLines.add("def ${podspecDetails.getPodMethodName()}".toString())
-        podMethodLines.add("    pod '$podspecDebugName', :configuration => ['Debug'], :path => '$pathDebug'".toString())
-        podMethodLines.add("    pod '$podspecReleaseName', :configuration => ['Release'], :path => '$pathRelease'".toString())
+        if (!podspecDetails.xcodeDebugConfigurations.isEmpty()) {
+            String configs = Utils.toQuotedList(podspecDetails.xcodeDebugConfigurations)
+            podMethodLines.add("    pod '$podspecDebugName', :configuration => [$configs], :path => '$pathDebug'".toString())
+        }
+        if (!podspecDetails.xcodeReleaseConfigurations.isEmpty()) {
+            String configs = Utils.toQuotedList(podspecDetails.xcodeReleaseConfigurations)
+            podMethodLines.add("    pod '$podspecReleaseName', :configuration => [$configs], :path => '$pathRelease'".toString())
+        }
         podMethodLines.add("end")
         return podMethodLines
     }

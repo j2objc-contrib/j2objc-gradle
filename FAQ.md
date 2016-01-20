@@ -32,6 +32,7 @@ Paste the results below, replacing existing contents.
 - [Why is my clean build failing?](#why-is-my-clean-build-failing)
 - [How do I include Java files from additional source directories?](#how-do-i-include-java-files-from-additional-source-directories)
 - [How do I develop with Swift?](#how-do-i-develop-with-swift)
+- [How do I specify additional Xcode build configurations?](#how-do-i-specify-additional-xcode-build-configurations)
 - [How do I manually configure the Cocoapods Podfile?](#how-do-i-manually-configure-the-cocoapods-podfile)
 - [How do I manually configure my Xcode project to use the translated libraries?](#how-do-i-manually-configure-my-xcode-project-to-use-the-translated-libraries)
 - [How do I update my J2ObjC translated code from Xcode?](#how-do-i-update-my-j2objc-translated-code-from-xcode)
@@ -333,6 +334,27 @@ you'd like to access from Swift code.
 // Included from `shared/build/j2objcOutputs/src/main/objc`
 #import "MyClassOne.h"
 #import "MyClassTwo.h"
+```
+
+
+### How do I specify additional Xcode build configurations?
+
+Set `xcodeDebugConfigurations` and `xcodeReleaseConfigurations` to specify which build
+configurations should link the debug and release builds of the translated libs, respectively.
+These default to `['Debug']` and `['Release']` which correspond to Xcode's default build
+configuration names. Setting either of these to an empty array will omit the respective pod
+line from the "pod method".
+
+For example, if you have a build configuration called "Beta" for sending to internal testers
+and one called "Preview" for doing ad-hoc distribution:
+
+```gradle
+// File: shared/build.gradle
+j2objcConfig {
+    xcodeDebugConfigurations += ['Beta']
+    xcodeReleaseConfigurations += ['Preview']
+    ...
+}
 ```
 
 

@@ -498,6 +498,14 @@ class UtilsTest {
     }
 
     @Test
+    void testToQuotedString() {
+        assert "'a','b','c'" == Utils.toQuotedList(['a', 'b', 'c'])
+        assert "'abc'" == Utils.toQuotedList(['abc'])
+        assert "''" == Utils.toQuotedList([''])
+        assert "" == Utils.toQuotedList([])
+    }
+
+    @Test
     void testProjectExecLog() {
         ExecSpec execSpec = new ExecHandleBuilder()
         execSpec.setExecutable('/EXECUTABLE')
