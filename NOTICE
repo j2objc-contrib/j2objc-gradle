@@ -1,7 +1,7 @@
 j2objc-gradle - Gradle plugin for j2objc (Java to Objective-C transpiler)
 https://github.com/j2objc-contrib/j2objc-gradle
 
-Copyright (c) 2015 the authors of j2objc-gradle
+Copyright (c) 2015-2016 the authors of j2objc-gradle
 
 Main Contributors:
   Advay Mengle @advayDev1 <source@madvay.com>
