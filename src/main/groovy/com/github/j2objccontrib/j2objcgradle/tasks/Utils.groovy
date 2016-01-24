@@ -511,6 +511,14 @@ class Utils {
         return null
     }
 
+    static String toQuotedList(List<String> listString) {
+        if (listString.isEmpty()) {
+            return ''
+        } else {
+            return "'${listString.join("','")}'"
+        }
+    }
+
     @VisibleForTesting
     static String projectExecLog(
             ExecSpec execSpec, ByteArrayOutputStream stdout, ByteArrayOutputStream stderr,

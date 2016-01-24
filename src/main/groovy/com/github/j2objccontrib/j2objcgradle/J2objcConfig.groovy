@@ -725,6 +725,33 @@ class J2objcConfig {
      */
     boolean xcodeTargetsManualConfig = false
 
+    /**
+     * The Xcode build configurations which should link to the generated debug libraries.
+     * If set to an empty array, the Debug configuration will be omitted from the "pod method".
+     * <p/>
+     * For example:
+     * <pre>
+     * j2objcConfig {
+     *     xcodeDebugConfigurations += ['Beta']
+     *     ...
+     * }
+     * </pre>
+     */
+    List<String> xcodeDebugConfigurations = ['Debug']
+
+    /**
+     * The Xcode build configurations which should link to the generated release libraries.
+     * If set to an empty array, the Release configuration will be omitted from the "pod method".
+     * <p/>
+     * For example:
+     * <pre>
+     * j2objcConfig {
+     *     xcodeReleaseConfigurations += ['Preview']
+     *     ...
+     * }
+     * </pre>
+     */
+    List<String> xcodeReleaseConfigurations = ['Release']
 
     protected boolean finalConfigured = false
     /**
