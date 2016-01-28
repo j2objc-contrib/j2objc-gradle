@@ -47,7 +47,8 @@ Paste the results below, replacing existing contents.
 - [How do I develop on Windows or Linux?](#how-do-i-develop-on-windows-or-linux)
 - [How do I fix missing required architecture linker warning?](#how-do-i-fix-missing-required-architecture-linker-warning)
 - [How do I fix Undefined symbols for architecture linker warning?](#how-do-i-fix-undefined-symbols-for-architecture-linker-warning)
-- [How do I solve the Eclipse error message Obtaining Gradle model...?](#how-do-i-solve-the-eclipse-error-message-obtaining-gradle-model)
+- [How do I fix the Eclipse error message Obtaining Gradle model...?](#how-do-i-fix-the-eclipse-error-message-obtaining-gradle-model)
+- [How do I fix Command Line Failed: pod install](#how-do-i-fix-command-line-failed-pod-install)
 
 
 ### Start here for debugging (aka it's not working; aka don't panic)
@@ -717,7 +718,30 @@ otool -SV base/build/j2objcOutputs/lib/iosDebug/libbase-j2objc.a
 ```
 
 
-### How do I solve the Eclipse error message ``Obtaining Gradle model...``?
+### How do I fix the Eclipse error message ``Obtaining Gradle model...``?
 
 You have to first create the [Gradle wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html).
 Go to your project folder and do ``gradle wrapper``. Refresh your Eclipse project.
+
+
+
+### How do I fix ``Command Line Failed: pod install``
+
+This problem can be caused by one of two issues. In the command line, run `pod --version`. 
+If this command fails, see issue 1. If the command works, see issue 2.
+
+1. CocoaPods is not installed on your machine. This can be fixed by running 
+```
+  sudo gem install cocoapods
+```
+
+2. The GUI app environment differs from your shell environment. If `pod install` works fine 
+in the command line but fails when running the gradle plugin then you need to modify 
+your `.bash_profile` to include your `$PATH` in the GUI app environment variables on OS X.
+
+At the end of your `.bash_profile` add
+```
+  launchctl setenv PATH $PATH
+```
+
+More information can be found in [issue #496](https://github.com/j2objc-contrib/j2objc-gradle/issues/496)

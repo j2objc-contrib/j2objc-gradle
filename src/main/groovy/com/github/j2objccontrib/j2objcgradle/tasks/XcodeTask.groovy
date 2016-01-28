@@ -243,8 +243,8 @@ class XcodeTask extends DefaultTask {
                 String message =
                         exception.toString() +
                         '\n' +
-                        'Please install CocoaPods to use j2objcXcode (https://cocoapods.org):\n' +
-                        '    sudo gem install cocoapods'
+                        'Please see this FAQ item for help:\n'
+                        'https://github.com/j2objc-contrib/j2objc-gradle/blob/master/FAQ.md#how-do-i-fix-command-line-failed-pod-install'
                 throw new InvalidUserDataException(message, exception)
             }
             // unrecognized errors are rethrown:
