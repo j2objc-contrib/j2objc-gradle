@@ -848,7 +848,8 @@ class J2objcConfig {
         }
         // Yes, J2ObjC uses stderr to output the version.
         String actualVersionString = stderr.toString().trim()
-        if (actualVersionString != "j2objc $j2objcVersion".toString()) {
+        boolean overrideRequiredVersion = Utils.getLocalProperty(project, 'version.override', 'false').toBoolean()
+        if (actualVersionString != "j2objc $j2objcVersion".toString() && !overrideRequiredVersion) {
             // Note that actualVersionString will usually already have the word 'j2objc' in it.
             Utils.throwJ2objcConfigFailure(project,
                     "Found $actualVersionString at $j2objcHome, J2ObjC v$j2objcVersion required.")
