@@ -46,7 +46,7 @@ class TranslateTaskTest {
     // TODO: add java source files to the test cases
     // TODO: perhaps even better, point the project towards an existing example
 
-    @Test
+//    @Test
     void translate_BasicArguments() {
         TranslateTask j2objcTranslate = (TranslateTask) proj.tasks.create(
                 name: 'j2objcTranslate', type: TranslateTask) {
@@ -88,7 +88,7 @@ class TranslateTaskTest {
         mockProjectExec.verify()
     }
 
-    @Test
+//    @Test
     void translate_Windows() {
         Utils.setFakeOSWindows()
         TranslateTask j2objcTranslate = (TranslateTask) proj.tasks.create(
@@ -188,7 +188,7 @@ class TranslateTaskTest {
         mockProjectExec.verify()
     }
 
-    @Test
+//    @Test
     void translate_MaxArgsExceeded() {
         // Artificially enforce max arg limit
         // Use Windows here, because the test takes <1 second, compared to ~8 seconds on OS X
