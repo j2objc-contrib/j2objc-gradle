@@ -16,11 +16,18 @@
 
 package com.example;
 
-import com.google.common.base.Joiner;
+import com.google.protobuf.ExtensionRegistry;
 
-public class CubeTester {
+public class ProtocolUtilTester {
 
-    public static String exerciseGuava(String space) {
-        return Joiner.on(space).join('a', 'b', 'c');
+    public static boolean loadProtocolBuffersClass(String className) {
+        Class clazz = null;
+        try {
+            clazz = Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+
+        return clazz != null;
     }
 }

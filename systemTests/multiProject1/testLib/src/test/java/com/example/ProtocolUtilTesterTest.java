@@ -19,10 +19,10 @@ package com.example;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class CubeTesterTest {
+public class ProtocolUtilTesterTest {
 
     @Test
-    public void testExerciseGuava() {
-        Assert.assertEquals("a_b_c", CubeTester.exerciseGuava("_"));
+    public void testLoadProtocolBuffersClass() {
+        Assert.assertTrue(ProtocolUtilTester.loadProtocolBuffersClass("com.google.protobuf.ExtensionRegistry"));
     }
 }

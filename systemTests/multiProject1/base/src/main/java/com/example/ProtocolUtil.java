@@ -16,22 +16,27 @@
 
 package com.example;
 
-import com.google.common.base.Joiner;
+public class ProtocolUtil {
 
-public class Cube {
+    protected final String className;
 
-    protected final int dimension;
-
-    public Cube(int dimension) {
-        this.dimension = dimension;
+    public ProtocolUtil(String className) {
+        this.className = className;
     }
 
     @Override
     public String toString() {
-        return String.format("[Cube %d]", dimension);
+        return String.format("[ProtocolUtil %s]", className);
     }
 
-    public String exerciseGuava() {
-        return Joiner.on("BASE").join('a', 'b', 'c');
+    public boolean loadProtocolBuffersClass() {
+        Class clazz = null;
+        try {
+            clazz = Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+
+        return clazz != null;
     }
 }

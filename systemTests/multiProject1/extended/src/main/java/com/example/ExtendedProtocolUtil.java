@@ -21,12 +21,10 @@ import java.lang.Override;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import com.google.common.base.Joiner;
+public class ExtendedProtocolUtil extends ProtocolUtil {
 
-public class ExtendedCube extends Cube {
-
-    public ExtendedCube(int dimension) {
-        super(dimension);
+    public ExtendedProtocolUtil(String className) {
+        super(className);
     }
 
     @Override
@@ -36,7 +34,14 @@ public class ExtendedCube extends Cube {
     }
 
     @Override
-    public String exerciseGuava() {
-        return Joiner.on("EXT").join('a', 'b', 'c');
+    public boolean loadProtocolBuffersClass() {
+        Class clazz = null;
+        try {
+            clazz = Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+
+        return clazz != null;
     }
 }
