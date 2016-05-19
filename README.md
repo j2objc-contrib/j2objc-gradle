@@ -87,7 +87,7 @@ The plugin requries modern versions of Gradle and J2ObjC, and assumes the
 [J2ObjC Requirements](http://j2objc.org/#requirements):
 
 * Gradle 2.4
-* J2ObjC 0.9.8.2.1 or higher
+* J2ObjC 1.0.2 or higher
 * JDK 1.7 or higher
 * Mac workstation or laptop
 * Mac OS X 10.9 or higher

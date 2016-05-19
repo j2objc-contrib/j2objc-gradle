@@ -23,7 +23,7 @@ __Requirements__
 * Only built-in libraries
 
 If you have one or more shared Java J2ObjC Gradle project,
-and depend only on libraries provided in the J2ObjC distribution (in 0.9.8.2.1 this is:
+and depend only on libraries provided in the J2ObjC distribution (in 1.0.2 this is:
 * com.google.guava:guava
 * com.google.j2objc:j2objc-annotations
 * com.google.protobuf:protobuf-java

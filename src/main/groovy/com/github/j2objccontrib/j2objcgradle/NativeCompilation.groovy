@@ -99,7 +99,7 @@ class NativeCompilation {
                     case TargetSpec.TARGET_OSX:
                         if (!Utils.j2objcHasOsxDistribution(project)) {
                             String msg = "J2ObjC distribution at $j2objcPath lacks a lib/macosx directory.\n" +
-                                         "Please update to J2ObjC 0.9.8.2.1 or higher; earlier versions will\n" +
+                                         "Please update to J2ObjC 1.0.2 or higher; earlier versions will\n" +
                                          "not work correctly with Xcode 7 or higher."
                             throw new InvalidUserDataException(msg)
                         }

@@ -25,7 +25,7 @@ set -uev
 # Run specific test by script parameter, e.g. 'systemTests/run-all.sh 1'
 TEST_SET=${1:-12}
 
-J2OBJC_VERSION=${J2OBJC_VERSION:=0.9.8.2.1}
+J2OBJC_VERSION=${J2OBJC_VERSION:=1.0.2}
 
 if [[ "$PWD" =~ systemTests ]]; then
    echo "Should be run from project root and not systemTests directory"

@@ -49,7 +49,6 @@ class DependencyConverter {
     // List of `group:name`
     // TODO: Handle versioning.
     static final List<String> J2OBJC_DEFAULT_LIBS = [
-            'com.google.guava:guava',
             'junit:junit',
             'org.mockito:mockito-core',
             'com.google.j2objc:j2objc-annotations',

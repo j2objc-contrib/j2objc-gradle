@@ -34,7 +34,7 @@ pushd localJ2objcDist
 # Specific version can be configured from command line:
 # export J2OBJC_VERSION=X.Y.Z
 # Default is version number listed on following line:
-J2OBJC_VERSION=${J2OBJC_VERSION:=0.9.8.2.1}
+J2OBJC_VERSION=${J2OBJC_VERSION:=1.0.2}
 
 # Specific version can be configured from command line:
 # export ANDROID_HOME=DIR

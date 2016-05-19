@@ -159,7 +159,7 @@ class PodspecTask extends DefaultTask {
                "  spec.resources = '$resourceDir/**/*'\n" +
                "  spec.requires_arc = true\n" +
                "  spec.libraries = " +  // continuation of same line
-               "'ObjC', 'guava', 'javax_inject', 'jre_emul', 'jsr305', 'z', 'icucore'\n" +
+               "'ObjC', 'javax_inject', 'jre_emul', 'jsr305', 'z', 'icucore'\n" +
                "  spec.ios.vendored_libraries = '$libDirIos/lib${libName}.a'\n" +
                "  spec.osx.vendored_libraries = '$libDirOsx/lib${libName}.a'\n" +
                "  spec.watchos.vendored_libraries = '$libDirWatchos/lib${libName}.a'\n" +
