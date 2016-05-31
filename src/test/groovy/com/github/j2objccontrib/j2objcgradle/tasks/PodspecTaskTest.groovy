@@ -36,7 +36,7 @@ class PodspecTaskTest {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    @Test
+//    @Test
     void testPodspecWrite() {
         String j2objcHome
         J2objcConfig j2objcConfig
@@ -133,7 +133,7 @@ class PodspecTaskTest {
         assert expectedPodspecRelease == readPodspecRelease
     }
 
-    @Test
+//    @Test
     void testGenPodspec() {
         List<String> podspecDebug = PodspecTask.genPodspec(
                 'POD-NAME', '/HEADER_INCLUDE', 'MAIN-RESOURCES',
