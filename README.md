@@ -1,3 +1,5 @@
+## Hey! We are looking for new developers to maintain the plugin.  Let us know on [j2objc-discuss](https://groups.google.com/forum/#!topic/j2objc-discuss/jQ_eyW9nxmQ) if you are interested.  Active development on this plugin is otherwise currently suspended.
+
 # J2ObjC Gradle Plugin
 
 The __J2ObjC Gradle plugin__ enables Java source to be part of an iOS application's build
