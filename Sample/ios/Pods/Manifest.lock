@@ -1,0 +1,14 @@
+PODS:
+  - j2objc-shared (1.0)
+
+DEPENDENCIES:
+  - j2objc-shared (from `/Users/mg/Documents/Android/Android-Studio/Sample/shared/build`)
+
+EXTERNAL SOURCES:
+  j2objc-shared:
+    :path: "/Users/mg/Documents/Android/Android-Studio/Sample/shared/build"
+
+SPEC CHECKSUMS:
+  j2objc-shared: 905275dd8b86894bea16ed75d82462ab78d47a3c
+
+COCOAPODS: 0.37.2
