@@ -1,6 +1,8 @@
 Please keep in mind that your "Contribution(s)" are submitted under
 the [Apache 2.0 License](LICENSE).
 
+## Hey! We are looking for new developers to maintain the plugin.  Let us know on [j2objc-discuss](https://groups.google.com/forum/#!topic/j2objc-discuss/jQ_eyW9nxmQ) if you are interested.  Active development on this plugin is otherwise currently suspended.
+
 ### Quick start
 
 1. Fork it clicking on the top right "Fork" button
