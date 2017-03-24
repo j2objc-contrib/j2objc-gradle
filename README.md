@@ -18,8 +18,8 @@ Note that the plugin is currently in alpha; we may need to make breaking API cha
 before the 1.0 release.
 
 [![License](https://img.shields.io/badge/license-Apache%202.0%20License-blue.svg)](https://github.com/j2objc-contrib/j2objc-gradle/blob/master/LICENSE)
-[![OSX and Linux Build Status](https://img.shields.io/travis/j2objc-contrib/j2objc-gradle/master.svg?label=mac and linux build)](https://travis-ci.org/j2objc-contrib/j2objc-gradle)
-[![Windows Build Status](https://img.shields.io/appveyor/ci/madvayApiAccess/j2objc-gradle/master.svg?label=windows build)](https://ci.appveyor.com/project/madvayApiAccess/j2objc-gradle/branch/master)
+[![OSX and Linux Build Status](https://img.shields.io/travis/j2objc-contrib/j2objc-gradle/master.svg?label=mac%20and%20linux%20build)](https://travis-ci.org/j2objc-contrib/j2objc-gradle)
+[![Windows Build Status](https://img.shields.io/appveyor/ci/madvayApiAccess/j2objc-gradle/master.svg?label=windows%20build)](https://ci.appveyor.com/project/madvayApiAccess/j2objc-gradle/branch/master)
 
 Home Page: https://github.com/j2objc-contrib/j2objc-gradle
 
