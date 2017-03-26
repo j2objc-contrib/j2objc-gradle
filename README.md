@@ -42,7 +42,7 @@ Configure `shared/build.gradle` for your Java-only project:
 // File: shared/build.gradle
 plugins {
     id 'java'
-    id 'com.github.j2objccontrib.j2objcgradle' version '0.5.0-alpha'
+    id 'com.github.j2objccontrib.j2objcgradle' version '0.6.0-alpha'
 }
 
 dependencies {
@@ -83,13 +83,13 @@ For more complex situations like:
 [J2objcConfig.groovy](https://github.com/j2objc-contrib/j2objc-gradle/blob/master/src/main/groovy/com/github/j2objccontrib/j2objcgradle/J2objcConfig.groovy#L30).
 
 
-### Minimum Requirements
+### Requirements
 
 The plugin requries modern versions of Gradle and J2ObjC, and assumes the
 [J2ObjC Requirements](http://j2objc.org/#requirements):
 
-* Gradle 2.4
-* J2ObjC 0.9.8.2.1 or higher
+* Gradle 2.4 to 2.8 supported
+* J2ObjC 0.9.8.2.1
 * JDK 1.7 or higher
 * Mac workstation or laptop
 * Mac OS X 10.9 or higher
