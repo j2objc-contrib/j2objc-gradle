@@ -240,7 +240,8 @@ class Utils {
         'enabledArchs',
         'home',
         'release.enabled',
-        'translateOnlyMode'
+        'translateOnlyMode',
+        'version.override'
     ))
 
     private static final String PROPERTY_KEY_PREFIX = 'j2objc.'

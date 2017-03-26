@@ -279,7 +279,8 @@ class NativeCompilation {
                     // https://docs.gradle.org/current/userguide/nativeBinaries.html#N16030
                     // TODO: Consider making this configuration easier using plugin extension.
                     // If we do that, however, we will become inconsistent with Gradle Objective-C building.
-                    objcCompiler.args "-I$j2objcPath/include"
+                    // TODO check if the guava path exists before including?
+                    objcCompiler.args "-I$j2objcPath/include", "-I$j2objcPath/include/guava"
                     objcCompiler.args '-Werror', '-Wno-parentheses', '-fno-strict-overflow'
                     objcCompiler.args '-std=c11'
                     objcCompiler.args j2objcConfig.extraObjcCompilerArgs

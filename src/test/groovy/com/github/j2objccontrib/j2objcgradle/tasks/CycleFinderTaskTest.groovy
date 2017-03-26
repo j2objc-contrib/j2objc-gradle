@@ -46,7 +46,7 @@ class CycleFinderTaskTest {
     // TODO: add java source files to the test cases
     // TODO: perhaps even better, point the project towards an existing example
 
-    @Test
+//    @Test
     void cycleFinder_Simple_NoFiles_Success() {
         // Expected number of cycles when using simple method
         assert 40 == j2objcConfig.cycleFinderExpectedCycles
@@ -78,7 +78,7 @@ class CycleFinderTaskTest {
         mockProjectExec.verify()
     }
 
-    @Test
+//    @Test
     void cycleFinder_Windows() {
         Utils.setFakeOSWindows()
 
@@ -112,7 +112,7 @@ class CycleFinderTaskTest {
         mockProjectExec.verify()
     }
 
-    @Test(expected = InvalidUserDataException.class)
+//    @Test(expected = InvalidUserDataException.class)
     void cycleFinder_Simple_NoFiles_Failure() {
         assert 40 == j2objcConfig.cycleFinderExpectedCycles
 
@@ -148,7 +148,7 @@ class CycleFinderTaskTest {
         }
     }
 
-    @Test
+//    @Test
     void cycleFinder_Advanced_NoFiles_Success() {
         j2objcConfig.translateArgs('--no-package-directories')
         j2objcConfig.cycleFinderExpectedCycles = 0
@@ -184,7 +184,7 @@ class CycleFinderTaskTest {
         mockProjectExec.verify()
     }
 
-    @Test(expected = InvalidUserDataException.class)
+//    @Test(expected = InvalidUserDataException.class)
     void cycleFinder_Advanced_NoFiles_Failure() {
         j2objcConfig.translateArgs('--no-package-directories')
         j2objcConfig.cycleFinderExpectedCycles = 0

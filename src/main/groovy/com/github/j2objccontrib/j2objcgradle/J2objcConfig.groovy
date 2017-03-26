@@ -291,14 +291,62 @@ class J2objcConfig {
     // J2objc default libraries, from $J2OBJC_HOME/lib/...
     // TODO: auto add libraries based on java dependencies, warn on version differences
     List<String> translateJ2objcLibs = [
+            /**
+             * bleeding edge package names:
+             *
+             cycle_finder
+             guava-19.0
+             hamcrest-core-1.3
+             j2objc
+             j2objc_annotations
+             j2objc_junit
+             j2objc_xalan
+             javax.inject-1
+             jre_emul-src
+             jre_emul
+             jsr305-3.0.0
+             mockito-core-1.9.5
+
+             *
+             * 1.0.1 package names
+             cycle_finder
+             hamcrest-core-1.3
+             j2objc
+             j2objc_annotations
+             j2objc_guava
+             j2objc_junit
+             j2objc_xalan
+             javax.inject-1
+             jre_emul-src
+             jre_emul
+             jsr305-3.0.0
+             mockito-core-1.9.5
+
+             *
+             * 0.9.8.2 package names
+             cycle_finder
+             hamcrest-core-1.3
+             j2objc
+             j2objc_annotations
+             j2objc_guava
+             j2objc_junit
+             javax.inject-1
+             jre_emul-src
+             jre_emul
+             jsr305-3.0.0
+             mockito-core-1.9.5
+
+             */
+            // TODO modify to support all future versions, use gradle's file globbing support, just supply a pattern
             // Comments indicate difference compared to standard libraries...
             // Memory annotations, e.g. @Weak, @AutoreleasePool
             "j2objc_annotations.jar",
             // Libraries that have CycleFinder fixes, e.g. @Weak and code removal
-            "j2objc_guava.jar", "j2objc_junit.jar", "jre_emul.jar",
+            // NOTE guava lib's name changed since commit 949248804b2c5b8bd7b7804305a4f12bc340ca5b
+            "guava-19.0.jar", "j2objc_guava.jar", "j2objc_junit.jar", "jre_emul.jar",
             // Libraries that don't need CycleFinder fixes
             "javax.inject-1.jar", "jsr305-3.0.0.jar",
-            "mockito-core-1.9.5.jar", "hamcrest-core-1.3.jar", "protobuf_runtime.jar"]
+            "mockito-core-1.9.5.jar", "hamcrest-core-1.3.jar"/*, "protobuf_runtime.jar"*/]
 
     /**
      * Additional native libraries that are part of the j2objc distribution to link
@@ -311,7 +359,7 @@ class J2objcConfig {
      */
     // J2objc default libraries, from $J2OBJC_HOME/lib/..., without '.a' extension.
     // TODO: auto add libraries based on java dependencies, warn on version differences
-    List<String> linkJ2objcLibs = ['guava', 'javax_inject', 'jsr305', 'protobuf_runtime']
+    List<String> linkJ2objcLibs = ['guava', 'javax_inject', 'jsr305'/*, 'protobuf_runtime'*/]
 
     /**
      * Additional native libraries that are part of the j2objc distribution to link
@@ -848,7 +896,8 @@ class J2objcConfig {
         }
         // Yes, J2ObjC uses stderr to output the version.
         String actualVersionString = stderr.toString().trim()
-        if (actualVersionString != "j2objc $j2objcVersion".toString()) {
+        boolean overrideRequiredVersion = Utils.getLocalProperty(project, 'version.override', 'false').toBoolean()
+        if (actualVersionString != "j2objc $j2objcVersion".toString() && !overrideRequiredVersion) {
             // Note that actualVersionString will usually already have the word 'j2objc' in it.
             Utils.throwJ2objcConfigFailure(project,
                     "Found $actualVersionString at $j2objcHome, J2ObjC v$j2objcVersion required.")
