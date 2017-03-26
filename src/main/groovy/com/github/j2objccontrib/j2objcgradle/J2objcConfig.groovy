@@ -228,7 +228,7 @@ class J2objcConfig {
      *  @param translateClasspaths add libraries for -classpath argument
      */
     void translateClasspaths(String... translateClasspaths) {
-        appendArgs(this.translateClasspaths, 'translateClasspaths', true, translateClasspaths)
+        appendArgs(this.translateClasspaths, 'translateClasspaths', false, translateClasspaths)
     }
 
     /**
@@ -241,7 +241,7 @@ class J2objcConfig {
      *  @param translateSourcepaths args add source jar for translation
      */
     void translateSourcepaths(String... translateSourcepaths) {
-        appendArgs(this.translateSourcepaths, 'translateSourcepaths', true, translateSourcepaths)
+        appendArgs(this.translateSourcepaths, 'translateSourcepaths', false, translateSourcepaths)
     }
 
     /**
