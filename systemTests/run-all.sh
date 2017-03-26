@@ -25,7 +25,7 @@ set -uev
 # Run specific test by script parameter, e.g. 'systemTests/run-all.sh 1'
 TEST_SET=${1:-12}
 
-J2OBJC_VERSION=${J2OBJC_VERSION:=0.9.8.2.1}
+J2OBJC_VERSION=${J2OBJC_VERSION:=1.0.2}
 
 if [[ "$PWD" =~ systemTests ]]; then
    echo "Should be run from project root and not systemTests directory"
@@ -57,7 +57,7 @@ if [[ $TEST_SET == *"2"* ]] ; then
    # does the same for Guava. These libraries are used in both `extended` and `base`.
    # We must rename the include directory while this test runs, otherwise the
    # code builds against the translated Guava headers provided in the j2objc dist.
-   mv systemTests/localJ2objcDist/j2objc-$J2OBJC_VERSION/include/com/google/common systemTests/localJ2objcDist/j2objc-$J2OBJC_VERSION/include/com/google/common-bak
+   mv systemTests/localJ2objcDist/j2objc-$J2OBJC_VERSION/include/guava/com/google/common systemTests/localJ2objcDist/j2objc-$J2OBJC_VERSION/include/guava/com/google/common-bak
    systemTests/run-test.sh systemTests/externalLibrary1
-   mv systemTests/localJ2objcDist/j2objc-$J2OBJC_VERSION/include/com/google/common-bak systemTests/localJ2objcDist/j2objc-$J2OBJC_VERSION/include/com/google/common
+   mv systemTests/localJ2objcDist/j2objc-$J2OBJC_VERSION/include/guava/com/google/common-bak systemTests/localJ2objcDist/j2objc-$J2OBJC_VERSION/include/guava/com/google/common
 fi

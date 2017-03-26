@@ -16,11 +16,32 @@
 
 package com.example;
 
-import com.google.common.base.Joiner;
+import java.lang.Override;
 
-public class CubeTester {
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
-    public static String exerciseGuava(String space) {
-        return Joiner.on(space).join('a', 'b', 'c');
+public class ExtendedProtocolUtil extends ProtocolUtil {
+
+    public ExtendedProtocolUtil(String className) {
+        super(className);
+    }
+
+    @Override
+    public String toString() {
+        Gson gson = new GsonBuilder().create();
+        return gson.toJson(this);
+    }
+
+    @Override
+    public boolean loadProtocolBuffersClass() {
+        Class clazz = null;
+        try {
+            clazz = Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+
+        return clazz != null;
     }
 }

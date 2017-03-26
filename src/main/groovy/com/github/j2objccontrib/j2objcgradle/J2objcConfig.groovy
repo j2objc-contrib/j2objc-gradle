@@ -76,7 +76,7 @@ class J2objcConfig {
     /**
      * Exact required version of j2objc.
      */
-    String j2objcVersion = '0.9.8.2.1'
+    String j2objcVersion = '1.0.2'
 
     /**
      * Don't verify J2ObjC binaries.  Useful for testing and power-users
@@ -266,7 +266,7 @@ class J2objcConfig {
      * dependencies {
      *     compile project(':peer1')                  // type (1)
      *     compile 'com.google.code.gson:gson:2.3.1'  // type (3)
-     *     compile 'com.google.guava:guava:18.0'      // type (2)
+     *     compile 'com.google.guava:guava:19.0'      // type (2)
      *     testCompile 'junit:junit:4.11'             // type (2)
      * }
      * </pre>
@@ -295,7 +295,7 @@ class J2objcConfig {
             // Memory annotations, e.g. @Weak, @AutoreleasePool
             "j2objc_annotations.jar",
             // Libraries that have CycleFinder fixes, e.g. @Weak and code removal
-            "j2objc_guava.jar", "j2objc_junit.jar", "jre_emul.jar",
+            "j2objc_junit.jar", "jre_emul.jar",
             // Libraries that don't need CycleFinder fixes
             "javax.inject-1.jar", "jsr305-3.0.0.jar",
             "mockito-core-1.9.5.jar", "hamcrest-core-1.3.jar", "protobuf_runtime.jar"]
@@ -306,12 +306,12 @@ class J2objcConfig {
      * <p/>
      * For example:
      * <pre>
-     * linkJ2objcLibs = ["guava", "jsr305"]
+     * linkJ2objcLibs = ["jsr305"]
      * </pre>
      */
     // J2objc default libraries, from $J2OBJC_HOME/lib/..., without '.a' extension.
     // TODO: auto add libraries based on java dependencies, warn on version differences
-    List<String> linkJ2objcLibs = ['guava', 'javax_inject', 'jsr305', 'protobuf_runtime']
+    List<String> linkJ2objcLibs = ['javax_inject', 'jsr305', 'protobuf_runtime']
 
     /**
      * Additional native libraries that are part of the j2objc distribution to link
@@ -787,7 +787,7 @@ class J2objcConfig {
         finalConfigured = true
     }
 
-    public static final String MIN_SUPPORTED_J2OBJC_VERSION = '0.9.8.2.1'
+    public static final String MIN_SUPPORTED_J2OBJC_VERSION = '1.0.2'
 
     protected void verifyJ2objcRequirements() {
         if (skipJ2objcVerification) {

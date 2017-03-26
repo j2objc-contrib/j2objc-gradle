@@ -16,13 +16,27 @@
 
 package com.example;
 
-import org.junit.Assert;
-import org.junit.Test;
+public class ProtocolUtil {
 
-public class CubeTesterTest {
+    protected final String className;
 
-    @Test
-    public void testExerciseGuava() {
-        Assert.assertEquals("a_b_c", CubeTester.exerciseGuava("_"));
+    public ProtocolUtil(String className) {
+        this.className = className;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("[ProtocolUtil %s]", className);
+    }
+
+    public boolean loadProtocolBuffersClass() {
+        Class clazz = null;
+        try {
+            clazz = Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+
+        return clazz != null;
     }
 }

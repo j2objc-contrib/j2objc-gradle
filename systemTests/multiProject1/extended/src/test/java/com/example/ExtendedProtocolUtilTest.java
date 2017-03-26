@@ -19,15 +19,19 @@ package com.example;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class CubeTest {
+public class ExtendedProtocolUtilTest {
+
+    private static final String CLASSNAME = "com.google.protobuf.Extension";
 
     @Test
     public void testToString() {
-        Assert.assertEquals("[Cube 7]", new Cube(7).toString());
+        Assert.assertEquals("{\"className\":\"com.google.protobuf.Extension\"}",
+        new ExtendedProtocolUtil(CLASSNAME).toString());
     }
 
     @Test
-    public void testExerciseGuava() {
-        Assert.assertEquals(CubeTester.exerciseGuava("BASE"), new Cube(7).exerciseGuava());
+    public void testLoadProtocolBuffersClass() {
+        Assert.assertEquals(ProtocolUtilTester.loadProtocolBuffersClass(CLASSNAME),
+                new ExtendedProtocolUtil(CLASSNAME).loadProtocolBuffersClass());
     }
 }

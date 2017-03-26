@@ -16,27 +16,18 @@
 
 package com.example;
 
-import java.lang.Override;
+import com.google.protobuf.ExtensionRegistry;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+public class ProtocolUtilTester {
 
-import com.google.common.base.Joiner;
+    public static boolean loadProtocolBuffersClass(String className) {
+        Class clazz = null;
+        try {
+            clazz = Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
 
-public class ExtendedCube extends Cube {
-
-    public ExtendedCube(int dimension) {
-        super(dimension);
-    }
-
-    @Override
-    public String toString() {
-        Gson gson = new GsonBuilder().create();
-        return gson.toJson(this);
-    }
-
-    @Override
-    public String exerciseGuava() {
-        return Joiner.on("EXT").join('a', 'b', 'c');
+        return clazz != null;
     }
 }

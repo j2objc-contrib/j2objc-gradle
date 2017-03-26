@@ -16,22 +16,13 @@
 
 package com.example;
 
-import com.google.common.base.Joiner;
+import org.junit.Assert;
+import org.junit.Test;
 
-public class Cube {
+public class ProtocolUtilTesterTest {
 
-    protected final int dimension;
-
-    public Cube(int dimension) {
-        this.dimension = dimension;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("[Cube %d]", dimension);
-    }
-
-    public String exerciseGuava() {
-        return Joiner.on("BASE").join('a', 'b', 'c');
+    @Test
+    public void testLoadProtocolBuffersClass() {
+        Assert.assertTrue(ProtocolUtilTester.loadProtocolBuffersClass("com.google.protobuf.ExtensionRegistry"));
     }
 }
