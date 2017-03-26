@@ -259,15 +259,22 @@ class TranslateTask extends DefaultTask {
         ])
         doTranslate(sourcepathDirs, srcGenMainDir, translateArgs, mainSrcFilesChanged, "mainSrcFilesArgFile")
 
-        // Translate test code. Tests are never built with --build-closure; otherwise
+        // Translate test code.
+        List<String> testTranslateArgs = new ArrayList<>(translateArgs)
+
+        // Tests are never built with --build-closure; otherwise
         // we will get duplicate symbol errors.
         // There is an edge-case that will fail: if the main and test code depend on
         // some other library X AND use --build-closure to translate X AND the API of X
         // needed by the test code is not a subset of the API of X used by the main
         // code, compilation will fail. The solution is to just build the whole library
         // X as a separate j2objc project and depend on it.
-        List<String> testTranslateArgs = new ArrayList<>(translateArgs)
         testTranslateArgs.removeAll('--build-closure')
+
+        // JUnit and most other testing frameworks require reflection for the tests to function.
+        // The main source code doesn't need reflection information, but make sure the tests include it.
+        testTranslateArgs.removeAll('--strip-reflection')
+        
         sourcepathDirs = new UnionFileCollection([
                 project.files(Utils.srcSet(project, 'main', 'java').getSrcDirs()),
                 project.files(Utils.srcSet(project, 'test', 'java').getSrcDirs()),

@@ -146,7 +146,7 @@ class TranslateTaskTest {
         j2objcConfig.translateSourcepaths('REL-SOURCEPATH', absSourcePath)
         j2objcConfig.translateClasspaths('REL-CLASSPATH', absClassPath)
         j2objcConfig.translateJ2objcLibs = ['J2OBJC-LIB1', 'J2OBJC-LIB2']
-        j2objcConfig.translateArgs('-ARG1', '-ARG2')
+        j2objcConfig.translateArgs('-ARG1', '-ARG2', '--strip-reflection')
         // TODO: add testing for translatePattern
         // j2objcConfig.translatePattern {
         //     exclude '**/Example.java'
@@ -158,7 +158,7 @@ class TranslateTaskTest {
                 '-d', '/PROJECT_DIR/build/j2objcSrcGenMain',
                 '-sourcepath', "/PROJECT_DIR/src/main/java:/PROJECT_DIR/REL-SOURCEPATH:$absSourcePath:/PROJECT_DIR/build/classes/main:/PROJECT_DIR/REL-GENPATH:$absGenPath",
                 '-classpath', "/PROJECT_DIR/REL-CLASSPATH:$absClassPath:/J2OBJC_HOME/lib/J2OBJC-LIB1:/J2OBJC_HOME/lib/J2OBJC-LIB2:/PROJECT_DIR/build/classes",
-                '-ARG1', '-ARG2',
+                '-ARG1', '-ARG2', '--strip-reflection',
                 '/PROJECT_DIR/src/main/java/com/example/Main1.java'
         ],
         // expectedWindowsExecutableAndArgs
