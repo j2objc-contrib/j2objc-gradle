@@ -21,7 +21,7 @@ before the 1.0 release.
 [![OSX and Linux Build Status](https://img.shields.io/travis/j2objc-contrib/j2objc-gradle/master.svg?label=mac%20and%20linux%20build)](https://travis-ci.org/j2objc-contrib/j2objc-gradle)
 [![Windows Build Status](https://img.shields.io/appveyor/ci/madvayApiAccess/j2objc-gradle/master.svg?label=windows%20build)](https://ci.appveyor.com/project/madvayApiAccess/j2objc-gradle/branch/master)
 
-Home Page: https://github.com/j2objc-contrib/j2objc-gradle
+Home Page: http://gradle.j2objccontrib.org
 
 ### Quick Start Guide
 
