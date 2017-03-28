@@ -1,5 +1,3 @@
-# Ignore all the wrappers below.
-gradle/
 gradlew.bat
 
 # Under this directory, we do in fact need to preserve local.properties!
